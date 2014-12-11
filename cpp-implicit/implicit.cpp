@@ -9,6 +9,21 @@ struct Imp_OnlineOutput;
 struct Imp_Experiment;
 struct Imp_Size;
 
+arma::mat test(arma::mat input);
+Imp_Size Imp_dataset_size(const Imp_Dataset& dataset);
+mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t);
+Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t);
+mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
+mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
+mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
+Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
+Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
+	SEXP verbose);
+
+
 struct Imp_DataPoint {
 //@members
   mat x;
@@ -74,6 +89,17 @@ void hello(){
   Rcpp::Rcout<<"hello world!"<<std::endl;
 }
 
+// Function to output function results for testing
+// This function should cause conflicts in merging
+// This function should be REMOVED after debugging
+//
+// [[Rcpp::export]]
+arma::mat test(arma::mat input){
+	Imp_OnlineOutput a;
+	a.estimates = input;
+	return Imp_onlineOutput_estimate(a, 2);
+}
+
 
 //return the nsamples and p of a dataset
 //std::tuple<unsigned, unsigned> Imp_dataset_size(const Imp_Dataset& dataset){
@@ -92,7 +118,9 @@ Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
 
 // return the @t th estimated parameter in @online_out
 mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t){
-	return mat();
+	t = t-1;
+	mat column = mat(online_out.estimates.col(t));
+	return column;
 }
 
 // return the @t th data point in @dataset
