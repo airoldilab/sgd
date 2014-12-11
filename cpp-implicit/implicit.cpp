@@ -25,6 +25,8 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 
 
 struct Imp_DataPoint {
+  Imp_DataPoint(): x(mat()), y(0) {}
+  Imp_DataPoint(mat xin, double yin):x(xin), y(yin) {}
 //@members
   mat x;
   double y;
@@ -32,6 +34,8 @@ struct Imp_DataPoint {
 
 struct Imp_Dataset
 {
+  Imp_Dataset():X(mat()), Y(mat()) {}
+  Imp_Dataset(mat xin, mat yin):X(xin), Y(yin) {}
 //@members
   mat X;
   mat Y;
@@ -78,6 +82,8 @@ struct Imp_Experiment {
 };
 
 struct Imp_Size{
+  Imp_Size():nsamples(0), p(0){}
+  Imp_Size(unsigned nin, unsigned pin):nsamples(nin), p(pin) {}
   unsigned nsamples;
   unsigned p;
 };
@@ -95,9 +101,12 @@ void hello(){
 //
 // [[Rcpp::export]]
 arma::mat test(arma::mat input){
-	Imp_OnlineOutput a;
-	a.estimates = input;
-	return Imp_onlineOutput_estimate(a, 2);
+  Imp_Dataset temp;
+  temp.X = input;
+  temp.Y = input.col(4);
+  Imp_DataPoint a = Imp_get_dataset_point(temp, 5);
+  Rcpp::Rcout << a.y<<std::endl;
+  return a.x;
 }
 
 
@@ -108,7 +117,10 @@ arma::mat test(arma::mat input){
 
 //return the nsamples and p of a dataset
 Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
- return Imp_Size();
+  Imp_Size size;
+  size.nsamples = dataset.X.n_rows;
+  size.p = dataset.X.n_cols;
+  return size;
 }
 
 //add estimate to the t column of out.estimates
@@ -118,14 +130,17 @@ Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
 
 // return the @t th estimated parameter in @online_out
 mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t){
-	t = t-1;
-	mat column = mat(online_out.estimates.col(t));
-	return column;
+  t = t-1;
+  mat column = mat(online_out.estimates.col(t));
+  return column;
 }
 
 // return the @t th data point in @dataset
 Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
-	return Imp_DataPoint();
+  t = t - 1;
+  mat xt = mat(dataset.X.row(t));
+  double yt = dataset.Y(t);
+  return Imp_DataPoint(xt, yt);
 }
 
 // return the new estimate of parameters, using SGD
