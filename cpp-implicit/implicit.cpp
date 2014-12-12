@@ -3,6 +3,8 @@
 #include "RcppArmadillo.h"
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/tools/roots.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/math/tools/roots.hpp>
 #include <math.h>
 
 using namespace arma;
@@ -140,9 +142,10 @@ struct Imp_Size{
 
 // Function to test the cpp integration is working
 // [[Rcpp::export]]
-void hello(){
+std::string hello(){
 	Rcpp::Rcout<<"hello world!"<<std::endl;
   Rcpp::Rcout<<"hello world!"<<std::endl;
+  return "hello";
 }
 
 // Function to output function results for testing
@@ -232,6 +235,14 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
       return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
       					       + normx * ksi);
     }
+    double first_derivative (double ksi) const{
+      return experiment.h_first_derivative(dot(theta_old, datapoint.x)
+					   + normx * ksi)*normx;
+    }
+    double second_derivative (double ksi) const{
+      return experiment.h_second_derivative(dot(theta_old, datapoint.x)
+						   + normx * ksi)*normx*normx;
+    }
     const Imp_Experiment& experiment;
     const Imp_DataPoint& datapoint;
     const mat& theta_old;
@@ -239,9 +250,14 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   };
 
   struct Implicit_fn{
+    typedef boost::math::tuple<double, double, double> tuple_type;
     Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
-    double operator() (double u) const{
-      return u - at * g(u);
+    tuple_type operator() (double u) const{
+      double value = u - at * g(u);
+      double first = 1 + at * g.first_derivative(u);
+      double second = at * g.second_derivative(u);
+      tuple_type result(value, first, second);
+      return result;
     }
     double at;
     const Get_score_coeff& g;
@@ -263,11 +279,12 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   }
   double result;
   if (lower != upper){
-      std::pair<double, double> xit;
-      boost::math::tools::eps_tolerance<double> tol(14);
-      boost::uintmax_t max_iter = 1000;
-      xit = boost::math::tools::toms748_solve(implicit_fn, lower, upper, tol, max_iter);
-      result = (xit.first + xit.second)/2;
+      //std::pair<double, double> xit;
+      //boost::math::tools::eps_tolerance<double> tol(14);
+      //boost::uintmax_t max_iter = 1000;
+      //xit = boost::math::tools::toms748_solve(implicit_fn, lower, upper, tol, max_iter);
+      //result = (xit.first + xit.second)/2;
+      result = boost::math::tools::newton_raphson_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
   }
   else
     result = lower;
@@ -327,25 +344,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
 			    Rcpp::Named("last") = out.last_estimate());
 }
-
-/* Func object for root finding methods, up to second deriv
-*  h_coeff(x) = x + e^x;
-*  h_coeff(x)' = 1 + e^x;
-*  
-
-struct Test_H_Coeff {
-  typedef boost::tuples::tuple<double, double> tuple_type;
-  tuple_type operator()(double u) {
-    tuple_type result(u+exp(u), 1.+exp(u));
-    return result;
-  }
-
-};
-
-double find_root() {
-  return boost::math::tools::newton_raphson_iterate(Test_H_Coeff(), -.5, -1., 0., 3);
-}
-*/
 
 
 
