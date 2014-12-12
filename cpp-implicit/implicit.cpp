@@ -1,6 +1,7 @@
 
 //[[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
+#include <boost/tuple/tuple.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <math.h>
 
@@ -22,7 +23,8 @@ mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
-Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
+//Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
+void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose);
 
@@ -78,17 +80,54 @@ struct Imp_Experiment {
     return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
   double h_transfer(double u) const{
-    if (model_name=="poisson")
+    if (model_name=="poisson") {
       return exp(u);
-    return 0;
+    }
+    else if (model_name == "normal") {
+      return u;
+    } 
+    else if (model_name == "logistic") {
+      return sigmoid(u);
+    }
+    else {
+      return 0;
+    }
   }
   //YKuang
-  double h_first_derivative() const{
-  	return 0;
+  double h_first_derivative(double u) const{
+  	if (model_name == "poisson") {
+      return exp(u);
+    }
+    else if (model_name == "normal") {
+      return 1.;
+    } 
+    else if (model_name == "logistic") {
+      return sigmoid(u) * (1. - sigmoid(u));
+    } 
+    else {
+      return 0.;
+    }
   }
   //YKuang
-  double h_second_derivative() const{
-  	return 0;
+  double h_second_derivative(double u) const{
+  	if (model_name == "poisson") {
+      return exp(u);
+    }
+    else if (model_name == "normal") {
+      return 0.;
+    } 
+    else if (model_name == "logistic") {
+      double sig = sigmoid(u);
+      return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
+    } 
+    else {
+      return 0.;
+    }
+  }
+
+private:
+  double sigmoid(double u) const {
+    return 1. / (1. + exp(-u));
   }
 };
 
@@ -137,6 +176,7 @@ Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
 // }
 
 // return the @t th estimated parameter in @online_out
+// Here, t=1 is the first estimate, which in matrix will be its 0-th col
 mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t){
   if (t==0){
       return(mat(online_out.estimates.n_rows, 1, fill::zeros));
@@ -171,7 +211,7 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 // return the new estimate of parameters, using ASGD
 mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
-	return mat();
+	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment);
 }
 
 
@@ -238,8 +278,16 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 
 //YKuang
 // transform the output of average SGD
-Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
-	return sgd_onlineOutput;
+void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
+	mat avg_estimates(sgd_onlineOutput.estimates.n_rows, 1);
+	avg_estimates = Imp_onlineOutput_estimate(sgd_onlineOutput, 1);
+	for (unsigned t = 1; t < sgd_onlineOutput.estimates.n_cols; ++t) {
+		avg_estimates = (1. - 1./(double)t) * avg_estimates
+						+ 1./((double)t) * Imp_onlineOutput_estimate(sgd_onlineOutput, t+1);
+		// t+1-th data has been averaged in @sgd_onlineOutput.estimate,
+		// hence can be used to store instantly
+		sgd_onlineOutput.estimates.col(t) = avg_estimates;
+	}
 }
 
 // use the method specified by algorithm to estimate parameters
@@ -261,14 +309,40 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 
   for(int t=1; t<=nsamples; ++t){
-      if (algo == "sgd"){
-	Imp_sgd_online_algorithm(t, out, data, exprm);
+      if (algo == "sgd") {
+        Imp_sgd_online_algorithm(t, out, data, exprm);
       }
+      else if (algo == "asgd") {
+        Imp_asgd_online_algorithm(t, out, data, exprm);
+      }
+  }
+
+  if (algo == "asgd") {
+	  asgd_transform_output(out);
   }
 
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
 			    Rcpp::Named("last") = out.last_estimate());
 }
+
+/* Func object for root finding methods, up to second deriv
+*  h_coeff(x) = x + e^x;
+*  h_coeff(x)' = 1 + e^x;
+*  
+
+struct Test_H_Coeff {
+  typedef boost::tuples::tuple<double, double> tuple_type;
+  tuple_type operator()(double u) {
+    tuple_type result(u+exp(u), 1.+exp(u));
+    return result;
+  }
+
+};
+
+double find_root() {
+  return boost::math::tools::newton_raphson_iterate(Test_H_Coeff(), -.5, -1., 0., 3);
+}
+*/
 
 
 
