@@ -271,7 +271,7 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   }
   else
     result = lower;
-  mat theta_new = theta_old + result * datapoint.x;
+  mat theta_new = theta_old + result * datapoint.x.t();
   online_out.estimates.col(t-1) = theta_new;
   return theta_new;
 }
@@ -314,6 +314,9 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
       }
       else if (algo == "asgd") {
         Imp_asgd_online_algorithm(t, out, data, exprm);
+      }
+      else if (algo == "implicit"){
+	Imp_implicit_online_algorithm(t, out, data, exprm);
       }
   }
 

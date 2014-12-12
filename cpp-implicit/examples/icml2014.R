@@ -247,13 +247,22 @@ postProcess.poisson <- function() {
   plot(ts, y, type="l")
 }
 
-run.test.experiment <- function(niters=100){
+run.test.imp.c <- function(niters=10000){
   e = poisson.experiment(niters=niters)
   dataset = e$sample.dataset()
-  run_online_algorithm(dataset,e, 'sgd', F)
+  c = run_online_algorithm(dataset,e, 'implicit', F)
+  c
 }
 
+run.test.imp.r <- function(niters=10000){
+  e = poisson.experiment(niters=niters)
+  dataset = e$sample.dataset()
+  r = run.online.algorithm(dataset,e, implicit.onlineAlgorithm)
+  r
+}
 
+microbenchmark(run.test.imp.r(), run.test.imp.c(), times=5)
+benchmark(replications=5, run.test.imp.c(), run.test.imp.r())
 
 
 
