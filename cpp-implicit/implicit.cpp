@@ -1,11 +1,9 @@
 
 //[[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
+#include <boost/math/tools/roots.hpp>
 #include <math.h>
 
-using namespace boost::numeric::ublas;
 using namespace arma;
 
 struct Imp_DataPoint;
@@ -176,11 +174,66 @@ mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	return mat();
 }
 
+
 //Tlan
 // return the new estimate of parameters, using implicit SGD
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
-	return mat();
+  Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
+  double at = experiment.learning_rate(t);
+  double normx = dot(datapoint.x, datapoint.x);
+  mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
+
+  struct Get_score_coeff{
+    Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
+		    const mat& t, double n):experiment(e), datapoint(d),
+			theta_old(t), normx(n) {}
+    double operator() (double ksi) const{
+      return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
+      					       + normx * ksi);
+    }
+    const Imp_Experiment& experiment;
+    const Imp_DataPoint& datapoint;
+    const mat& theta_old;
+    double normx;
+  };
+
+  struct Implicit_fn{
+    Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
+    double operator() (double u) const{
+      return u - at * g(u);
+    }
+    double at;
+    const Get_score_coeff& g;
+  };
+
+  Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx);
+  Implicit_fn implicit_fn(at, get_score_coeff);
+
+  double rt = at * get_score_coeff(0);
+  double lower = 0;
+  double upper = 0;
+  if (rt < 0){
+      upper = 0;
+      lower = rt;
+  }
+  else{
+      upper = rt;
+      lower = 0;
+  }
+  double result;
+  if (lower != upper){
+      std::pair<double, double> xit;
+      boost::math::tools::eps_tolerance<double> tol(14);
+      boost::uintmax_t max_iter = 1000;
+      xit = boost::math::tools::toms748_solve(implicit_fn, lower, upper, tol, max_iter);
+      result = (xit.first + xit.second)/2;
+  }
+  else
+    result = lower;
+  mat theta_new = theta_old + result * datapoint.x;
+  online_out.estimates.col(t-1) = theta_new;
+  return theta_new;
 }
 
 //YKuang
@@ -195,7 +248,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose){
   Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
-  //Rcpp::String Algorithm(algorithm);
   Imp_Experiment exprm;
   Imp_Dataset data;
   std::string algo;

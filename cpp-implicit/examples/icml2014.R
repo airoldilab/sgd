@@ -247,6 +247,17 @@ postProcess.poisson <- function() {
   plot(ts, y, type="l")
 }
 
+run.test.experiment <- function(niters=100){
+  e = poisson.experiment(niters=niters)
+  dataset = e$sample.dataset()
+  run_online_algorithm(dataset,e, 'sgd', F)
+}
+
+
+
+
+
+
 
 
 
