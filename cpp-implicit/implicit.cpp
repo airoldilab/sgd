@@ -3,6 +3,8 @@
 #include "RcppArmadillo.h"
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/math/tools/roots.hpp>
 #include <math.h>
 
 using namespace boost::numeric::ublas;
@@ -94,7 +96,7 @@ struct Imp_Experiment {
     }
   }
   //YKuang
-  double h_first_derivative() const{
+  double h_first_derivative(double u) const{
   	if (model_name == "poisson") {
       return exp(u);
     }
@@ -109,7 +111,7 @@ struct Imp_Experiment {
     }
   }
   //YKuang
-  double h_second_derivative() const{
+  double h_second_derivative(double u) const{
   	if (model_name == "poisson") {
       return exp(u);
     }
@@ -176,6 +178,7 @@ Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
 // }
 
 // return the @t th estimated parameter in @online_out
+// Here, t=1 is the first estimate, which in matrix will be its 0-th col
 mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t){
   if (t==0){
       return(mat(online_out.estimates.n_rows, 1, fill::zeros));
@@ -223,6 +226,16 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 //YKuang
 // transform the output of average SGD
 Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
+	mat avg_estimates(sgd_onlineOutput.estimates.n_rows, 1);
+	avg_estimates = Imp_onlineOutput_estimate(sgd_onlineOutput, 1);
+	for (unsigned t = 1; t < avg_estimates.n_cols; ++t) {
+		avg_estimates = (1. - 1./(double)t) * avg_estimates
+						+ 1./((double)t) * Imp_onlineOutput_estimate(sgd_onlineOutput, t+1);
+		// t+1-th data has been averaged in @sgd_onlineOutput.estimate,
+		// hence can be used to store instantly
+		sgd_onlineOutput.estimates.col(t) = avg_estimates;
+	}
+
 	return sgd_onlineOutput;
 }
 
@@ -259,7 +272,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 *  h_coeff(x) = x + e^x;
 *  h_coeff(x)' = 1 + e^x;
 *  
-*/
+
 struct Test_H_Coeff {
   typedef boost::tuples::tuple<double, double> tuple_type;
   tuple_type operator()(double u) {
@@ -269,11 +282,10 @@ struct Test_H_Coeff {
 
 };
 
-// [[Rcpp::export]]
 double find_root() {
   return boost::math::tools::newton_raphson_iterate(Test_H_Coeff(), -.5, -1., 0., 3);
 }
-
+*/
 
 
 
