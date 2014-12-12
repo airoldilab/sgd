@@ -26,7 +26,8 @@ mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
-Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
+//Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
+void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose);
 
@@ -213,7 +214,7 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 // return the new estimate of parameters, using ASGD
 mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
-	return mat();
+	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment);
 }
 
 //Tlan
@@ -225,18 +226,16 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 
 //YKuang
 // transform the output of average SGD
-Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
+void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 	mat avg_estimates(sgd_onlineOutput.estimates.n_rows, 1);
 	avg_estimates = Imp_onlineOutput_estimate(sgd_onlineOutput, 1);
-	for (unsigned t = 1; t < avg_estimates.n_cols; ++t) {
+	for (unsigned t = 1; t < sgd_onlineOutput.estimates.n_cols; ++t) {
 		avg_estimates = (1. - 1./(double)t) * avg_estimates
 						+ 1./((double)t) * Imp_onlineOutput_estimate(sgd_onlineOutput, t+1);
 		// t+1-th data has been averaged in @sgd_onlineOutput.estimate,
 		// hence can be used to store instantly
 		sgd_onlineOutput.estimates.col(t) = avg_estimates;
 	}
-
-	return sgd_onlineOutput;
 }
 
 // use the method specified by algorithm to estimate parameters
@@ -259,9 +258,16 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 
   for(int t=1; t<=nsamples; ++t){
-      if (algo == "sgd"){
-	Imp_sgd_online_algorithm(t, out, data, exprm);
+      if (algo == "sgd") {
+        Imp_sgd_online_algorithm(t, out, data, exprm);
       }
+      else if (algo == "asgd") {
+        Imp_asgd_online_algorithm(t, out, data, exprm);
+      }
+  }
+
+  if (algo == "asgd") {
+	  asgd_transform_output(out);
   }
 
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
