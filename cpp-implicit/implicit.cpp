@@ -49,14 +49,13 @@ struct Imp_Dataset
 struct Imp_OnlineOutput{
   //Construct Imp_OnlineOutput compatible with
   //the shape of data
-  Imp_OnlineOutput(const Imp_Dataset& data){}
-  
+  Imp_OnlineOutput(const Imp_Dataset& data):estimates(mat(data.X.n_cols, data.X.n_rows)){}
   Imp_OnlineOutput(){}
 //@members
   mat estimates;
 //@methods
   mat last_estimate(){
-  	return mat();
+    return estimates.col(estimates.n_cols-1);
   }
 };
 
@@ -73,16 +72,16 @@ struct Imp_Experiment {
   // 	return Imp_Dataset();
   // }
   double learning_rate(unsigned t) const{
+    if (model_name=="poisson")
+      return double(10)/3/t;
     return 0;
   }
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const{
-    return 0;
+    return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
   double h_transfer(double u) const{
-    switch(model_name){
-      case 'poisson':
-	return exp(u);
-    }
+    if (model_name=="poisson")
+      return exp(u);
     return 0;
   }
   //YKuang
@@ -115,12 +114,9 @@ void hello(){
 //
 // [[Rcpp::export]]
 arma::mat test(arma::mat input){
-  vector<double> v (10);
-  for (unsigned i = 0; i < v.size (); ++ i){
-    v(i) = i;
-    Rcpp::Rcout<<v(i)<<std::endl;
-  }
-  return mat();
+  Imp_OnlineOutput out;
+  out.estimates = input;
+  return out.last_estimate();
 }
 
 
