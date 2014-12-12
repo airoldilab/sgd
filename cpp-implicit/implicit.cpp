@@ -113,10 +113,10 @@ void hello(){
 // This function should be REMOVED after debugging
 //
 // [[Rcpp::export]]
-arma::mat test(arma::mat input){
-  Imp_OnlineOutput out;
-  out.estimates = input;
-  return out.last_estimate();
+arma::mat test(arma::mat input1){
+  Imp_Dataset input;
+  input.X = input1;
+  return mat();
 }
 
 
@@ -140,6 +140,9 @@ Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
 
 // return the @t th estimated parameter in @online_out
 mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t){
+  if (t==0){
+      return(mat(online_out.estimates.n_rows, 1, fill::zeros));
+  }
   t = t-1;
   mat column = mat(online_out.estimates.col(t));
   return column;
@@ -190,7 +193,29 @@ Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose){
-	return Rcpp::List();
+  Rcpp::List Dataset(dataset);
+  Rcpp::List Experiment(experiment);
+  //Rcpp::String Algorithm(algorithm);
+  Imp_Experiment exprm;
+  Imp_Dataset data;
+  std::string algo;
+  algo =  Rcpp::as<std::string>(algorithm);
+  exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
+  exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
+  exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+  data.X = Rcpp::as<mat>(Dataset["X"]);
+  data.Y = Rcpp::as<mat>(Dataset["Y"]);
+  Imp_OnlineOutput out(data);
+  unsigned nsamples = Imp_dataset_size(data).nsamples;
+
+  for(int t=1; t<=nsamples; ++t){
+      if (algo == "sgd"){
+	Imp_sgd_online_algorithm(t, out, data, exprm);
+      }
+  }
+
+  return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
+			    Rcpp::Named("last") = out.last_estimate());
 }
 
 
