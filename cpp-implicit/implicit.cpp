@@ -80,17 +80,54 @@ struct Imp_Experiment {
     return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
   double h_transfer(double u) const{
-    if (model_name=="poisson")
+    if (model_name=="poisson") {
       return exp(u);
-    return 0;
+    }
+    else if (model_name == "normal") {
+      return u;
+    } 
+    else if (model_name == "logistic") {
+      return sigmoid(u);
+    }
+    else {
+      return 0;
+    }
   }
   //YKuang
   double h_first_derivative() const{
-  	return 0;
+  	if (model_name == "poisson") {
+      return exp(u);
+    }
+    else if (model_name == "normal") {
+      return 1.;
+    } 
+    else if (model_name == "logistic") {
+      return sigmoid(u) * (1. - sigmoid(u));
+    } 
+    else {
+      return 0.;
+    }
   }
   //YKuang
   double h_second_derivative() const{
-  	return 0;
+  	if (model_name == "poisson") {
+      return exp(u);
+    }
+    else if (model_name == "normal") {
+      return 0.;
+    } 
+    else if (model_name == "logistic") {
+      double sig = sigmoid(u);
+      return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
+    } 
+    else {
+      return 0.;
+    }
+  }
+
+private:
+  double sigmoid(double u) const {
+    return 1. / (1. + exp(-u));
   }
 };
 
@@ -217,6 +254,26 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
 			    Rcpp::Named("last") = out.last_estimate());
 }
+
+/* Func object for root finding methods, up to second deriv
+*  h_coeff(x) = x + e^x;
+*  h_coeff(x)' = 1 + e^x;
+*  
+*/
+struct Test_H_Coeff {
+  typedef boost::tuples::tuple<double, double> tuple_type;
+  tuple_type operator()(double u) {
+    tuple_type result(u+exp(u), 1.+exp(u));
+    return result;
+  }
+
+};
+
+// [[Rcpp::export]]
+double find_root() {
+  return boost::math::tools::newton_raphson_iterate(Test_H_Coeff(), -.5, -1., 0., 3);
+}
+
 
 
 
