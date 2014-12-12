@@ -1,6 +1,11 @@
 
 //[[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <math.h>
+
+using namespace boost::numeric::ublas;
 using namespace arma;
 
 struct Imp_DataPoint;
@@ -44,7 +49,7 @@ struct Imp_Dataset
 struct Imp_OnlineOutput{
   //Construct Imp_OnlineOutput compatible with
   //the shape of data
-  Imp_OnlineOutput(Imp_Dataset data){}
+  Imp_OnlineOutput(const Imp_Dataset& data){}
   
   Imp_OnlineOutput(){}
 //@members
@@ -57,7 +62,7 @@ struct Imp_OnlineOutput{
 
 struct Imp_Experiment {
 //@members
-  mat theta_star;
+  //mat theta_star;
   unsigned p;
   unsigned n_iters;
   //mat cov_mat;
@@ -67,16 +72,25 @@ struct Imp_Experiment {
   // Imp_Dataset sample_dataset(){
   // 	return Imp_Dataset();
   // }
-  double score_function(){
+  double learning_rate(unsigned t) const{
+    return 0;
+  }
+  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const{
+    return 0;
+  }
+  double h_transfer(double u) const{
+    switch(model_name){
+      case 'poisson':
+	return exp(u);
+    }
+    return 0;
+  }
+  //YKuang
+  double h_first_derivative() const{
   	return 0;
   }
-  double h_transfer(){
-  	return 0;
-  }
-  double h_first_derivative(){
-  	return 0;
-  }
-  double h_second_derivative(){
+  //YKuang
+  double h_second_derivative() const{
   	return 0;
   }
 };
@@ -101,12 +115,12 @@ void hello(){
 //
 // [[Rcpp::export]]
 arma::mat test(arma::mat input){
-  Imp_Dataset temp;
-  temp.X = input;
-  temp.Y = input.col(4);
-  Imp_DataPoint a = Imp_get_dataset_point(temp, 5);
-  Rcpp::Rcout << a.y<<std::endl;
-  return a.x;
+  vector<double> v (10);
+  for (unsigned i = 0; i < v.size (); ++ i){
+    v(i) = i;
+    Rcpp::Rcout<<v(i)<<std::endl;
+  }
+  return mat();
 }
 
 
@@ -146,7 +160,13 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 // return the new estimate of parameters, using SGD
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
-	return mat();
+  Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
+  double at = experiment.learning_rate(t);
+  mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
+  mat score_t = experiment.score_function(theta_old, datapoint);
+  mat theta_new = theta_old + at * score_t;
+  online_out.estimates.col(t-1) = theta_new;
+  return theta_new;
 }
 
 
@@ -157,12 +177,14 @@ mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	return mat();
 }
 
+//Tlan
 // return the new estimate of parameters, using implicit SGD
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
 	return mat();
 }
 
+//YKuang
 // transform the output of average SGD
 Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 	return sgd_onlineOutput;
