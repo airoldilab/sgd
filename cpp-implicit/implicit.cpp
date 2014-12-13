@@ -1,10 +1,6 @@
-
+#include <boost/math/tools/roots.hpp>
 //[[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
-#include <boost/tuple/tuple.hpp>
-#include <boost/math/tools/roots.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/math/tools/roots.hpp>
 #include <math.h>
 
 using namespace arma;
@@ -74,13 +70,18 @@ struct Imp_Experiment {
   // 	return Imp_Dataset();
   // }
   double learning_rate(unsigned t) const{
-    if (model_name=="poisson")
+    if (model_name == "poisson")
       return double(10)/3/t;
+    else if (model_name == "normal") {
+      return .1/ t;
+    }
     return 0;
   }
+
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const{
     return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
+
   double h_transfer(double u) const{
     if (model_name=="poisson") {
       return exp(u);
@@ -140,6 +141,44 @@ struct Imp_Size{
   unsigned p;
 };
 
+// Compute score function coeff and its derivative for Implicit-SGD update
+struct Get_score_coeff{
+  Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
+      const mat& t, double n):experiment(e), datapoint(d),
+    theta_old(t), normx(n) {}
+  double operator() (double ksi) const{
+    return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
+                     + normx * ksi);
+  }
+  double first_derivative (double ksi) const{
+    return experiment.h_first_derivative(dot(theta_old, datapoint.x)
+           + normx * ksi)*normx;
+  }
+  double second_derivative (double ksi) const{
+    return experiment.h_second_derivative(dot(theta_old, datapoint.x)
+             + normx * ksi)*normx*normx;
+  }
+  const Imp_Experiment& experiment;
+  const Imp_DataPoint& datapoint;
+  const mat& theta_old;
+  double normx;
+};
+
+// Root finding functor for Implicit-SGD update
+struct Implicit_fn{
+  typedef boost::math::tuple<double, double, double> tuple_type;
+  Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
+  tuple_type operator() (double u) const{
+    double value = u - at * g(u);
+    double first = 1 + at * g.first_derivative(u);
+    double second = at * g.second_derivative(u);
+    tuple_type result(value, first, second);
+    return result;
+  }
+  double at;
+  const Get_score_coeff& g;
+};
+
 // Function to test the cpp integration is working
 // [[Rcpp::export]]
 std::string hello(){
@@ -158,12 +197,6 @@ arma::mat test(arma::mat input1){
   input.X = input1;
   return mat();
 }
-
-
-//return the nsamples and p of a dataset
-//std::tuple<unsigned, unsigned> Imp_dataset_size(const Imp_Dataset& dataset){
-//	return std::make_tuple(0, 0);
-//}
 
 //return the nsamples and p of a dataset
 Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
@@ -209,14 +242,11 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   return theta_new;
 }
 
-
-
 // return the new estimate of parameters, using ASGD
 mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
 	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment);
 }
-
 
 //Tlan
 // return the new estimate of parameters, using implicit SGD
@@ -226,42 +256,6 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   double at = experiment.learning_rate(t);
   double normx = dot(datapoint.x, datapoint.x);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
-
-  struct Get_score_coeff{
-    Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
-		    const mat& t, double n):experiment(e), datapoint(d),
-			theta_old(t), normx(n) {}
-    double operator() (double ksi) const{
-      return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
-      					       + normx * ksi);
-    }
-    double first_derivative (double ksi) const{
-      return experiment.h_first_derivative(dot(theta_old, datapoint.x)
-					   + normx * ksi)*normx;
-    }
-    double second_derivative (double ksi) const{
-      return experiment.h_second_derivative(dot(theta_old, datapoint.x)
-						   + normx * ksi)*normx*normx;
-    }
-    const Imp_Experiment& experiment;
-    const Imp_DataPoint& datapoint;
-    const mat& theta_old;
-    double normx;
-  };
-
-  struct Implicit_fn{
-    typedef boost::math::tuple<double, double, double> tuple_type;
-    Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
-    tuple_type operator() (double u) const{
-      double value = u - at * g(u);
-      double first = 1 + at * g.first_derivative(u);
-      double second = at * g.second_derivative(u);
-      tuple_type result(value, first, second);
-      return result;
-    }
-    double at;
-    const Get_score_coeff& g;
-  };
 
   Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx);
   Implicit_fn implicit_fn(at, get_score_coeff);
@@ -279,11 +273,6 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   }
   double result;
   if (lower != upper){
-      //std::pair<double, double> xit;
-      //boost::math::tools::eps_tolerance<double> tol(14);
-      //boost::uintmax_t max_iter = 1000;
-      //xit = boost::math::tools::toms748_solve(implicit_fn, lower, upper, tol, max_iter);
-      //result = (xit.first + xit.second)/2;
       result = boost::math::tools::newton_raphson_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
   }
   else
@@ -293,7 +282,7 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   return theta_new;
 }
 
-//YKuang
+// YKuang
 // transform the output of average SGD
 void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 	mat avg_estimates(sgd_onlineOutput.estimates.n_rows, 1);
@@ -344,6 +333,3 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
 			    Rcpp::Named("last") = out.last_estimate());
 }
-
-
-

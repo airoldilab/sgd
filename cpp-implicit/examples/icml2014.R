@@ -264,6 +264,22 @@ run.test.imp.r <- function(niters=10000){
 microbenchmark(run.test.imp.r(), run.test.imp.c(), times=5)
 benchmark(replications=5, run.test.imp.c(), run.test.imp.r())
 
+# generate data first as this part should not be the responsibility in the algorithm
+normal.e = normal.experiment(niters=1000, p=1000)
+normal.data = normal.e$sample.dataset()
+
+run.test.normal.imp.c <- function(norm.e, norm.data) {
+  c = run_online_algorithm(norm.data, norm.e, 'implicit', F)
+  c
+}
+
+run.test.normal.imp.r <- function(norm.e, norm.data){
+  r = run.online.algorithm(norm.data, norm.e, implicit.onlineAlgorithm)
+  r
+}
+
+benchmark(replications=3, run.test.normal.imp.c(normal.e, normal.data), run.test.normal.imp.r(normal.e, normal.data))
+
 
 
 
