@@ -19,4 +19,4 @@ This is the simplified data of original `covtype.data`, with only its first 2000
 | Horizontal_Distance_To_Fire_Points | quantitative | meters | Horz Dist to nearest wildfire ignition points |
 | Wilderness_Area (**4** binary columns) | qualitative | 0, 1 | Wilderness area |
 | Soil_Type (**40** binary columns) | qualitative | 0, 1 | Soil Type designation |
-| Cover_Type | enumerate | 1 to 7 | Forest Cover Type designation |
+| Cover_Type(**Y**) | enumerate | 1 to 7 | Forest Cover Type designation |
