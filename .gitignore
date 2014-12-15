@@ -1,3 +1,5 @@
 *.DS_Store
 *.Rhistory
 *.Rdata
+*.so
+*.o
