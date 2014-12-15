@@ -1,5 +1,7 @@
 library(Rcpp)
 library(RcppArmadillo)
+library(rbenchmark)
+library(microbenchmark)
 source("online-algorithms.R")
 sourceCpp('implicit.cpp')
 sample.covariance.matrix <- function(p) {
@@ -62,6 +64,8 @@ normal.experiment <- function(niters, p=100, lr.scale=1.0) {
     # stop("Need to define learning rate per-application.")
     lr.scale * base.learning.rate(t, gamma0=gamma0, alpha=lambda0, c=1)
   }
+  
+  experiment$lr = list(gamma0 = gamma0, alpha = lambda0, c = 1, scale = lr.scale)
   
   # 4b. Fisher information
   experiment$J = A
@@ -156,6 +160,8 @@ poisson.experiment <- function(niters) {
               ## is to show that the implicit method remains robust across multiple scenarios.
   }
   
+  experiment$lr = list(gamma0 = 1, alpha = 1, c = 1, scale = 1)
+  
   # 4b. Fisher information
   # Recall J= E(h'(theta.star' x) x x')
   experiment$J = matrix(0, nrow=2, ncol=2)
@@ -247,25 +253,24 @@ postProcess.poisson <- function() {
   plot(ts, y, type="l")
 }
 
-run.test.imp.c <- function(niters=10000){
-  e = poisson.experiment(niters=niters)
-  dataset = e$sample.dataset()
-  c = run_online_algorithm(dataset,e, 'implicit', F)
+poisson.e = poisson.experiment(niters=10000)
+poisson.dataset = poisson.e$sample.dataset()
+
+run.test.imp.c <- function(data, exprm, niters=10000){
+  c = run_online_algorithm(data,exprm, 'implicit', F)
   c
 }
 
-run.test.imp.r <- function(niters=10000){
-  e = poisson.experiment(niters=niters)
-  dataset = e$sample.dataset()
-  r = run.online.algorithm(dataset,e, implicit.onlineAlgorithm)
+run.test.imp.r <- function(data, exprm,niters=10000){
+  r = run.online.algorithm(data,exprm, implicit.onlineAlgorithm)
   r
 }
 
-microbenchmark(run.test.imp.r(), run.test.imp.c(), times=5)
-benchmark(replications=5, run.test.imp.c(), run.test.imp.r())
+microbenchmark(run.test.imp.r(poisson.dataset, poisson.e), run.test.imp.c(poisson.dataset, poisson.e), times=5)
+benchmark(replications=5, run.test.imp.c(poisson.dataset, poisson.e), run.test.imp.r(poisson.dataset, poisson.e))
 
 # generate data first as this part should not be the responsibility in the algorithm
-normal.e = normal.experiment(niters=1000, p=1000)
+normal.e = normal.experiment(niters=1000, p=100)
 normal.data = normal.e$sample.dataset()
 
 run.test.normal.imp.c <- function(norm.e, norm.data) {

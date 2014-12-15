@@ -10,6 +10,7 @@ struct Imp_Dataset;
 struct Imp_OnlineOutput;
 struct Imp_Experiment;
 struct Imp_Size;
+struct Imp_Learning_rate;
 
 arma::mat test(arma::mat input);
 Imp_Size Imp_dataset_size(const Imp_Dataset& dataset);
@@ -57,11 +58,25 @@ struct Imp_OnlineOutput{
   }
 };
 
+struct Imp_Learning_rate {
+  Imp_Learning_rate():gamma(1), alpha(1), c(1), scale(1) {}
+  Imp_Learning_rate(double g, double a, double cin, double s):
+    gamma(g), alpha(a), c(cin), scale(s) {}
+  double gamma;
+  double alpha;
+  double c;
+  double scale;
+  double operator() (unsigned t) const {
+    return scale * gamma * pow(1 + alpha * gamma * t, -c);
+  }
+};
+
 struct Imp_Experiment {
 //@members
   //mat theta_star;
   unsigned p;
   unsigned n_iters;
+  Imp_Learning_rate lr;
   //mat cov_mat;
   //mat fisher_info_mat;
   std::string model_name;
@@ -73,7 +88,7 @@ struct Imp_Experiment {
     if (model_name == "poisson")
       return double(10)/3/t;
     else if (model_name == "normal") {
-      return .1/ t;
+      return lr(t);
     }
     return 0;
   }
@@ -302,12 +317,14 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose){
   Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
+  Rcpp::List LR = Experiment["lr"];
   Imp_Experiment exprm;
   Imp_Dataset data;
   std::string algo;
   algo =  Rcpp::as<std::string>(algorithm);
   exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
+  exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
   exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
   data.X = Rcpp::as<mat>(Dataset["X"]);
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
