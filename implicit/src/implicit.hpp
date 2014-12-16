@@ -1,6 +1,7 @@
 #include "RcppArmadillo.h"
 #include <boost/math/tools/roots.hpp>
 #include <math.h>
+#include <string>
 
 using namespace arma;
 
@@ -132,21 +133,26 @@ struct Imp_Size{
 // Compute score function coeff and its derivative for Implicit-SGD update
 template<typename TRANSFER>
 struct Get_score_coeff{
+
   Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
-      const mat& t, double n):experiment(e), datapoint(d),
+      const mat& t, double n) : experiment(e), datapoint(d),
     theta_old(t), normx(n) {}
+
   double operator() (double ksi) const{
     return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
                      + normx * ksi);
   }
+
   double first_derivative (double ksi) const{
     return experiment.h_first_derivative(dot(theta_old, datapoint.x)
            + normx * ksi)*normx;
   }
+
   double second_derivative (double ksi) const{
     return experiment.h_second_derivative(dot(theta_old, datapoint.x)
              + normx * ksi)*normx*normx;
   }
+
   const Imp_Experiment<TRANSFER>& experiment;
   const Imp_DataPoint& datapoint;
   const mat& theta_old;
@@ -157,7 +163,8 @@ struct Get_score_coeff{
 template<typename TRANSFER>
 struct Implicit_fn{
   typedef boost::math::tuple<double, double, double> tuple_type;
-  Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
+
+  Implicit_fn(double a, const Get_score_coeff<TRANSFER>& get_score): at(a), g(get_score){}
   tuple_type operator() (double u) const{
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);
@@ -165,6 +172,7 @@ struct Implicit_fn{
     tuple_type result(value, first, second);
     return result;
   }
+  
   double at;
   const Get_score_coeff<TRANSFER>& g;
 };

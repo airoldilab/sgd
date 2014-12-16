@@ -5,15 +5,11 @@ hello_world <- function() {
     invisible(.Call('implicit_hello_world', PACKAGE = 'implicit'))
 }
 
-rcpparma_outerproduct <- function(x) {
-    .Call('implicit_rcpparma_outerproduct', PACKAGE = 'implicit', x)
+test <- function(input1) {
+    .Call('implicit_test', PACKAGE = 'implicit', input1)
 }
 
-rcpparma_innerproduct <- function(x) {
-    .Call('implicit_rcpparma_innerproduct', PACKAGE = 'implicit', x)
-}
-
-rcpparma_bothproducts <- function(x) {
-    .Call('implicit_rcpparma_bothproducts', PACKAGE = 'implicit', x)
+run_online_algorithm <- function(dataset, experiment, algorithm, verbose) {
+    .Call('implicit_run_online_algorithm', PACKAGE = 'implicit', dataset, experiment, algorithm, verbose)
 }
 

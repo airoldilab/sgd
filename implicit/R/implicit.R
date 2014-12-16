@@ -14,6 +14,8 @@ implicit.control <- function(epsilon = 1e-08, maxit = 10000, trace = FALSE)
 # A generic function to dispatch calls
 implicit <- function(x, ...) UseMethod("implicit")
 
+# if class(x) is formula, call implicit.formula
+
 # Method to call when the first argument is a formula
 implicit.formula <- function(formula, family = gaussian, data, weights, subset, 
                              na.action, start = NULL, etastart, mustart, offset, control = list(...), 
@@ -34,7 +36,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   
   
   mf <- match.call(expand.dots = FALSE)
-  print(mf)
+
   #build dataframe according to the formula
   m <- match(c("formula", "data", "subset", "weights", "na.action", 
                "etastart", "mustart", "offset"), names(mf), 0L)
@@ -50,7 +52,6 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
     return(mf)
   
   mt <- attr(mf, "terms")
-  Y <- model.response(mf, "any")
   #set control according to user input and the default values
   control <- do.call("implicit.control", control)
   
@@ -92,7 +93,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   # null.deviance = nulldev, iter = iter, weights = wt, prior.weights = weights, 
   # df.residual = resdf, df.null = nulldf, y = y, converged = conv, 
   # boundary = boundary)
-  fit <- list()
+  fit <- list()  ##see glm.fit
   
   # model frame should be included as a component of the returned value
   if (model) 
@@ -119,6 +120,6 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   fit <- c(fit, list(call = call, formula = formula, terms = mt, 
                      data = data, offset = offset, control = control, method = method, 
                      contrasts = attr(X, "contrasts"), xlevels = .getXlevels(mt, mf)))
-  class(fit) <- c(fit$class, c("glm", "lm", "implicit"))
+  class(fit) <- c(fit$class, c("implicit", "glm", "lm"))
   fit
 }

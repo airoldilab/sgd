@@ -98,8 +98,8 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   double normx = dot(datapoint.x, datapoint.x);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
-  Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx);
-  Implicit_fn implicit_fn(at, get_score_coeff);
+  Get_score_coeff<TRANSFER> get_score_coeff(experiment, datapoint, theta_old, normx);
+  Implicit_fn<TRANSFER> implicit_fn(at, get_score_coeff);
 
   double rt = at * get_score_coeff(0);
   double lower = 0;

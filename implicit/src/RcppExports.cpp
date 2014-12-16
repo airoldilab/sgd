@@ -17,45 +17,33 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// rcpparma_outerproduct
-arma::mat rcpparma_outerproduct(const arma::colvec& x);
-RcppExport SEXP implicit_rcpparma_outerproduct(SEXP xSEXP) {
+// test
+arma::mat test(arma::mat input1);
+RcppExport SEXP implicit_test(SEXP input1SEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
         Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP );
-        arma::mat __result = rcpparma_outerproduct(x);
+        Rcpp::traits::input_parameter< arma::mat >::type input1(input1SEXP );
+        arma::mat __result = test(input1);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);
     return __sexp_result;
 END_RCPP
 }
-// rcpparma_innerproduct
-double rcpparma_innerproduct(const arma::colvec& x);
-RcppExport SEXP implicit_rcpparma_innerproduct(SEXP xSEXP) {
+// run_online_algorithm
+Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP algorithm, SEXP verbose);
+RcppExport SEXP implicit_run_online_algorithm(SEXP datasetSEXP, SEXP experimentSEXP, SEXP algorithmSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
         Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP );
-        double __result = rcpparma_innerproduct(x);
-        PROTECT(__sexp_result = Rcpp::wrap(__result));
-    }
-    UNPROTECT(1);
-    return __sexp_result;
-END_RCPP
-}
-// rcpparma_bothproducts
-Rcpp::List rcpparma_bothproducts(const arma::colvec& x);
-RcppExport SEXP implicit_rcpparma_bothproducts(SEXP xSEXP) {
-BEGIN_RCPP
-    SEXP __sexp_result;
-    {
-        Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP );
-        Rcpp::List __result = rcpparma_bothproducts(x);
+        Rcpp::traits::input_parameter< SEXP >::type dataset(datasetSEXP );
+        Rcpp::traits::input_parameter< SEXP >::type experiment(experimentSEXP );
+        Rcpp::traits::input_parameter< SEXP >::type algorithm(algorithmSEXP );
+        Rcpp::traits::input_parameter< SEXP >::type verbose(verboseSEXP );
+        Rcpp::List __result = run_online_algorithm(dataset, experiment, algorithm, verbose);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);
