@@ -179,38 +179,5 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   }
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
             Rcpp::Named("last") = out.last_estimate());
-  #if 0
-  if (transfer_name == "identity"){
-      Imp_Experiment<Imp_Identity> exprm;
-      Imp_Dataset data;
-      std::string algo;
-      algo =  Rcpp::as<std::string>(algorithm);
-      exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
-      exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
-      exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
-      exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
-      data.X = Rcpp::as<mat>(Dataset["X"]);
-      data.Y = Rcpp::as<mat>(Dataset["Y"]);
-      Imp_OnlineOutput out(data);
-      unsigned nsamples = Imp_dataset_size(data).nsamples;
-
-      for(int t=1; t<=nsamples; ++t){
-	  if (algo == "sgd") {
-	    Imp_sgd_online_algorithm(t, out, data, exprm);
-	  }
-	  else if (algo == "asgd") {
-	    Imp_asgd_online_algorithm(t, out, data, exprm);
-	  }
-	  else if (algo == "implicit"){
-      Imp_implicit_online_algorithm(t, out, data, exprm);
-	  }
-      }
-      if (algo == "asgd") {
-		asgd_transform_output(out);
-      }
-      return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
-				  Rcpp::Named("last") = out.last_estimate());
-  }
-  #endif
   return Rcpp::List();
 }
