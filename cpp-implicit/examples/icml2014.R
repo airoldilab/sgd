@@ -3,7 +3,8 @@ library(RcppArmadillo)
 library(rbenchmark)
 library(microbenchmark)
 source("online-algorithms.R")
-sourceCpp('implicit.cpp')
+library(implicit)
+#sourceCpp('implicit.cpp')
 sample.covariance.matrix <- function(p) {
   # Samples a low-rank covariance matrix.
   #
@@ -178,6 +179,8 @@ poisson.experiment <- function(niters) {
   experiment$risk <- function(theta) {
     vector.dist(theta, experiment$theta.star)
   }
+  
+  experiment$transfer.name = "exp"
   
   return(experiment)
 }

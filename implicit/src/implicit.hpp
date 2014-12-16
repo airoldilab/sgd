@@ -2,16 +2,19 @@
 #include <boost/math/tools/roots.hpp>
 #include <math.h>
 #include <string>
+#include <cstddef>
 
 using namespace arma;
+
+#define nullptr NULL
 
 struct Imp_DataPoint;
 struct Imp_Dataset;
 struct Imp_OnlineOutput;
 struct Imp_Identity;
 struct Imp_Exp;
-template<typename TRANSFER>
-  struct Imp_Experiment;
+//template<typename TRANSFER>
+struct Imp_Experiment;
 struct Imp_Size;
 struct Imp_Learning_rate;
 struct Imp_transfer;
@@ -60,41 +63,82 @@ struct Imp_Learning_rate {
   }
 };
 
+// Base transfer function struct
+struct Imp_Transfer_Base
+{
+  Imp_Transfer_Base() : name_("abstract transfer") { }
+  virtual ~Imp_Transfer_Base() { }
+
+  virtual double operator()(double u) const = 0;
+
+  virtual double first(double u) const = 0;
+
+  virtual double second(double u) const = 0;
+
+protected:
+  Imp_Transfer_Base(std::string n) : name_(n) { }
+  std::string name_;
+};
+
 //Identity transfer function
-struct Imp_Identity{
-  double operator() (double u) const{
+struct Imp_Identity : public Imp_Transfer_Base {
+  Imp_Identity() : Imp_Transfer_Base("identity transfer") { }
+
+  virtual double operator() (double u) const{
     return u;
   }
-  double first(double u) const{
+  virtual double first(double u) const{
     return 1;
   }
-  double second(double u) const{
+  virtual double second(double u) const{
     return 0;
   }
 };
 
 //exponent transfer function
-struct Imp_Exp{
-  double operator() (double u) const{
+struct Imp_Exp : public Imp_Transfer_Base {
+  Imp_Exp() : Imp_Transfer_Base("exponential transfer") { }
+
+  virtual double operator() (double u) const{
     return exp(u);
   }
-  double first(double u) const{
+  virtual double first(double u) const{
     return exp(u);
   }
-  double second(double u) const{
+  virtual double second(double u) const{
     return exp(u);
   }
 };
 
-template<typename TRANSFER>
+//template<typename TRANSFER>
 struct Imp_Experiment {
 //@members
   unsigned p;
   unsigned n_iters;
   Imp_Learning_rate lr;
   std::string model_name;
-  TRANSFER h_transfer;
+  //TRANSFER h_transfer;
 //@methods
+  Imp_Experiment(std::string transfer_name) : h_transfer_(nullptr) {
+    if (transfer_name == "identity") {
+      h_transfer_ = new Imp_Identity;
+    }
+    else if (transfer_name == "exp") {
+      h_transfer_ = new Imp_Exp;
+    }
+
+    if (h_transfer_ == nullptr) {
+      // base transfer function type
+      h_transfer_ = new Imp_Identity;
+    }
+  }
+
+  Imp_Experiment() : h_transfer_(new Imp_Identity) { }
+
+  ~Imp_Experiment() {
+    delete h_transfer_;
+  }
+
   double learning_rate(unsigned t) const{
     if (model_name == "poisson")
       return double(10)/3/t;
@@ -108,16 +152,25 @@ struct Imp_Experiment {
     return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
 
+  double h_transfer(double u) const {
+    return (*h_transfer_)(u);
+  }
+
   //YKuang
   double h_first_derivative(double u) const{
-    return h_transfer.first(u);
+    //return h_transfer.first(u);
+    return h_transfer_->first(u);
   }
   //YKuang
   double h_second_derivative(double u) const{
-    return h_transfer.second(u);
+    //return h_transfer.second(u);
+    return h_transfer_->second(u);
   }
 
 private:
+  // since this is a dangerous dynamic pointer, we may want to make it private later.
+  Imp_Transfer_Base* h_transfer_;
+
   double sigmoid(double u) const {
     return 1. / (1. + exp(-u));
   }
@@ -131,10 +184,11 @@ struct Imp_Size{
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update
-template<typename TRANSFER>
+//template<typename TRANSFER>
 struct Get_score_coeff{
 
-  Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
+  //Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
+  Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
       const mat& t, double n) : experiment(e), datapoint(d),
     theta_old(t), normx(n) {}
 
@@ -153,18 +207,20 @@ struct Get_score_coeff{
              + normx * ksi)*normx*normx;
   }
 
-  const Imp_Experiment<TRANSFER>& experiment;
+  //const Imp_Experiment<TRANSFER>& experiment;
+  const Imp_Experiment& experiment;
   const Imp_DataPoint& datapoint;
   const mat& theta_old;
   double normx;
 };
 
 // Root finding functor for Implicit-SGD update
-template<typename TRANSFER>
+//template<typename TRANSFER>
 struct Implicit_fn{
   typedef boost::math::tuple<double, double, double> tuple_type;
 
-  Implicit_fn(double a, const Get_score_coeff<TRANSFER>& get_score): at(a), g(get_score){}
+  //Implicit_fn(double a, const Get_score_coeff<TRANSFER>& get_score): at(a), g(get_score){}
+  Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
   tuple_type operator() (double u) const{
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);
@@ -174,6 +230,7 @@ struct Implicit_fn{
   }
   
   double at;
-  const Get_score_coeff<TRANSFER>& g;
+  //const Get_score_coeff<TRANSFER>& g;
+  const Get_score_coeff& g;
 };
 

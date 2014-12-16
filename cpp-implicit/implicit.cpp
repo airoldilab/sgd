@@ -1,31 +1,36 @@
-#include <boost/math/tools/roots.hpp>
+// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 //[[Rcpp::depends(RcppArmadillo)]]
 #include "RcppArmadillo.h"
+#include <boost/math/common_factor.hpp>
+#include <boost/math/tools/roots.hpp>
 #include <math.h>
+#include <string>
+#include <cstddef>
+// via the depends attribute we tell Rcpp to create hooks for
+// RcppArmadillo so that the build process will know what to do
+// This file will be compiled with C++11
+// BH provides methods to use boost library
+//
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::depends(BH)]]
+
+
 
 using namespace arma;
+
+#define nullptr NULL
 
 struct Imp_DataPoint;
 struct Imp_Dataset;
 struct Imp_OnlineOutput;
+struct Imp_Identity;
+struct Imp_Exp;
+//template<typename TRANSFER>
 struct Imp_Experiment;
 struct Imp_Size;
 struct Imp_Learning_rate;
-
-arma::mat test(arma::mat input);
-Imp_Size Imp_dataset_size(const Imp_Dataset& dataset);
-mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t);
-Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t);
-mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
-mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
-mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment);
-//Imp_OnlineOutput& asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
-void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput);
-Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
-	SEXP verbose);
+struct Imp_transfer;
 
 
 struct Imp_DataPoint {
@@ -71,19 +76,82 @@ struct Imp_Learning_rate {
   }
 };
 
+// Base transfer function struct
+struct Imp_Transfer_Base
+{
+  Imp_Transfer_Base() : name_("abstract transfer") { }
+  virtual ~Imp_Transfer_Base() { }
+
+  virtual double operator()(double u) const = 0;
+
+  virtual double first(double u) const = 0;
+
+  virtual double second(double u) const = 0;
+
+protected:
+  Imp_Transfer_Base(std::string n) : name_(n) { }
+  std::string name_;
+};
+
+//Identity transfer function
+struct Imp_Identity : public Imp_Transfer_Base {
+  Imp_Identity() : Imp_Transfer_Base("identity transfer") { }
+
+  virtual double operator() (double u) const{
+    return u;
+  }
+  virtual double first(double u) const{
+    return 1;
+  }
+  virtual double second(double u) const{
+    return 0;
+  }
+};
+
+//exponent transfer function
+struct Imp_Exp : public Imp_Transfer_Base {
+  Imp_Exp() : Imp_Transfer_Base("exponential transfer") { }
+
+  virtual double operator() (double u) const{
+    return exp(u);
+  }
+  virtual double first(double u) const{
+    return exp(u);
+  }
+  virtual double second(double u) const{
+    return exp(u);
+  }
+};
+
+//template<typename TRANSFER>
 struct Imp_Experiment {
 //@members
-  //mat theta_star;
   unsigned p;
   unsigned n_iters;
   Imp_Learning_rate lr;
-  //mat cov_mat;
-  //mat fisher_info_mat;
   std::string model_name;
+  //TRANSFER h_transfer;
 //@methods
-  // Imp_Dataset sample_dataset(){
-  // 	return Imp_Dataset();
-  // }
+  Imp_Experiment(std::string transfer_name) : h_transfer_(nullptr) {
+    if (transfer_name == "identity") {
+      h_transfer_ = new Imp_Identity;
+    }
+    else if (transfer_name == "exp") {
+      h_transfer_ = new Imp_Exp;
+    }
+
+    if (h_transfer_ == nullptr) {
+      // base transfer function type
+      h_transfer_ = new Imp_Identity;
+    }
+  }
+
+  Imp_Experiment() : h_transfer_(new Imp_Identity) { }
+
+  ~Imp_Experiment() {
+    delete h_transfer_;
+  }
+
   double learning_rate(unsigned t) const{
     if (model_name == "poisson")
       return double(10)/3/t;
@@ -97,53 +165,25 @@ struct Imp_Experiment {
     return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
 
-  double h_transfer(double u) const{
-    if (model_name=="poisson") {
-      return exp(u);
-    }
-    else if (model_name == "normal") {
-      return u;
-    } 
-    else if (model_name == "logistic") {
-      return sigmoid(u);
-    }
-    else {
-      return 0;
-    }
+  double h_transfer(double u) const {
+    return (*h_transfer_)(u);
   }
+
   //YKuang
   double h_first_derivative(double u) const{
-  	if (model_name == "poisson") {
-      return exp(u);
-    }
-    else if (model_name == "normal") {
-      return 1.;
-    } 
-    else if (model_name == "logistic") {
-      return sigmoid(u) * (1. - sigmoid(u));
-    } 
-    else {
-      return 0.;
-    }
+    //return h_transfer.first(u);
+    return h_transfer_->first(u);
   }
   //YKuang
   double h_second_derivative(double u) const{
-  	if (model_name == "poisson") {
-      return exp(u);
-    }
-    else if (model_name == "normal") {
-      return 0.;
-    } 
-    else if (model_name == "logistic") {
-      double sig = sigmoid(u);
-      return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
-    } 
-    else {
-      return 0.;
-    }
+    //return h_transfer.second(u);
+    return h_transfer_->second(u);
   }
 
 private:
+  // since this is a dangerous dynamic pointer, we may want to make it private later.
+  Imp_Transfer_Base* h_transfer_;
+
   double sigmoid(double u) const {
     return 1. / (1. + exp(-u));
   }
@@ -157,22 +197,30 @@ struct Imp_Size{
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update
+//template<typename TRANSFER>
 struct Get_score_coeff{
+
+  //Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
   Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
-      const mat& t, double n):experiment(e), datapoint(d),
+      const mat& t, double n) : experiment(e), datapoint(d),
     theta_old(t), normx(n) {}
+
   double operator() (double ksi) const{
     return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
                      + normx * ksi);
   }
+
   double first_derivative (double ksi) const{
     return experiment.h_first_derivative(dot(theta_old, datapoint.x)
            + normx * ksi)*normx;
   }
+
   double second_derivative (double ksi) const{
     return experiment.h_second_derivative(dot(theta_old, datapoint.x)
              + normx * ksi)*normx*normx;
   }
+
+  //const Imp_Experiment<TRANSFER>& experiment;
   const Imp_Experiment& experiment;
   const Imp_DataPoint& datapoint;
   const mat& theta_old;
@@ -180,8 +228,11 @@ struct Get_score_coeff{
 };
 
 // Root finding functor for Implicit-SGD update
+//template<typename TRANSFER>
 struct Implicit_fn{
   typedef boost::math::tuple<double, double, double> tuple_type;
+
+  //Implicit_fn(double a, const Get_score_coeff<TRANSFER>& get_score): at(a), g(get_score){}
   Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
   tuple_type operator() (double u) const{
     double value = u - at * g(u);
@@ -190,17 +241,22 @@ struct Implicit_fn{
     tuple_type result(value, first, second);
     return result;
   }
+  
   double at;
+  //const Get_score_coeff<TRANSFER>& g;
   const Get_score_coeff& g;
 };
 
-// Function to test the cpp integration is working
+
+
+// hello world function 
+// 
+//
 // [[Rcpp::export]]
-std::string hello(){
-	Rcpp::Rcout<<"hello world!"<<std::endl;
-  Rcpp::Rcout<<"hello world!"<<std::endl;
-  return "hello";
+void hello_world() {
+    Rcpp::Rcout<<"Hello!"<<"  "<<boost::math::gcd(12, 8)<<std::endl;
 }
+
 
 // Function to output function results for testing
 // This function should cause conflicts in merging
@@ -246,7 +302,8 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 }
 
 // return the new estimate of parameters, using SGD
-mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
+//template<typename TRANSFER>
+mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   double at = experiment.learning_rate(t);
@@ -258,14 +315,16 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 }
 
 // return the new estimate of parameters, using ASGD
-mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
+//template<typename TRANSFER>
+mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
 	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment);
 }
 
 //Tlan
 // return the new estimate of parameters, using implicit SGD
-mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out, 
+//template<typename TRANSFER>
+mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
   Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
   double at = experiment.learning_rate(t);
@@ -288,7 +347,7 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   }
   double result;
   if (lower != upper){
-      result = boost::math::tools::newton_raphson_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
+      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
   }
   else
     result = lower;
@@ -315,10 +374,17 @@ void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose){
+  Rcpp::Rcout << "enter run_online_algorithm" << std::endl;
   Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
   Rcpp::List LR = Experiment["lr"];
-  Imp_Experiment exprm;
+  
+  //std::string transfer_name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string exp_name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
+  Rcpp::Rcout << exp_name << ", " << transfer_name << std::endl;
+
+  Imp_Experiment exprm(transfer_name);
   Imp_Dataset data;
   std::string algo;
   algo =  Rcpp::as<std::string>(algorithm);
@@ -332,21 +398,53 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 
   for(int t=1; t<=nsamples; ++t){
-      if (algo == "sgd") {
-        Imp_sgd_online_algorithm(t, out, data, exprm);
-      }
-      else if (algo == "asgd") {
-        Imp_asgd_online_algorithm(t, out, data, exprm);
-      }
-      else if (algo == "implicit"){
-	Imp_implicit_online_algorithm(t, out, data, exprm);
-      }
+    if (algo == "sgd") {
+      Imp_sgd_online_algorithm(t, out, data, exprm);
+    }
+    else if (algo == "asgd") {
+      Imp_asgd_online_algorithm(t, out, data, exprm);
+    }
+    else if (algo == "implicit"){
+      Imp_implicit_online_algorithm(t, out, data, exprm);
+    }
   }
-
   if (algo == "asgd") {
-	  asgd_transform_output(out);
+    asgd_transform_output(out);
   }
-
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
-			    Rcpp::Named("last") = out.last_estimate());
+            Rcpp::Named("last") = out.last_estimate());
+  #if 0
+  if (transfer_name == "identity"){
+      Imp_Experiment<Imp_Identity> exprm;
+      Imp_Dataset data;
+      std::string algo;
+      algo =  Rcpp::as<std::string>(algorithm);
+      exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
+      exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
+      exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
+      exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+      data.X = Rcpp::as<mat>(Dataset["X"]);
+      data.Y = Rcpp::as<mat>(Dataset["Y"]);
+      Imp_OnlineOutput out(data);
+      unsigned nsamples = Imp_dataset_size(data).nsamples;
+
+      for(int t=1; t<=nsamples; ++t){
+	  if (algo == "sgd") {
+	    Imp_sgd_online_algorithm(t, out, data, exprm);
+	  }
+	  else if (algo == "asgd") {
+	    Imp_asgd_online_algorithm(t, out, data, exprm);
+	  }
+	  else if (algo == "implicit"){
+      Imp_implicit_online_algorithm(t, out, data, exprm);
+	  }
+      }
+      if (algo == "asgd") {
+		asgd_transform_output(out);
+      }
+      return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
+				  Rcpp::Named("last") = out.last_estimate());
+  }
+  #endif
+  return Rcpp::List();
 }

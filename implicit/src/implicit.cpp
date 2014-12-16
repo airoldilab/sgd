@@ -69,9 +69,9 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 }
 
 // return the new estimate of parameters, using SGD
-template<typename TRANSFER>
+//template<typename TRANSFER>
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment<TRANSFER>& experiment){
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   double at = experiment.learning_rate(t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
@@ -82,24 +82,24 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 }
 
 // return the new estimate of parameters, using ASGD
-template<typename TRANSFER>
+//template<typename TRANSFER>
 mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment<TRANSFER>& experiment){
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
 	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment);
 }
 
 //Tlan
 // return the new estimate of parameters, using implicit SGD
-template<typename TRANSFER>
+//template<typename TRANSFER>
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment<TRANSFER>& experiment){
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
   Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
   double at = experiment.learning_rate(t);
   double normx = dot(datapoint.x, datapoint.x);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
-  Get_score_coeff<TRANSFER> get_score_coeff(experiment, datapoint, theta_old, normx);
-  Implicit_fn<TRANSFER> implicit_fn(at, get_score_coeff);
+  Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx);
+  Implicit_fn implicit_fn(at, get_score_coeff);
 
   double rt = at * get_score_coeff(0);
   double lower = 0;
@@ -114,7 +114,7 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   }
   double result;
   if (lower != upper){
-      result = boost::math::tools::newton_raphson_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
+      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
   }
   else
     result = lower;
@@ -144,7 +144,42 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
   Rcpp::List LR = Experiment["lr"];
-  std::string transfer_name = Rcpp::as<std::string>(Experiment["name"]);
+  
+  //std::string transfer_name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string exp_name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
+  Rcpp::Rcout << exp_name << ", " << transfer_name << std::endl;
+
+  Imp_Experiment exprm(transfer_name);
+  Imp_Dataset data;
+  std::string algo;
+  algo =  Rcpp::as<std::string>(algorithm);
+  exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
+  exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
+  exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
+  exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+  data.X = Rcpp::as<mat>(Dataset["X"]);
+  data.Y = Rcpp::as<mat>(Dataset["Y"]);
+  Imp_OnlineOutput out(data);
+  unsigned nsamples = Imp_dataset_size(data).nsamples;
+
+  for(int t=1; t<=nsamples; ++t){
+    if (algo == "sgd") {
+      Imp_sgd_online_algorithm(t, out, data, exprm);
+    }
+    else if (algo == "asgd") {
+      Imp_asgd_online_algorithm(t, out, data, exprm);
+    }
+    else if (algo == "implicit"){
+      Imp_implicit_online_algorithm(t, out, data, exprm);
+    }
+  }
+  if (algo == "asgd") {
+    asgd_transform_output(out);
+  }
+  return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
+            Rcpp::Named("last") = out.last_estimate());
+  #if 0
   if (transfer_name == "identity"){
       Imp_Experiment<Imp_Identity> exprm;
       Imp_Dataset data;
@@ -176,5 +211,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
       return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
 				  Rcpp::Named("last") = out.last_estimate());
   }
+  #endif
   return Rcpp::List();
 }
