@@ -7,13 +7,13 @@
 using namespace arma;
 
 #define nullptr NULL
+#define DEBUG 1
 
 struct Imp_DataPoint;
 struct Imp_Dataset;
 struct Imp_OnlineOutput;
 struct Imp_Identity;
 struct Imp_Exp;
-//template<typename TRANSFER>
 struct Imp_Experiment;
 struct Imp_Size;
 struct Imp_Learning_rate;
@@ -75,6 +75,12 @@ struct Imp_Transfer_Base
 
   virtual double second(double u) const = 0;
 
+#if DEBUG
+  void print_name() {
+    Rcpp::Rcout << name_ << std::endl;
+  }
+#endif
+
 protected:
   Imp_Transfer_Base(std::string n) : name_(n) { }
   std::string name_;
@@ -110,14 +116,12 @@ struct Imp_Exp : public Imp_Transfer_Base {
   }
 };
 
-//template<typename TRANSFER>
 struct Imp_Experiment {
 //@members
   unsigned p;
   unsigned n_iters;
   Imp_Learning_rate lr;
   std::string model_name;
-  //TRANSFER h_transfer;
 //@methods
   Imp_Experiment(std::string transfer_name) : h_transfer_(nullptr) {
     if (transfer_name == "identity") {
@@ -131,12 +135,24 @@ struct Imp_Experiment {
       // base transfer function type
       h_transfer_ = new Imp_Identity;
     }
+
+#if DEBUG
+    h_transfer_->print_name();
+#endif
   }
 
-  Imp_Experiment() : h_transfer_(new Imp_Identity) { }
+  Imp_Experiment() : h_transfer_(new Imp_Identity) {
+#if DEBUG
+    h_transfer_->print_name();
+#endif
+  }
 
   ~Imp_Experiment() {
+#if DEBUG
+    Rcpp::Rcout << "experiment disposed" << std::endl;
+#endif
     delete h_transfer_;
+    h_transfer_ = nullptr;
   }
 
   double learning_rate(unsigned t) const{
@@ -168,7 +184,7 @@ struct Imp_Experiment {
   }
 
 private:
-  // since this is a dangerous dynamic pointer, we may want to make it private later.
+  // since this is a dangerous dynamic pointer, we may want to make it private
   Imp_Transfer_Base* h_transfer_;
 
   double sigmoid(double u) const {
@@ -184,7 +200,6 @@ struct Imp_Size{
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update
-//template<typename TRANSFER>
 struct Get_score_coeff{
 
   //Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
@@ -215,7 +230,6 @@ struct Get_score_coeff{
 };
 
 // Root finding functor for Implicit-SGD update
-//template<typename TRANSFER>
 struct Implicit_fn{
   typedef boost::math::tuple<double, double, double> tuple_type;
 
