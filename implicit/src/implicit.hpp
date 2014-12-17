@@ -35,6 +35,29 @@ struct Imp_Dataset
 //@members
   mat X;
   mat Y;
+//@methods
+  mat covariance() const {
+    unsigned N = X.n_rows;
+    mat X_mean = row_mean(X);
+
+    mat cov_mat(X.n_cols, X.n_cols, fill::zeros);
+    for (unsigned i = 0; i < X.n_rows; ++i) {
+      mat x_i = X.row(i) - X_mean;
+      cov_mat += x_i.t() * x_i;
+    }
+    cov_mat /= (N - 1);
+    return cov_mat;
+  }
+
+private:
+  mat row_mean(const mat& A) const {
+    mat result(1, A.n_cols, fill::zeros);
+    for (unsigned i = 0; i < A.n_rows; ++i) {
+      result += A.row(i);
+    }
+    result = result / A.n_rows;
+    return result;
+  }
 };
 
 struct Imp_OnlineOutput{
