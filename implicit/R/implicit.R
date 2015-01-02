@@ -19,7 +19,7 @@ implicit <- function(x, ...) UseMethod("implicit")
 # Method to call when the first argument is a formula
 implicit.formula <- function(formula, family = gaussian, data, weights, subset, 
                              na.action, start = NULL, etastart, mustart, offset, control = list(...), 
-                             model = TRUE, method = "implicit.sgd", x = FALSE, y = TRUE, contrasts = NULL, 
+                             model = TRUE, method = "implicit", x = FALSE, y = TRUE, contrasts = NULL, 
                              ...){
   #the call parameter to return
   call <- match.call()
@@ -93,7 +93,8 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   # null.deviance = nulldev, iter = iter, weights = wt, prior.weights = weights, 
   # df.residual = resdf, df.null = nulldf, y = y, converged = conv, 
   # boundary = boundary)
-  fit <- list()  ##see glm.fit
+  fit <- implicit.fit(x=X, y=Y, family=family, method=method)
+  return(fit)
   
   # model frame should be included as a component of the returned value
   if (model) 
@@ -122,4 +123,36 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
                      contrasts = attr(X, "contrasts"), xlevels = .getXlevels(mt, mf)))
   class(fit) <- c(fit$class, c("implicit", "glm", "lm"))
   fit
+}
+
+implicit.transfer.name <- function(link.name) {
+  if(!is.character(link.name)) {
+    stop("link name must be a string")
+  }
+  link.names <- c("identity", "log", "logit")
+  transfer.names <- c("identity", "exp", "logistic")
+  match.indices <- match(link.names, link.name, 0L)
+  if (sum(match.indices) == 0L) {
+    stop("no match link function founded!")
+  }
+  transfer.idx = which(match.indices == 1L)
+  transfer.names[transfer.idx]
+}
+
+implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL, etastart = NULL, 
+                          mustart = NULL, offset = rep(0, nobs), family = gaussian(), 
+                          control = list(), intercept = TRUE, method="implicit")  {
+  x <- as.matrix(x)
+  y <- as.matrix(y)
+  dataset <- list(X=x, Y=y)
+  
+  experiment <- list()
+  experiment$name = family$family
+  experiment$transfer.name = implicit.transfer.name(family$link)
+  experiment$niters = length(dataset$Y)
+  experiment$lr = list(gamma0 = 1, alpha = 1, c = 2/3, scale = 1)
+  experiment$p = dim(dataset$X)[2]
+  
+  out <- run_online_algorithm(dataset, experiment, method, F)
+  out
 }

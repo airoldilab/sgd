@@ -180,11 +180,11 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     else if (algo == "asgd") {
       Imp_asgd_online_algorithm(t, out, data, exprm);
     }
-    else if (algo == "implicit"){
+    else if (algo == "implicit" || algo == "a-implicit"){
       Imp_implicit_online_algorithm(t, out, data, exprm);
     }
   }
-  if (algo == "asgd") {
+  if (algo == "asgd" || algo == "a-implicit") {
     asgd_transform_output(out);
   }
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,

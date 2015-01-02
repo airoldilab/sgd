@@ -37,26 +37,7 @@ struct Imp_Dataset
   mat Y;
 //@methods
   mat covariance() const {
-    unsigned N = X.n_rows;
-    mat X_mean = row_mean(X);
-
-    mat cov_mat(X.n_cols, X.n_cols, fill::zeros);
-    for (unsigned i = 0; i < X.n_rows; ++i) {
-      mat x_i = X.row(i) - X_mean;
-      cov_mat += x_i.t() * x_i;
-    }
-    cov_mat /= (N - 1);
-    return cov_mat;
-  }
-
-private:
-  mat row_mean(const mat& A) const {
-    mat result(1, A.n_cols, fill::zeros);
-    for (unsigned i = 0; i < A.n_rows; ++i) {
-      result += A.row(i);
-    }
-    result = result / A.n_rows;
-    return result;
+    return cov(X);
   }
 };
 
@@ -139,6 +120,27 @@ struct Imp_Exp : public Imp_Transfer_Base {
   }
 };
 
+//logit transfer function
+struct Imp_Logistic : public Imp_Transfer_Base {
+  Imp_Logistic() : Imp_Transfer_Base("logistic transfer") { }
+
+  virtual double operator() (double u) const{
+    return sigmoid(u);
+  }
+  virtual double first(double u) const{
+    return sigmoid(u) * (1. - sigmoid(u));
+  }
+  virtual double second(double u) const{
+    double sig = sigmoid(u);
+    return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
+  }
+
+private:
+  double sigmoid(double u) const {
+    return 1. / (1. + exp(-u));
+  }
+};
+
 struct Imp_Experiment {
 //@members
   unsigned p;
@@ -152,6 +154,9 @@ struct Imp_Experiment {
     }
     else if (transfer_name == "exp") {
       h_transfer_ = new Imp_Exp;
+    }
+    else if (transfer_name == "logistic") {
+      h_transfer_ = new Imp_Logistic;
     }
 
     if (h_transfer_ == nullptr) {
@@ -179,12 +184,13 @@ struct Imp_Experiment {
   }
 
   double learning_rate(unsigned t) const{
-    if (model_name == "poisson")
+    /*if (model_name == "poisson")
       return double(10)/3/t;
     else if (model_name == "normal") {
       return lr(t);
     }
-    return 0;
+    return 0;*/
+    return lr(t);
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const{
@@ -209,10 +215,6 @@ struct Imp_Experiment {
 private:
   // since this is a dangerous dynamic pointer, we may want to make it private
   Imp_Transfer_Base* h_transfer_;
-
-  double sigmoid(double u) const {
-    return 1. / (1. + exp(-u));
-  }
 };
 
 struct Imp_Size{
