@@ -20,7 +20,7 @@ implicit <- function(x, ...) UseMethod("implicit")
 implicit.formula <- function(formula, family = gaussian, data, weights, subset, 
                              na.action, start = NULL, offset, control = list(...), 
                              model = TRUE, method = "implicit", x = FALSE, y = TRUE, contrasts = NULL, 
-                             ...){
+                             lr.type = "uni-dim", ...){
   #the call parameter to return
   call <- match.call()
   
@@ -39,6 +39,23 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
     stop("'method' must be a string")
   if (!(method %in% c('implicit', 'asgd', 'sgd')))
     stop("'method' not recognized")
+  
+  #check the validity of learning rate type
+  lr.types = c('uni-dim', 'px-dim')
+  if (is.numeric(lr.type)) {
+    if (lr.type < 1 | lr.type > 2) {
+      stop("'lr.type' out of range")
+    }
+    lr.type = lr.types[lr.type]
+  }
+  else if (is.character(lr.type)) {
+    if (!(lr.type %in% lr.types)) {
+      stop("'lr.type' not recognized")
+    }
+  }
+  else {
+    stop("invalid 'lr.type'")
+  }
   
   mf <- match.call(expand.dots = FALSE)
 
@@ -102,7 +119,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   #                    offset = offset, family = family, 
   #                    control = control, intercept = attr(mt, "intercept") > 0L, method = method)
   
-  fit <- implicit.fit(x=X, y=Y, family=family, method=method, offset = offset)
+  fit <- implicit.fit(x=X, y=Y, family=family, method=method, offset = offset, lr.type=lr.type)
   return(fit)
   
   # model frame should be included as a component of the returned value
@@ -150,7 +167,7 @@ implicit.transfer.name <- function(link.name) {
 
 implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
                           offset = rep(0, nobs), family = gaussian(), 
-                          control = list(), intercept = TRUE, method="implicit")  {
+                          control = list(), intercept = TRUE, method="implicit", lr.type)  {
   control <- do.call("implicit.control", control)
   x <- as.matrix(x)
   xnames <- dimnames(x)[[2L]]
@@ -220,7 +237,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     experiment$name = family$family
     experiment$transfer.name = implicit.transfer.name(family$link)
     experiment$niters = length(dataset$Y)
-    experiment$learning.rate.type = "px_dim"
+    experiment$lr.type = lr.type
     experiment$p = dim(dataset$X)[2]
     experiment$weights = weights[good]
     experiment$start = start

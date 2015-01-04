@@ -171,8 +171,8 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
 
-  std::string lr_type = Rcpp::as<std::string>(Experiment["learning.rate.type"]);
-  if (lr_type == "uni_dim") {
+  std::string lr_type = Rcpp::as<std::string>(Experiment["lr.type"]);
+  if (lr_type == "uni-dim") {
     // use the min eigenvalue of the covariance of data as alpha in LR
     cx_vec eigval;
     cx_mat eigvec;
@@ -181,7 +181,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     Rcpp::Rcout << "learning rate alpha: " << lr_alpha << std::endl;
     exprm.init_uni_dim_learning_rate(1., lr_alpha, 2./3., 1.);
   }
-  else if (lr_type == "px_dim") {
+  else if (lr_type == "px-dim") {
     exprm.init_px_dim_learning_rate();
   }
   
