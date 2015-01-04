@@ -73,8 +73,9 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
-  mat at = experiment.learning_rate(datapoint, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
+  mat at = experiment.learning_rate(theta_old, datapoint, t);
+
   mat score_t = experiment.score_function(theta_old, datapoint);
   mat theta_new = theta_old + mat(at * score_t);
   online_out.estimates.col(t-1) = theta_new;
@@ -94,8 +95,9 @@ mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
   Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
+  mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
-  mat at = experiment.learning_rate(datapoint, t);
+  mat at = experiment.learning_rate(theta_old, datapoint, t);
   vec diag_lr = at.diag();
   double average_lr = 0.;
   for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
@@ -104,7 +106,6 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   average_lr /= diag_lr.n_elem;
 
   double normx = dot(datapoint.x, datapoint.x);
-  mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
   Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx);
   Implicit_fn implicit_fn(average_lr, get_score_coeff);
@@ -180,10 +181,9 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     Rcpp::Rcout << "learning rate alpha: " << lr_alpha << std::endl;
     exprm.init_uni_dim_learning_rate(1., lr_alpha, 2./3., 1.);
   }
-  
-  //exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
-  //exprm.lr = Imp_Learning_rate(LR["gamma0"], lr_alpha, LR["c"], LR["scale"]);
-  exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+  else if (lr_type == "px_dim") {
+    exprm.init_px_dim_learning_rate();
+  }
   
   Imp_OnlineOutput out(data);
   unsigned nsamples = Imp_dataset_size(data).nsamples;
