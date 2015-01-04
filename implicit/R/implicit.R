@@ -4,11 +4,11 @@ source('R/RcppExports.R')
 ##TODO:Give warning if not converged?     ##
 ############################################
 #Set the control according to user input
-implicit.control <- function(epsilon = 1e-08, trace = FALSE) 
+implicit.control <- function(epsilon = 1e-08, trace = FALSE, deviance = FALSE, convergence=FALSE) 
 {
   if (!is.numeric(epsilon) || epsilon <= 0) 
     stop("value of 'epsilon' must be > 0")
-  list(epsilon = epsilon, trace = trace)
+  list(epsilon = epsilon, trace = trace, deviance = deviance, convergence=convergence)
 }
 
 # A generic function to dispatch calls
@@ -42,6 +42,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   
   mf <- match.call(expand.dots = FALSE)
 
+  #return(list(call=call, mf=mf))
   #build dataframe according to the formula
   m <- match(c("formula", "data", "subset", "weights", "na.action", 
                "offset"), names(mf), 0L)
@@ -101,7 +102,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   #                    offset = offset, family = family, 
   #                    control = control, intercept = attr(mt, "intercept") > 0L, method = method)
   
-  fit <- implicit.fit(x=X, y=Y, family=family, method=method)
+  fit <- implicit.fit(x=X, y=Y, family=family, method=method, offset = offset)
   return(fit)
   
   # model frame should be included as a component of the returned value
@@ -198,19 +199,39 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     iter <- 0L
   } else
   {
+    #set the initial value for theta
+    start <- if (!is.null(start))
+      if (length(start) != nvars) 
+        stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s", 
+                      nvars, paste(deparse(xnames), collapse = ", ")), domain = NA) else
+      start else {
+        rep(0, nvars)
+      }
+    eta = sum(x[1, ] * start)+offset[1]
+    if (!valideta(eta))
+      stop("cannot find valid starting values: please specify some", call. = FALSE)
+    y <- as.matrix(y)
     
+    #select x, y with weights>0, adjust for offsets
+    good <- weights > 0
+    dataset <- list(X=x[good, ], Y=as.matrix(y[good]-offset[good]))
+    
+    experiment <- list()
+    experiment$name = family$family
+    experiment$transfer.name = implicit.transfer.name(family$link)
+    experiment$niters = length(dataset$Y)
+    experiment$lr = list(gamma0 = 1, alpha = 1, c = 2/3, scale = 1)
+    experiment$p = dim(dataset$X)[2]
+    experiment$weights = weights[good]
+    experiment$start = start
+    experiment$control = control
+    
+    out <- run_online_algorithm(dataset, experiment, method, F)
   }
-  
-  y <- as.matrix(y)
-  dataset <- list(X=x, Y=y)
-  
-  experiment <- list()
-  experiment$name = family$family
-  experiment$transfer.name = implicit.transfer.name(family$link)
-  experiment$niters = length(dataset$Y)
-  experiment$lr = list(gamma0 = 1, alpha = 1, c = 2/3, scale = 1)
-  experiment$p = dim(dataset$X)[2]
-  
-  out <- run_online_algorithm(dataset, experiment, method, F)
   out
+  ###########################################
+  ## TODO: Calculate dev.resids for return ##
+  ###########################################
+  
+  ######TODO in C: check the validity of all eta before return
 }
