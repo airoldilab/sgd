@@ -256,18 +256,12 @@ postProcess.poisson <- function() {
   plot(ts, y, type="l")
 }
 
-poisson.e = poisson.experiment(niters=10000)
+poisson.e = poisson.experiment(niters=100000)
 poisson.dataset = poisson.e$sample.dataset()
-
-run.test.imp.c <- function(data, exprm, niters=10000){
-  c = run_online_algorithm(data,exprm, 'implicit', F)
-  c
-}
-
-run.test.imp.r <- function(data, exprm,niters=10000){
-  r = run.online.algorithm(data,exprm, implicit.onlineAlgorithm)
-  r
-}
+X = poisson.dataset$X
+Y = poisson.dataset$Y
+result.cpp <- implicit(Y~X-1, data=poisson.dataset, family = poisson, method="implicit")
+result.glm <- glm(Y~X-1, data=poisson.dataset, family=poisson)
 
 microbenchmark(run.test.imp.r(poisson.dataset, poisson.e), run.test.imp.c(poisson.dataset, poisson.e), times=5)
 benchmark(replications=5, run.test.imp.c(poisson.dataset, poisson.e), run.test.imp.r(poisson.dataset, poisson.e))

@@ -4,9 +4,11 @@ source('R/RcppExports.R')
 ##TODO:Give warning if not converged?     ##
 ############################################
 #Set the control according to user input
-implicit.control <- function(trace = FALSE) 
+implicit.control <- function(epsilon = 1e-08, trace = FALSE) 
 {
-  list(trace = trace)
+  if (!is.numeric(epsilon) || epsilon <= 0) 
+    stop("value of 'epsilon' must be > 0")
+  list(epsilon = epsilon, trace = trace)
 }
 
 # A generic function to dispatch calls
@@ -16,8 +18,8 @@ implicit <- function(x, ...) UseMethod("implicit")
 
 # Method to call when the first argument is a formula
 implicit.formula <- function(formula, family = gaussian, data, weights, subset, 
-                             na.action, start = NULL, etastart, mustart, offset, control = list(...), 
-                             model = TRUE, method = "implicit.sgd", x = FALSE, y = TRUE, contrasts = NULL, 
+                             na.action, start = NULL, offset, control = list(...), 
+                             model = TRUE, method = "implicit", x = FALSE, y = TRUE, contrasts = NULL, 
                              ...){
   #the call parameter to return
   call <- match.call()
@@ -32,12 +34,17 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
     stop("'family' not recognized")
   }
   
+  #check the validity of method
+  if (!is.character(method))
+    stop("'method' must be a string")
+  if (!(method %in% c('implicit', 'asgd', 'sgd')))
+    stop("'method' not recognized")
   
   mf <- match.call(expand.dots = FALSE)
 
   #build dataframe according to the formula
   m <- match(c("formula", "data", "subset", "weights", "na.action", 
-               "etastart", "mustart", "offset"), names(mf), 0L)
+               "offset"), names(mf), 0L)
   if (!is.character(method) && !is.function(method)) 
     stop("invalid 'method' argument")
   mf <- mf[c(1L, m)]
@@ -78,8 +85,6 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
       stop(gettextf("number of offsets is %d should equal %d (number of observations)", 
                     length(offset), NROW(Y)), domain = NA)
   }
-  mustart <- model.extract(mf, "mustart")
-  etastart <- model.extract(mf, "etastart")
   
   ###### TODO: plug in fit function
   # fit function should return 
@@ -91,7 +96,13 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   # null.deviance = nulldev, iter = iter, weights = wt, prior.weights = weights, 
   # df.residual = resdf, df.null = nulldf, y = y, converged = conv, 
   # boundary = boundary)
-  fit <- list()  ##see glm.fit
+  
+  #fit <- implicit.fit(x = X, y = Y, weights = weights, start = start,
+  #                    offset = offset, family = family, 
+  #                    control = control, intercept = attr(mt, "intercept") > 0L, method = method)
+  
+  fit <- implicit.fit(x=X, y=Y, family=family, method=method)
+  return(fit)
   
   # model frame should be included as a component of the returned value
   if (model) 
@@ -120,4 +131,86 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
                      contrasts = attr(X, "contrasts"), xlevels = .getXlevels(mt, mf)))
   class(fit) <- c(fit$class, c("implicit", "glm", "lm"))
   fit
+}
+
+implicit.transfer.name <- function(link.name) {
+  if(!is.character(link.name)) {
+    stop("link name must be a string")
+  }
+  link.names <- c("identity", "log", "logit")
+  transfer.names <- c("identity", "exp", "logistic")
+  match.indices <- match(link.names, link.name, 0L)
+  if (sum(match.indices) == 0L) {
+    stop("no match link function founded!")
+  }
+  transfer.idx = which(match.indices == 1L)
+  transfer.names[transfer.idx]
+}
+
+implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
+                          offset = rep(0, nobs), family = gaussian(), 
+                          control = list(), intercept = TRUE, method="implicit")  {
+  control <- do.call("implicit.control", control)
+  x <- as.matrix(x)
+  xnames <- dimnames(x)[[2L]]
+  ynames <- if (is.matrix(y)) 
+    rownames(y) else
+    names(y)
+  conv <- FALSE
+  nobs <- NROW(y)  # number of observations
+  nvars <- ncol(x) # number of covariates
+  EMPTY <- nvars == 0
+  
+  if (is.null(weights)) 
+    weights <- rep.int(1, nobs)
+  if (is.null(offset)) 
+    offset <- rep.int(0, nobs)
+  
+  variance <- family$variance
+  linkinv <- family$linkinv
+  if (!is.function(variance) || !is.function(linkinv)) 
+    stop("'family' argument seems not to be a valid family object", 
+         call. = FALSE)
+  dev.resids <- family$dev.resids
+  aic <- family$aic
+  mu.eta <- family$mu.eta
+  
+  unless.null <- function(x, if.null) 
+    if (is.null(x)) 
+    if.null else x
+  valideta <- unless.null(family$valideta, function(eta) TRUE)
+  validmu <- unless.null(family$validmu, function(mu) TRUE)
+  
+  if (EMPTY) {
+    eta <- rep.int(0, nobs) + offset
+    if (!valideta(eta)) 
+      stop("invalid linear predictor values in empty model", 
+           call. = FALSE)
+    mu <- linkinv(eta)
+    if (!validmu(mu)) 
+      stop("invalid fitted means in empty model", call. = FALSE)
+    dev <- sum(dev.resids(y, mu, weights))
+    w <- ((weights * mu.eta(eta)^2)/variance(mu))^0.5
+    residuals <- (y - mu)/mu.eta(eta)
+    good <- rep_len(TRUE, length(residuals))
+    boundary <- conv <- TRUE
+    coef <- numeric()
+    iter <- 0L
+  } else
+  {
+    
+  }
+  
+  y <- as.matrix(y)
+  dataset <- list(X=x, Y=y)
+  
+  experiment <- list()
+  experiment$name = family$family
+  experiment$transfer.name = implicit.transfer.name(family$link)
+  experiment$niters = length(dataset$Y)
+  experiment$lr = list(gamma0 = 1, alpha = 1, c = 2/3, scale = 1)
+  experiment$p = dim(dataset$X)[2]
+  
+  out <- run_online_algorithm(dataset, experiment, method, F)
+  out
 }

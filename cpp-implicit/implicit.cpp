@@ -373,27 +373,36 @@ void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 // use the method specified by algorithm to estimate parameters
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
-	SEXP verbose){
-  Rcpp::Rcout << "enter run_online_algorithm" << std::endl;
+  SEXP verbose){
   Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
   Rcpp::List LR = Experiment["lr"];
   
-  //std::string transfer_name = Rcpp::as<std::string>(Experiment["name"]);
   std::string exp_name = Rcpp::as<std::string>(Experiment["name"]);
   std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
   Rcpp::Rcout << exp_name << ", " << transfer_name << std::endl;
 
   Imp_Experiment exprm(transfer_name);
+
   Imp_Dataset data;
-  std::string algo;
-  algo =  Rcpp::as<std::string>(algorithm);
-  exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
-  exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
-  exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
-  exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
   data.X = Rcpp::as<mat>(Dataset["X"]);
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
+  
+  std::string algo;
+  algo =  Rcpp::as<std::string>(algorithm);
+
+  exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
+  exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
+  // use the min eigenvalue of the covariance of data as alpha in LR
+  cx_vec eigval;
+  cx_mat eigvec;
+  eig_gen(eigval, eigvec, data.covariance());
+  double lr_alpha = min(eigval).real();
+  Rcpp::Rcout << "learning rate alpha: " << lr_alpha << std::endl;
+  //exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
+  exprm.lr = Imp_Learning_rate(LR["gamma0"], lr_alpha, LR["c"], LR["scale"]);
+  exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+  
   Imp_OnlineOutput out(data);
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 
@@ -413,38 +422,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   }
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
             Rcpp::Named("last") = out.last_estimate());
-  #if 0
-  if (transfer_name == "identity"){
-      Imp_Experiment<Imp_Identity> exprm;
-      Imp_Dataset data;
-      std::string algo;
-      algo =  Rcpp::as<std::string>(algorithm);
-      exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
-      exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
-      exprm.lr = Imp_Learning_rate(LR["gamma0"], LR["alpha"], LR["c"], LR["scale"]);
-      exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
-      data.X = Rcpp::as<mat>(Dataset["X"]);
-      data.Y = Rcpp::as<mat>(Dataset["Y"]);
-      Imp_OnlineOutput out(data);
-      unsigned nsamples = Imp_dataset_size(data).nsamples;
-
-      for(int t=1; t<=nsamples; ++t){
-	  if (algo == "sgd") {
-	    Imp_sgd_online_algorithm(t, out, data, exprm);
-	  }
-	  else if (algo == "asgd") {
-	    Imp_asgd_online_algorithm(t, out, data, exprm);
-	  }
-	  else if (algo == "implicit"){
-      Imp_implicit_online_algorithm(t, out, data, exprm);
-	  }
-      }
-      if (algo == "asgd") {
-		asgd_transform_output(out);
-      }
-      return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
-				  Rcpp::Named("last") = out.last_estimate());
-  }
-  #endif
   return Rcpp::List();
 }
+
