@@ -256,7 +256,7 @@ postProcess.poisson <- function() {
   plot(ts, y, type="l")
 }
 
-poisson.e = poisson.experiment(niters=100000)
+poisson.e = poisson.experiment(niters=500000)
 poisson.dataset = poisson.e$sample.dataset()
 X = poisson.dataset$X
 Y = poisson.dataset$Y

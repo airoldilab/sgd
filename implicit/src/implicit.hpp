@@ -1,5 +1,8 @@
 #include "RcppArmadillo.h"
 #include <boost/math/tools/roots.hpp>
+#include <boost/function.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/ref.hpp>
 #include <math.h>
 #include <string>
 #include <cstddef>
@@ -16,9 +19,17 @@ struct Imp_Identity;
 struct Imp_Exp;
 struct Imp_Experiment;
 struct Imp_Size;
-struct Imp_Learning_rate;
-struct Imp_transfer;
 
+struct Imp_Identity_Transfer;
+struct Imp_Exp_Transfer;
+struct Imp_Logistic_Transfer;
+
+struct Imp_Unidim_Learn_Rate;
+struct Imp_Pxdim_Learn_Rate;
+
+typedef boost::function<double (double)> uni_func_type;
+typedef boost::function<mat (const mat&, const Imp_DataPoint&)> score_func_type;
+typedef boost::function<mat (const mat&, const Imp_DataPoint&, unsigned, unsigned)> learning_rate_type;
 
 struct Imp_DataPoint {
   Imp_DataPoint(): x(mat()), y(0) {}
@@ -54,90 +65,88 @@ struct Imp_OnlineOutput{
   }
 };
 
-struct Imp_Learning_rate {
-  Imp_Learning_rate():gamma(1), alpha(1), c(1), scale(1) {}
-  Imp_Learning_rate(double g, double a, double cin, double s):
-    gamma(g), alpha(a), c(cin), scale(s) {}
-  double gamma;
-  double alpha;
-  double c;
-  double scale;
-  double operator() (unsigned t) const {
-    return scale * gamma * pow(1 + alpha * gamma * t, -c);
-  }
-};
-
-// Base transfer function struct
-struct Imp_Transfer_Base
+/* 1 dimension (scalar) learning rate, suggested in Xu's paper
+ */
+struct Imp_Unidim_Learn_Rate
 {
-  Imp_Transfer_Base() : name_("abstract transfer") { }
-  virtual ~Imp_Transfer_Base() { }
-
-  virtual double operator()(double u) const = 0;
-
-  virtual double first(double u) const = 0;
-
-  virtual double second(double u) const = 0;
-
-#if DEBUG
-  void print_name() {
-    Rcpp::Rcout << name_ << std::endl;
+  static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, 
+                          unsigned t, unsigned p,
+                          double gamma, double alpha, double c, double scale) {
+    double lr = scale * gamma * pow(1 + alpha * gamma * t, -c);
+    mat lr_mat = mat(p, p, fill::eye) * lr;
+    return lr_mat;
   }
-#endif
-
-protected:
-  Imp_Transfer_Base(std::string n) : name_(n) { }
-  std::string name_;
 };
 
-//Identity transfer function
-struct Imp_Identity : public Imp_Transfer_Base {
-  Imp_Identity() : Imp_Transfer_Base("identity transfer") { }
+// p dimension learning rate
+struct Imp_Pxdim_Learn_Rate
+{
+  static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, 
+                          unsigned t, unsigned p,
+                          score_func_type score_func) {
+    mat Idiag(p, p, fill::eye);
+    mat Gi = score_func(theta_old, data_pt);
+    Idiag = Idiag + diagmat(Gi * Gi.t());
 
-  virtual double operator() (double u) const{
+    for (unsigned i = 0; i < p; ++i) {
+      if (abs(Idiag.at(i, i)) > 1e-8) {
+        Idiag.at(i, i) = 1. / Idiag.at(i, i);
+      }
+    }
+    return Idiag;
+  }
+};
+
+// Identity transfer function
+struct Imp_Identity_Transfer {
+  static double transfer(double u) {
     return u;
   }
-  virtual double first(double u) const{
-    return 1;
+
+  static double first_derivative(double u) {
+    return 1.;
   }
-  virtual double second(double u) const{
-    return 0;
+
+  static double second_derivative(double u) {
+    return 0.;
   }
 };
 
-//exponent transfer function
-struct Imp_Exp : public Imp_Transfer_Base {
-  Imp_Exp() : Imp_Transfer_Base("exponential transfer") { }
+// Exponentional transfer function
+struct Imp_Exp_Transfer {
+  static double transfer(double u) {
+    return exp(u);
+  }
 
-  virtual double operator() (double u) const{
+  static double first_derivative(double u) {
     return exp(u);
   }
-  virtual double first(double u) const{
-    return exp(u);
-  }
-  virtual double second(double u) const{
+
+  static double second_derivative(double u) {
     return exp(u);
   }
 };
 
-//logit transfer function
-struct Imp_Logistic : public Imp_Transfer_Base {
-  Imp_Logistic() : Imp_Transfer_Base("logistic transfer") { }
-
-  virtual double operator() (double u) const{
+// Logistic transfer function
+struct Imp_Logistic_Transfer {
+  static double transfer(double u) {
     return sigmoid(u);
   }
-  virtual double first(double u) const{
-    return sigmoid(u) * (1. - sigmoid(u));
+
+  static double first_derivative(double u) {
+    double sig = sigmoid(u);
+    return sig * (1. - sig);
   }
-  virtual double second(double u) const{
+
+  static double second_derivative(double u) {
     double sig = sigmoid(u);
     return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
   }
 
 private:
-  double sigmoid(double u) const {
-    return 1. / (1. + exp(-u));
+  // sigmoid function
+  static double sigmoid(double u) {
+      return 1. / (1. + exp(-u));
   }
 };
 
@@ -145,76 +154,72 @@ struct Imp_Experiment {
 //@members
   unsigned p;
   unsigned n_iters;
-  Imp_Learning_rate lr;
   std::string model_name;
 //@methods
-  Imp_Experiment(std::string transfer_name) : h_transfer_(nullptr) {
+  Imp_Experiment(std::string transfer_name) {
     if (transfer_name == "identity") {
-      h_transfer_ = new Imp_Identity;
+      transfer_ = boost::bind(&Imp_Identity_Transfer::transfer, _1);
+      transfer_first_deriv_ = boost::bind(
+                                  &Imp_Identity_Transfer::first_derivative, _1);
+      transfer_second_deriv_ = boost::bind(
+                                  &Imp_Identity_Transfer::second_derivative, _1);
     }
     else if (transfer_name == "exp") {
-      h_transfer_ = new Imp_Exp;
+      transfer_ = boost::bind(&Imp_Exp_Transfer::transfer, _1);
+      transfer_first_deriv_ = boost::bind(
+                                  &Imp_Exp_Transfer::first_derivative, _1);
+      transfer_second_deriv_ = boost::bind(
+                                  &Imp_Exp_Transfer::second_derivative, _1);
     }
     else if (transfer_name == "logistic") {
-      h_transfer_ = new Imp_Logistic;
+      transfer_ = boost::bind(&Imp_Logistic_Transfer::transfer, _1);
+      transfer_first_deriv_ = boost::bind(
+                                  &Imp_Logistic_Transfer::first_derivative, _1);
+      transfer_second_deriv_ = boost::bind(
+                                  &Imp_Logistic_Transfer::second_derivative, _1);
     }
-
-    if (h_transfer_ == nullptr) {
-      // base transfer function type
-      h_transfer_ = new Imp_Identity;
-    }
-
-#if DEBUG
-    h_transfer_->print_name();
-#endif
   }
 
-  Imp_Experiment() : h_transfer_(new Imp_Identity) {
-#if DEBUG
-    h_transfer_->print_name();
-#endif
+  void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
+    //lr_ = boost::bind(&uni_dim_learning_rate, _1, _2, _3, gamma, alpha, c, scale);
+    lr_ = boost::bind(&Imp_Unidim_Learn_Rate::learning_rate, 
+                      _1, _2, _3, _4, gamma, alpha, c, scale);
   }
 
-  ~Imp_Experiment() {
-#if DEBUG
-    Rcpp::Rcout << "experiment disposed" << std::endl;
-#endif
-    delete h_transfer_;
-    h_transfer_ = nullptr;
+  void init_px_dim_learning_rate() {
+    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2);
+    lr_ = boost::bind(&Imp_Pxdim_Learn_Rate::learning_rate,
+                      _1, _2, _3, _4, score_func);
   }
 
-  double learning_rate(unsigned t) const{
-    /*if (model_name == "poisson")
-      return double(10)/3/t;
-    else if (model_name == "normal") {
-      return lr(t);
-    }
-    return 0;*/
-    return lr(t);
+  mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, unsigned t) const {
+    //return lr(t);
+    return lr_(theta_old, data_pt, t, p);
   }
 
-  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const{
+  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const {
     return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
   }
 
   double h_transfer(double u) const {
-    return (*h_transfer_)(u);
+    return transfer_(u);
   }
 
   //YKuang
   double h_first_derivative(double u) const{
-    //return h_transfer.first(u);
-    return h_transfer_->first(u);
+    return transfer_first_deriv_(u);
   }
   //YKuang
   double h_second_derivative(double u) const{
-    //return h_transfer.second(u);
-    return h_transfer_->second(u);
+    return transfer_second_deriv_(u);
   }
 
 private:
-  // since this is a dangerous dynamic pointer, we may want to make it private
-  Imp_Transfer_Base* h_transfer_;
+  uni_func_type transfer_;
+  uni_func_type transfer_first_deriv_;
+  uni_func_type transfer_second_deriv_;
+
+  learning_rate_type lr_;
 };
 
 struct Imp_Size{
