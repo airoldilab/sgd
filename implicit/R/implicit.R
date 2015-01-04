@@ -208,8 +208,9 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
   experiment$name = family$family
   experiment$transfer.name = implicit.transfer.name(family$link)
   experiment$niters = length(dataset$Y)
-  experiment$lr = list(gamma0 = 1, alpha = 1, c = 2/3, scale = 1)
+  #experiment$lr = list(gamma0 = 1, alpha = 1, c = 2/3, scale = 1)
   experiment$p = dim(dataset$X)[2]
+  experiment$learning.rate.type = "uni_dim"
   
   out <- run_online_algorithm(dataset, experiment, method, F)
   out

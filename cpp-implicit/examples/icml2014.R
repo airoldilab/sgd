@@ -260,7 +260,7 @@ poisson.e = poisson.experiment(niters=100000)
 poisson.dataset = poisson.e$sample.dataset()
 X = poisson.dataset$X
 Y = poisson.dataset$Y
-result.cpp <- implicit(Y~X-1, data=poisson.dataset, family = poisson, method="implicit")
+result.cpp <- implicit(Y~X-1, data=poisson.dataset, family = poisson, method="asgd")
 result.glm <- glm(Y~X-1, data=poisson.dataset, family=poisson)
 
 microbenchmark(run.test.imp.r(poisson.dataset, poisson.e), run.test.imp.c(poisson.dataset, poisson.e), times=5)
