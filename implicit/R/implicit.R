@@ -37,7 +37,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   #check the validity of method
   if (!is.character(method))
     stop("'method' must be a string")
-  if (!(method %in% c('implicit', 'asgd', 'sgd')))
+  if (!(method %in% c('implicit', 'asgd', 'sgd', 'model.frame')))
     stop("'method' not recognized")
   
   #check the validity of learning rate type
@@ -115,12 +115,10 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   # df.residual = resdf, df.null = nulldf, y = y, converged = conv, 
   # boundary = boundary)
   
-  #fit <- implicit.fit(x = X, y = Y, weights = weights, start = start,
-  #                    offset = offset, family = family, 
-  #                    control = control, intercept = attr(mt, "intercept") > 0L, method = method)
-  
-  fit <- implicit.fit(x=X, y=Y, family=family, method=method, offset = offset, lr.type=lr.type)
-  return(fit)
+  fit <- implicit.fit(x = X, y = Y, weights = weights, start = start,
+                      offset = offset, family = family, 
+                      control = control, intercept = attr(mt, "intercept") > 0L,
+                      method = method, lr.type=lr.type)
   
   # model frame should be included as a component of the returned value
   if (model) 
@@ -130,9 +128,9 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   # The null model will include the offset, and an intercept if there is one in the model.
   if (length(offset) && attr(mt, "intercept") > 0L) {
     ######TODO: call fit for null model here
-    fit2 <- list(converged = T, deviance = 0)
-    if (!fit2$converged) 
-      warning("fitting to calculate the null deviance did not converge -- increase 'maxit'?")
+    fit2 <- implicit.fit(x = X[, "(Intercept)", drop = FALSE], y = Y, weights = weights, 
+                      offset = offset, family = family, control = control, 
+                      intercept = TRUE)
     fit$null.deviance <- fit2$deviance
   }
   
@@ -214,6 +212,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     boundary <- conv <- TRUE
     coef <- numeric()
     iter <- 0L
+    rank <- 0L
   } else
   {
     #set the initial value for theta
@@ -231,25 +230,53 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     
     #select x, y with weights>0, adjust for offsets
     good <- weights > 0
-    dataset <- list(X=x[good, ], Y=as.matrix(y[good]))
-    
+    dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
     experiment <- list()
     experiment$name = family$family
     experiment$transfer.name = implicit.transfer.name(family$link)
     experiment$niters = length(dataset$Y)
     experiment$lr.type = lr.type
     experiment$p = dim(dataset$X)[2]
-    experiment$weights = weights[good]
-    experiment$start = start
-    experiment$control = control
-    experiment$offset = offset
-    
+    experiment$weights = as.matrix(weights[good])
+    experiment$start = as.matrix(start)
+    experiment$deviance = control$deviance
+    experiment$trace = control$trace
+    experiment$convergence = control$convergence
+    experiment$epsilon = control$epsilon
+    experiment$offset = as.matrix(offset)
     out <- run_online_algorithm(dataset, experiment, method, F)
+    mu = as.numeric(out$mu)
+    eta = as.numeric(out$eta)
+    coef = as.numeric(out$coefficients)
+    dev = out$deviance
+    residuals = as.numeric((y - mu)/mu.eta(eta))
+    iter = experiment$p
+    rank = out$rank
   }
-  out
-  ###########################################
-  ## TODO: Calculate dev.resids for return ##
-  ###########################################
-  
-  ######TODO in C: check the validity of all eta before return
+  names(residuals) <- ynames
+  names(mu) <- ynames
+  names(eta) <- ynames
+  names(weights) <- ynames
+  names(y) <- ynames
+  wtdmu <- if (intercept) 
+    sum(weights * y)/sum(weights) else
+    linkinv(offset)
+  nulldev <- sum(dev.resids(y, wtdmu, weights))
+  n.ok <- nobs - sum(weights == 0)
+  nulldf <- n.ok - as.integer(intercept)
+  resdf <- n.ok - rank
+  aic.model <- aic(y, 1, mu, weights, dev) + 2 * rank
+  if (!EMPTY)
+    qr = qr(x)
+  names(coef) <- xnames
+  list(coefficients = coef, residuals = residuals, fitted.values = mu, 
+       R = if (!EMPTY) qr.R(qr), 
+       rank = rank, qr = if (!EMPTY) qr, family = family, 
+       linear.predictors = eta, deviance = dev, aic = aic.model, 
+       null.deviance = nulldev, iter = iter, weights = weights, 
+       df.residual = resdf, df.null = nulldf, y = y, 
+       estimates = if(!EMPTY) out$estimates)
+  ######TODO in C: deal with offset
+  ######TODO compare all results with glm
+  ######TODO unit test on all checks
 }

@@ -120,7 +120,7 @@ struct Imp_Identity_Transfer {
     return 0.;
   }
 
-  static bool valideta(const mat& eta) {
+  static bool valideta(double eta){
     return true;
   }
 };
@@ -147,7 +147,7 @@ struct Imp_Exp_Transfer {
     return exp(u);
   }
 
-  static bool valideta(const mat& eta) {
+  static bool valideta(double eta){
     return true;
   }
 };
@@ -176,7 +176,7 @@ struct Imp_Logistic_Transfer {
     return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
   }
 
-  static bool valideta(const mat& eta) {
+  static bool valideta(double eta){
     return true;
   }
 
@@ -359,7 +359,7 @@ struct Imp_Experiment {
     return deviance_(y, mu, wt);
   }
 
-  bool valideta(const mat& eta) {
+  bool valideta(double eta) const{
     return valideta_(eta);
   }
 
@@ -373,7 +373,7 @@ private:
 
   uni_func_type variance_;
   deviance_type deviance_;
-  boost::function<bool (const mat&)> valideta_;
+  boost::function<bool (double)> valideta_;
 };
 
 struct Imp_Size{

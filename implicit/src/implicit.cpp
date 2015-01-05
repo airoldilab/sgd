@@ -173,11 +173,11 @@ bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const
   }
   double deviance = 0;
   mat mu;
-  mat eta;
+  mat eta_mat;
   //check the deviance
   if (exprm.dev){
-    eta = data.X * theta + exprm.offset;
-    mu = exprm.h_transfer(eta);
+    eta_mat = data.X * theta + exprm.offset;
+    mu = exprm.h_transfer(eta_mat);
     deviance = exprm.deviance(data.Y, mu, exprm.weights);
     if(!is_finite(deviance)){
       Rcpp::Rcout<<"Deviance is non-finite"<<std::endl;
@@ -187,8 +187,8 @@ bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const
   //print if trace
   if(exprm.trace){
     if (!exprm.dev){
-      eta = data.X * theta + exprm.offset;
-      mu = exprm.h_transfer(eta);
+      eta_mat = data.X * theta + exprm.offset;
+      mu = exprm.h_transfer(eta_mat);
       deviance = exprm.deviance(data.Y, mu, exprm.weights);
     }
     Rcpp::Rcout<<"Deviance = "<<deviance<<" , Iterations - "<<t<<std::endl;
@@ -213,7 +213,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   Imp_Dataset data;
   data.X = Rcpp::as<mat>(Dataset["X"]);
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
-  
   std::string algo;
   algo =  Rcpp::as<std::string>(algorithm);
 
@@ -226,7 +225,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
   exprm.epsilon = Rcpp::as<double>(Experiment["epsilon"]);
-
   std::string lr_type = Rcpp::as<std::string>(Experiment["lr.type"]);
   if (lr_type == "uni-dim") {
     // use the min eigenvalue of the covariance of data as alpha in LR
@@ -289,39 +287,55 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     asgd_transform_output(out);
   }
 
-  //check the validity of mu for Poisson and Binomial family
+  //check the validity of eta for all observations
   mat eta;
+  eta = data.X * out.last_estimate() + exprm.offset;
   mat mu;
-  if (exprm.model_name == "poisson" || exprm.model_name == "binomial"){
-    eta = data.X * out.last_estimate() + exprm.offset;
-    mu = exprm.h_transfer(eta);
+  mu = exprm.h_transfer(eta);
+  for(int i=0; i<eta.n_rows; ++i){
+      if (!is_finite(eta[i])){
+	Rcpp::Rcout<<"warning: NaN or non-finite eta"<<std::endl;
+	break;
+      }
+      if (!exprm.valideta(eta[i])){
+	Rcpp::Rcout<<"warning: eta is not in the support"<<std::endl;
+	break;
+      }
   }
+
+  //check the validity of mu for Poisson and Binomial family
   double eps = 10. * datum::eps;
   if(exprm.model_name=="poisson")
-    if (mu < eps)
+    if (any(vectorise(mu) < eps))
       Rcpp::Rcout<<"warning: implicit.fit: fitted rates numerically 0 occurred"<<std::endl;
   if(exprm.model_name=="binomial")
-      if (mu < eps or mu > (1-eps))
+      if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
         Rcpp::Rcout<<"warning: implicit.fit: fitted rates numerically 0 occurred"<<std::endl;
+
+  //calculate the deviance
+  double dev = exprm.deviance(data.Y, mu, exprm.weights);
 
   //check the convergence of the algorithm
   if (exprm.convergence){
-    eta = data.X * out.last_estimate() + exprm.offset;
-    mu = exprm.h_transfer(eta);
-    double dev1 = exprm.deviance(data.Y, mu, exprm.weights);
-    eta = data.X * out.estimates.col(out.estimates.n_cols-1);
-    mu = exprm.h_transfer(eta);
-    double dev2 = exprm.deviance(data.Y, mu, exprm.weights);
-    if (std::abs(dev1-dev2) > exprm.epsilon)
+    mat old_eta;
+    mat old_mu;
+    old_eta = data.X * out.estimates.col(out.estimates.n_cols-2);
+    old_mu = exprm.h_transfer(old_eta);
+    double dev2 = exprm.deviance(data.Y, old_mu, exprm.weights);
+    if (std::abs(dev-dev2) > exprm.epsilon)
       Rcpp::Rcout<<"warning: implicit.fit: algorithm did not converge"<<std::endl;
   }
 
-  mat coef = out.last_estimate;
+
+  mat coef = out.last_estimate();
   //check the number of covariates
   if (X_rank < Imp_dataset_size(data).p)
     coef.rows(X_rank, coef.n_rows-1) = datum::nan;
 
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
-            Rcpp::Named("last") = out.last_estimate());
+            Rcpp::Named("last") = out.last_estimate(),
+	    Rcpp::Named("mu") = mu, Rcpp::Named("eta") = eta,
+	    Rcpp::Named("coefficients") = coef, Rcpp::Named("rank") = X_rank,
+	    Rcpp::Named("deviance") = dev);
   return Rcpp::List();
 }
