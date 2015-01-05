@@ -71,12 +71,13 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 // return the new estimate of parameters, using SGD
 //template<typename TRANSFER>
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
   mat at = experiment.learning_rate(theta_old, datapoint, t);
-
   mat score_t = experiment.score_function(theta_old, datapoint);
+  if (!is_finite(score_t))
+    good_gradient = false;
   mat theta_new = theta_old + mat(at * score_t);
   online_out.estimates.col(t-1) = theta_new;
   return theta_new;
@@ -85,8 +86,8 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 // return the new estimate of parameters, using ASGD
 //template<typename TRANSFER>
 mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
-	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment);
+	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
+	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment, good_gradient);
 }
 
 //Tlan
@@ -146,6 +147,54 @@ void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 	}
 }
 
+bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const Imp_Experiment& exprm){
+  //check if all estimates are finite
+  if (!is_finite(theta)){
+    Rcpp::Rcout<<"warning: non-finite coefficients at iteration "<<t<<std::endl;
+  }
+
+  //check if eta is in the support
+  double eta = exprm.offset[t-1] + as_scalar(Imp_get_dataset_point(data, t).x * theta);
+  if (!exprm.valideta(eta)){
+    Rcpp::Rcout<<"no valid set of coefficients has been found: please supply starting values"<<t<<std::endl;
+    return false;
+  }
+
+  //check the variance of the expectation of Y
+  double mu_var = exprm.variance(exprm.h_transfer(eta));
+  if (!is_finite(mu_var)){
+    Rcpp::Rcout<<"NA in V(mu)"<<t<<std::endl;
+    return false;
+  }
+  if (mu_var == 0){
+    Rcpp::Rcout<<"0 in V(mu)"<<t<<std::endl;
+    return false;
+  }
+  double deviance = 0;
+  mat mu;
+  mat eta;
+  //check the deviance
+  if (exprm.dev){
+    eta = data.X * theta + exprm.offset;
+    mu = exprm.h_transfer(eta);
+    deviance = exprm.deviance(data.Y, mu, exprm.weights);
+    if(!is_finite(deviance)){
+      Rcpp::Rcout<<"Deviance is non-finite"<<std::endl;
+      return false;
+    }
+  }
+  //print if trace
+  if(exprm.trace){
+    if (!exprm.dev){
+      eta = data.X * theta + exprm.offset;
+      mu = exprm.h_transfer(eta);
+      deviance = exprm.deviance(data.Y, mu, exprm.weights);
+    }
+    Rcpp::Rcout<<"Deviance = "<<deviance<<" , Iterations - "<<t<<std::endl;
+  }
+  return true;
+}
+
 // use the method specified by algorithm to estimate parameters
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
@@ -170,6 +219,13 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+  exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
+  exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
+  exprm.start = Rcpp::as<mat>(Experiment["start"]);
+  exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);
+  exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
+  exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
+  exprm.epsilon = Rcpp::as<double>(Experiment["epsilon"]);
 
   std::string lr_type = Rcpp::as<std::string>(Experiment["lr.type"]);
   if (lr_type == "uni-dim") {
@@ -188,20 +244,71 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   Imp_OnlineOutput out(data);
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 
+  //check if the number of observations is greater than the rank of X
+  unsigned X_rank = rank(data.X);
+  if (X_rank > nsamples){
+    Rcpp::Rcout<<"X matrix has rank "<<X_rank<<", but only "
+	<<nsamples<<" observation"<<std::endl;
+    return Rcpp::List();
+  }
+
+  bool good_gradient = true;
+  bool good_validity = true;
   for(int t=1; t<=nsamples; ++t){
     if (algo == "sgd") {
-      Imp_sgd_online_algorithm(t, out, data, exprm);
+      mat theta = Imp_sgd_online_algorithm(t, out, data, exprm, good_gradient);
+      if (!good_gradient){
+	Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
+	return Rcpp::List();
+      }
+      good_validity = validity_check(data,theta, t, exprm);
+      if (!good_validity)
+	return Rcpp::List();
     }
     else if (algo == "asgd") {
-      Imp_asgd_online_algorithm(t, out, data, exprm);
+      mat theta = Imp_asgd_online_algorithm(t, out, data, exprm, good_gradient);
+      if (!good_gradient){
+	Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
+      	return Rcpp::List();
+      }
+      good_validity = validity_check(data,theta, t, exprm);
+      if (!good_validity)
+      	return Rcpp::List();
     }
     else if (algo == "implicit" || algo == "a-implicit"){
-      Imp_implicit_online_algorithm(t, out, data, exprm);
+      mat theta = Imp_implicit_online_algorithm(t, out, data, exprm);
+      if (!is_finite(theta)){
+        Rcpp::Rcout<<"warning: non-finite coefficients at iteration "<<t<<std::endl;
+      }
+      good_validity = validity_check(data,theta, t, exprm);
+      if (!good_validity)
+      	return Rcpp::List();
     }
   }
   if (algo == "asgd" || algo == "a-implicit") {
     asgd_transform_output(out);
   }
+
+  //check the validity of mu for Poisson and Binomial family
+  mat eta;
+  mat mu;
+  if (exp_name == "poisson" || exp_name == "binomial"){
+    eta = data.X * out.last_estimate() + exprm.offset;
+    mu = exprm.h_transfer(eta);
+  }
+  double eps = 10. * datum::eps;
+  if(exp_name=="poisson")
+    if (mu < eps)
+      Rcpp::Rcout<<"warning: implicit.fit: fitted rates numerically 0 occurred"<<std::endl;
+  if(exp_name=="binomial")
+      if (mu < eps or mu > (1-eps))
+        Rcpp::Rcout<<"warning: implicit.fit: fitted rates numerically 0 occurred"<<std::endl;
+
+  //check the convergence of the algorithm
+  if (exprm.convergence){
+    mu
+  }
+
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
             Rcpp::Named("last") = out.last_estimate());
   return Rcpp::List();

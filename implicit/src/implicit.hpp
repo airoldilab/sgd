@@ -240,6 +240,14 @@ struct Imp_Experiment {
   unsigned p;
   unsigned n_iters;
   std::string model_name;
+  mat offset;
+  mat weights;
+  mat start;
+  double epsilon;
+  bool trace;
+  bool dev;
+  bool convergence;
+
 //@methods
   Imp_Experiment(std::string transfer_name) {
     if (transfer_name == "identity") {

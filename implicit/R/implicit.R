@@ -231,7 +231,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     
     #select x, y with weights>0, adjust for offsets
     good <- weights > 0
-    dataset <- list(X=x[good, ], Y=as.matrix(y[good]-offset[good]))
+    dataset <- list(X=x[good, ], Y=as.matrix(y[good]))
     
     experiment <- list()
     experiment$name = family$family
@@ -242,6 +242,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     experiment$weights = weights[good]
     experiment$start = start
     experiment$control = control
+    experiment$offset = offset
     
     out <- run_online_algorithm(dataset, experiment, method, F)
   }
