@@ -1,3 +1,6 @@
+#ifndef IMPLICIT_H
+#define IMPLICIT_H
+
 #include "RcppArmadillo.h"
 #include <boost/math/tools/roots.hpp>
 #include <boost/function.hpp>
@@ -103,6 +106,10 @@ struct Imp_Identity_Transfer {
     return u;
   }
 
+  static mat transfer(const mat& u) {
+    return u;
+  }
+
   static double first_derivative(double u) {
     return 1.;
   }
@@ -110,12 +117,24 @@ struct Imp_Identity_Transfer {
   static double second_derivative(double u) {
     return 0.;
   }
+
+  static double link(double u) {
+
+  }
 };
 
 // Exponentional transfer function
 struct Imp_Exp_Transfer {
   static double transfer(double u) {
     return exp(u);
+  }
+
+  static mat transfer(const mat& u) {
+    mat result = mat(u);
+    for (unsigned i = 0; i < result.n_rows; ++i) {
+      result(i, 0) = transfer(u(i, 0));
+    }
+    return result;
   }
 
   static double first_derivative(double u) {
@@ -131,6 +150,14 @@ struct Imp_Exp_Transfer {
 struct Imp_Logistic_Transfer {
   static double transfer(double u) {
     return sigmoid(u);
+  }
+
+  static mat transfer(const mat& u) {
+    mat result = mat(u);
+    for (unsigned i = 0; i < result.n_rows; ++i) {
+      result(i, 0) = transfer(u(i, 0));
+    }
+    return result;
   }
 
   static double first_derivative(double u) {
@@ -150,6 +177,67 @@ private:
   }
 };
 
+// gaussian model family
+struct Imp_Gaussian {
+  static std::string family;
+  
+  static double variance(double u) {
+    return 1.;
+  }
+
+  static double deviance(const mat& y, const mat& mu, const mat& wt) {
+    return sum(vec(wt % ((y-mu) % (y-mu))));
+  }
+};
+
+std::string Imp_Gaussian::family = "gaussian";
+
+// poisson model family
+struct Imp_Poisson {
+  static std::string family;
+  
+  static double variance(double u) {
+    return u;
+  }
+
+  static double deviance(const mat& y, const mat& mu, const mat& wt) {
+    vec r = vec(mu % wt);
+    for (unsigned i = 0; i < r.n_elem; ++i) {
+      if (y(i) > 0.) {
+        r(i) = wt(i) * (y(i) * log(y(i)/mu(i)) - (y(i) - mu(i)));
+      }
+    }
+    return sum(2. * r);
+  }
+};
+
+std::string Imp_Poisson::family = "poisson";
+
+// binomial model family
+struct Imp_Binomial {
+  static std::string family;
+  
+  static double variance(double u) {
+    return u * (1. - u);
+  }
+
+  // In R the dev.resids of Binomial family is not exposed.
+  // Found one [here](http://pages.stat.wisc.edu/~st849-1/lectures/GLMDeviance.pdf)
+  static double deviance(const mat& y, const mat& mu, const mat& wt) {
+    vec r(y.n_elem);
+    for (unsigned i = 0; i < r.n_elem; ++i) {
+      r(i) = 2. * wt(i) * (y_log_y(y(i), mu(i)) + y_log_y(1.-y(i), 1.-mu(i)));
+    }
+    return sum(r);
+  }
+private:
+  static double y_log_y(double y, double mu) {
+    return (y) ? (y * log(y/mu)) : 0.;
+  }
+};
+
+std::string Imp_Binomial::family = "binomial";
+
 struct Imp_Experiment {
 //@members
   unsigned p;
@@ -158,21 +246,25 @@ struct Imp_Experiment {
 //@methods
   Imp_Experiment(std::string transfer_name) {
     if (transfer_name == "identity") {
-      transfer_ = boost::bind(&Imp_Identity_Transfer::transfer, _1);
+      //transfer_ = boost::bind(&Imp_Identity_Transfer::transfer, _1);
+      transfer_ = boost::bind(static_cast<double (*)(double)>(
+                      &Imp_Identity_Transfer::transfer), _1);
       transfer_first_deriv_ = boost::bind(
                                   &Imp_Identity_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                                   &Imp_Identity_Transfer::second_derivative, _1);
     }
     else if (transfer_name == "exp") {
-      transfer_ = boost::bind(&Imp_Exp_Transfer::transfer, _1);
+      transfer_ = boost::bind(static_cast<double (*)(double)>(
+                      &Imp_Exp_Transfer::transfer), _1);
       transfer_first_deriv_ = boost::bind(
                                   &Imp_Exp_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                                   &Imp_Exp_Transfer::second_derivative, _1);
     }
     else if (transfer_name == "logistic") {
-      transfer_ = boost::bind(&Imp_Logistic_Transfer::transfer, _1);
+      transfer_ = boost::bind(static_cast<double (*)(double)>(
+                      &Imp_Logistic_Transfer::transfer), _1);
       transfer_first_deriv_ = boost::bind(
                                   &Imp_Logistic_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
@@ -234,8 +326,7 @@ struct Get_score_coeff{
 
   //Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
   Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
-      const mat& t, double n) : experiment(e), datapoint(d),
-    theta_old(t), normx(n) {}
+      const mat& t, double n) : experiment(e), datapoint(d), theta_old(t), normx(n) {}
 
   double operator() (double ksi) const{
     return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
@@ -278,3 +369,4 @@ struct Implicit_fn{
   const Get_score_coeff& g;
 };
 
+#endif
