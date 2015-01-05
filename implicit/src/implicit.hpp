@@ -31,6 +31,7 @@ struct Imp_Unidim_Learn_Rate;
 struct Imp_Pxdim_Learn_Rate;
 
 typedef boost::function<double (double)> uni_func_type;
+typedef boost::function<mat (const mat&)> mmult_func_type;
 typedef boost::function<mat (const mat&, const Imp_DataPoint&)> score_func_type;
 typedef boost::function<mat (const mat&, const Imp_DataPoint&, unsigned, unsigned)> learning_rate_type;
 
@@ -246,34 +247,39 @@ struct Imp_Experiment {
 //@methods
   Imp_Experiment(std::string transfer_name) {
     if (transfer_name == "identity") {
-      //transfer_ = boost::bind(&Imp_Identity_Transfer::transfer, _1);
+      // transfer() 's been overloaded, have to specify the function signature
       transfer_ = boost::bind(static_cast<double (*)(double)>(
                       &Imp_Identity_Transfer::transfer), _1);
+      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
+                      &Imp_Identity_Transfer::transfer), _1);
       transfer_first_deriv_ = boost::bind(
-                                  &Imp_Identity_Transfer::first_derivative, _1);
+                      &Imp_Identity_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
-                                  &Imp_Identity_Transfer::second_derivative, _1);
+                      &Imp_Identity_Transfer::second_derivative, _1);
     }
     else if (transfer_name == "exp") {
       transfer_ = boost::bind(static_cast<double (*)(double)>(
                       &Imp_Exp_Transfer::transfer), _1);
+      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
+                      &Imp_Exp_Transfer::transfer), _1);
       transfer_first_deriv_ = boost::bind(
-                                  &Imp_Exp_Transfer::first_derivative, _1);
+                      &Imp_Exp_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
-                                  &Imp_Exp_Transfer::second_derivative, _1);
+                      &Imp_Exp_Transfer::second_derivative, _1);
     }
     else if (transfer_name == "logistic") {
       transfer_ = boost::bind(static_cast<double (*)(double)>(
                       &Imp_Logistic_Transfer::transfer), _1);
+      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
+                      &Imp_Logistic_Transfer::transfer), _1);
       transfer_first_deriv_ = boost::bind(
-                                  &Imp_Logistic_Transfer::first_derivative, _1);
+                      &Imp_Logistic_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
-                                  &Imp_Logistic_Transfer::second_derivative, _1);
+                      &Imp_Logistic_Transfer::second_derivative, _1);
     }
   }
 
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
-    //lr_ = boost::bind(&uni_dim_learning_rate, _1, _2, _3, gamma, alpha, c, scale);
     lr_ = boost::bind(&Imp_Unidim_Learn_Rate::learning_rate, 
                       _1, _2, _3, _4, gamma, alpha, c, scale);
   }
@@ -297,6 +303,10 @@ struct Imp_Experiment {
     return transfer_(u);
   }
 
+  mat h_transfer(const mat& u) const {
+    return mat_transfer_(u);
+  }
+
   //YKuang
   double h_first_derivative(double u) const{
     return transfer_first_deriv_(u);
@@ -308,6 +318,7 @@ struct Imp_Experiment {
 
 private:
   uni_func_type transfer_;
+  mmult_func_type mat_transfer_;
   uni_func_type transfer_first_deriv_;
   uni_func_type transfer_second_deriv_;
 
