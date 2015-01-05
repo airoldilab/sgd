@@ -4,6 +4,7 @@
 #include "RcppArmadillo.h"
 #include "implicit.hpp"
 #include <boost/math/common_factor.hpp>
+#include <stdlib.h>
 
 // via the depends attribute we tell Rcpp to create hooks for
 // RcppArmadillo so that the build process will know what to do
@@ -203,11 +204,11 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   Rcpp::List Experiment(experiment);
   //Rcpp::List LR = Experiment["lr"];
   
-  std::string exp_name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
-  Rcpp::Rcout << exp_name << ", " << transfer_name << std::endl;
+  Rcpp::Rcout << model_name << ", " << transfer_name << std::endl;
 
-  Imp_Experiment exprm(transfer_name);
+  Imp_Experiment exprm(model_name, transfer_name);
 
   Imp_Dataset data;
   data.X = Rcpp::as<mat>(Dataset["X"]);
@@ -216,7 +217,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   std::string algo;
   algo =  Rcpp::as<std::string>(algorithm);
 
-  exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
   exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
@@ -292,22 +292,34 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   //check the validity of mu for Poisson and Binomial family
   mat eta;
   mat mu;
-  if (exp_name == "poisson" || exp_name == "binomial"){
+  if (exprm.model_name == "poisson" || exprm.model_name == "binomial"){
     eta = data.X * out.last_estimate() + exprm.offset;
     mu = exprm.h_transfer(eta);
   }
   double eps = 10. * datum::eps;
-  if(exp_name=="poisson")
+  if(exprm.model_name=="poisson")
     if (mu < eps)
       Rcpp::Rcout<<"warning: implicit.fit: fitted rates numerically 0 occurred"<<std::endl;
-  if(exp_name=="binomial")
+  if(exprm.model_name=="binomial")
       if (mu < eps or mu > (1-eps))
         Rcpp::Rcout<<"warning: implicit.fit: fitted rates numerically 0 occurred"<<std::endl;
 
   //check the convergence of the algorithm
   if (exprm.convergence){
-    mu
+    eta = data.X * out.last_estimate() + exprm.offset;
+    mu = exprm.h_transfer(eta);
+    double dev1 = exprm.deviance(data.Y, mu, exprm.weights);
+    eta = data.X * out.estimates.col(out.estimates.n_cols-1);
+    mu = exprm.h_transfer(eta);
+    double dev2 = exprm.deviance(data.Y, mu, exprm.weights);
+    if (std::abs(dev1-dev2) > exprm.epsilon)
+      Rcpp::Rcout<<"warning: implicit.fit: algorithm did not converge"<<std::endl;
   }
+
+  mat coef = out.last_estimate;
+  //check the number of covariates
+  if (X_rank < Imp_dataset_size(data).p)
+    coef.rows(X_rank, coef.n_rows-1) = datum::nan;
 
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
             Rcpp::Named("last") = out.last_estimate());

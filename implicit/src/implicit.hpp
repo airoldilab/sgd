@@ -34,6 +34,7 @@ typedef boost::function<double (double)> uni_func_type;
 typedef boost::function<mat (const mat&)> mmult_func_type;
 typedef boost::function<mat (const mat&, const Imp_DataPoint&)> score_func_type;
 typedef boost::function<mat (const mat&, const Imp_DataPoint&, unsigned, unsigned)> learning_rate_type;
+typedef boost::function<double (const mat&, const mat&, const mat&)> deviance_type;
 
 struct Imp_DataPoint {
   Imp_DataPoint(): x(mat()), y(0) {}
@@ -118,6 +119,10 @@ struct Imp_Identity_Transfer {
   static double second_derivative(double u) {
     return 0.;
   }
+
+  static bool valideta(const mat& eta) {
+    return true;
+  }
 };
 
 // Exponentional transfer function
@@ -140,6 +145,10 @@ struct Imp_Exp_Transfer {
 
   static double second_derivative(double u) {
     return exp(u);
+  }
+
+  static bool valideta(const mat& eta) {
+    return true;
   }
 };
 
@@ -165,6 +174,10 @@ struct Imp_Logistic_Transfer {
   static double second_derivative(double u) {
     double sig = sigmoid(u);
     return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
+  }
+
+  static bool valideta(const mat& eta) {
+    return true;
   }
 
 private:
@@ -247,9 +260,24 @@ struct Imp_Experiment {
   bool trace;
   bool dev;
   bool convergence;
+  std::string transfer_name;
 
 //@methods
-  Imp_Experiment(std::string transfer_name) {
+  Imp_Experiment(std::string m_name, std::string tr_name)
+  :model_name(m_name), transfer_name(tr_name) {
+    if (model_name == "gaussian") {
+      variance_ = boost::bind(&Imp_Gaussian::variance, _1);
+      deviance_ = boost::bind(&Imp_Gaussian::deviance, _1, _2, _3);
+    }
+    else if (model_name == "poisson") {
+      variance_ = boost::bind(&Imp_Poisson::variance, _1);
+      deviance_ = boost::bind(&Imp_Poisson::deviance, _1, _2, _3);
+    }
+    else if (model_name == "binomial") {
+      variance_ = boost::bind(&Imp_Binomial::variance, _1);
+      deviance_ = boost::bind(&Imp_Binomial::deviance, _1, _2, _3);
+    }
+
     if (transfer_name == "identity") {
       // transfer() 's been overloaded, have to specify the function signature
       transfer_ = boost::bind(static_cast<double (*)(double)>(
@@ -260,6 +288,7 @@ struct Imp_Experiment {
                       &Imp_Identity_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                       &Imp_Identity_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Identity_Transfer::valideta, _1);
     }
     else if (transfer_name == "exp") {
       transfer_ = boost::bind(static_cast<double (*)(double)>(
@@ -270,6 +299,7 @@ struct Imp_Experiment {
                       &Imp_Exp_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                       &Imp_Exp_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Exp_Transfer::valideta, _1);
     }
     else if (transfer_name == "logistic") {
       transfer_ = boost::bind(static_cast<double (*)(double)>(
@@ -280,6 +310,7 @@ struct Imp_Experiment {
                       &Imp_Logistic_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                       &Imp_Logistic_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Logistic_Transfer::valideta, _1);
     }
   }
 
@@ -320,6 +351,18 @@ struct Imp_Experiment {
     return transfer_second_deriv_(u);
   }
 
+  double variance(double u) const {
+    return variance_(u);
+  }
+
+  double deviance(const mat& y, const mat& mu, const mat& wt) const {
+    return deviance_(y, mu, wt);
+  }
+
+  bool valideta(const mat& eta) {
+    return valideta_(eta);
+  }
+
 private:
   uni_func_type transfer_;
   mmult_func_type mat_transfer_;
@@ -327,6 +370,10 @@ private:
   uni_func_type transfer_second_deriv_;
 
   learning_rate_type lr_;
+
+  uni_func_type variance_;
+  deviance_type deviance_;
+  boost::function<bool (const mat&)> valideta_;
 };
 
 struct Imp_Size{
