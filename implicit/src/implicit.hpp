@@ -9,6 +9,7 @@
 #include <math.h>
 #include <string>
 #include <cstddef>
+#include <iostream>
 
 using namespace arma;
 
@@ -54,6 +55,12 @@ struct Imp_Dataset
 //@methods
   mat covariance() const {
     return cov(X);
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const Imp_Dataset& dataset) {
+    os << "  Dataset:\n" << "    X has " << dataset.X.n_cols << " features\n" << 
+          "    Total of " << dataset.X.n_rows << " data points" << std::endl;
+    return os;
   }
 };
 
@@ -253,6 +260,8 @@ struct Imp_Experiment {
   unsigned p;
   unsigned n_iters;
   std::string model_name;
+  std::string transfer_name;
+  std::string lr_type;
   mat offset;
   mat weights;
   mat start;
@@ -260,7 +269,6 @@ struct Imp_Experiment {
   bool trace;
   bool dev;
   bool convergence;
-  std::string transfer_name;
 
 //@methods
   Imp_Experiment(std::string m_name, std::string tr_name)
@@ -317,12 +325,14 @@ struct Imp_Experiment {
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
     lr_ = boost::bind(&Imp_Unidim_Learn_Rate::learning_rate, 
                       _1, _2, _3, _4, gamma, alpha, c, scale);
+    lr_type = "Uni-dimension learning rate";
   }
 
   void init_px_dim_learning_rate() {
     score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2);
     lr_ = boost::bind(&Imp_Pxdim_Learn_Rate::learning_rate,
                       _1, _2, _3, _4, score_func);
+    lr_type = "Px-dimension learning rate";
   }
 
   mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, unsigned t) const {
@@ -361,6 +371,13 @@ struct Imp_Experiment {
 
   bool valideta(double eta) const{
     return valideta_(eta);
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
+    os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
+          "    Transfer function: " << exprm.transfer_name <<  "\n" <<
+          "    Learning rate: " << exprm.lr_type << std::endl;
+    return os;
   }
 
 private:

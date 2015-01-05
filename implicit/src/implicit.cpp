@@ -206,7 +206,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
-  Rcpp::Rcout << model_name << ", " << transfer_name << std::endl;
 
   Imp_Experiment exprm(model_name, transfer_name);
 
@@ -232,7 +231,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     cx_mat eigvec;
     eig_gen(eigval, eigvec, data.covariance());
     double lr_alpha = min(eigval).real();
-    Rcpp::Rcout << "learning rate alpha: " << lr_alpha << std::endl;
     exprm.init_uni_dim_learning_rate(1., lr_alpha, 2./3., 1.);
   }
   else if (lr_type == "px-dim") {
@@ -249,6 +247,10 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	<<nsamples<<" observation"<<std::endl;
     return Rcpp::List();
   }
+
+  // print out info
+  Rcpp::Rcout << data;
+  Rcpp::Rcout << exprm;
 
   bool good_gradient = true;
   bool good_validity = true;
