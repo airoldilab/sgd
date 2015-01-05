@@ -119,6 +119,10 @@ struct Imp_Identity_Transfer {
   static double second_derivative(double u) {
     return 0.;
   }
+
+  static bool valideta(const mat& eta) {
+    return true;
+  }
 };
 
 // Exponentional transfer function
@@ -141,6 +145,10 @@ struct Imp_Exp_Transfer {
 
   static double second_derivative(double u) {
     return exp(u);
+  }
+
+  static bool valideta(const mat& eta) {
+    return true;
   }
 };
 
@@ -166,6 +174,10 @@ struct Imp_Logistic_Transfer {
   static double second_derivative(double u) {
     double sig = sigmoid(u);
     return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
+  }
+
+  static bool valideta(const mat& eta) {
+    return true;
   }
 
 private:
@@ -268,6 +280,7 @@ struct Imp_Experiment {
                       &Imp_Identity_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                       &Imp_Identity_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Identity_Transfer::valideta, _1);
     }
     else if (transfer_name == "exp") {
       transfer_ = boost::bind(static_cast<double (*)(double)>(
@@ -278,6 +291,7 @@ struct Imp_Experiment {
                       &Imp_Exp_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                       &Imp_Exp_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Exp_Transfer::valideta, _1);
     }
     else if (transfer_name == "logistic") {
       transfer_ = boost::bind(static_cast<double (*)(double)>(
@@ -288,6 +302,7 @@ struct Imp_Experiment {
                       &Imp_Logistic_Transfer::first_derivative, _1);
       transfer_second_deriv_ = boost::bind(
                       &Imp_Logistic_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Logistic_Transfer::valideta, _1);
     }
   }
 
@@ -336,6 +351,10 @@ struct Imp_Experiment {
     return deviance_(y, mu, wt);
   }
 
+  bool valideta(const mat& eta) {
+    return valideta_(eta);
+  }
+
 private:
   uni_func_type transfer_;
   mmult_func_type mat_transfer_;
@@ -346,6 +365,7 @@ private:
 
   uni_func_type variance_;
   deviance_type deviance_;
+  boost::function<bool (const mat&)> valideta_;
 };
 
 struct Imp_Size{
