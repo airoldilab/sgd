@@ -154,11 +154,11 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   Rcpp::List Experiment(experiment);
   //Rcpp::List LR = Experiment["lr"];
   
-  std::string exp_name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
-  Rcpp::Rcout << exp_name << ", " << transfer_name << std::endl;
+  Rcpp::Rcout << model_name << ", " << transfer_name << std::endl;
 
-  Imp_Experiment exprm(transfer_name);
+  Imp_Experiment exprm(model_name, transfer_name);
 
   Imp_Dataset data;
   data.X = Rcpp::as<mat>(Dataset["X"]);
@@ -167,7 +167,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   std::string algo;
   algo =  Rcpp::as<std::string>(algorithm);
 
-  exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
+  // exprm.model_name = Rcpp::as<std::string>(Experiment["name"]);
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
 

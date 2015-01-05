@@ -34,6 +34,7 @@ typedef boost::function<double (double)> uni_func_type;
 typedef boost::function<mat (const mat&)> mmult_func_type;
 typedef boost::function<mat (const mat&, const Imp_DataPoint&)> score_func_type;
 typedef boost::function<mat (const mat&, const Imp_DataPoint&, unsigned, unsigned)> learning_rate_type;
+typedef boost::function<double (const mat&, const mat&, const mat&)> deviance_type;
 
 struct Imp_DataPoint {
   Imp_DataPoint(): x(mat()), y(0) {}
@@ -240,8 +241,23 @@ struct Imp_Experiment {
   unsigned p;
   unsigned n_iters;
   std::string model_name;
+  std::string transfer_name;
 //@methods
-  Imp_Experiment(std::string transfer_name) {
+  Imp_Experiment(std::string m_name, std::string tr_name)
+  :model_name(m_name), transfer_name(tr_name) {
+    if (model_name == "gaussian") {
+      variance_ = boost::bind(&Imp_Gaussian::variance, _1);
+      deviance_ = boost::bind(&Imp_Gaussian::deviance, _1, _2, _3);
+    }
+    else if (model_name == "poisson") {
+      variance_ = boost::bind(&Imp_Poisson::variance, _1);
+      deviance_ = boost::bind(&Imp_Poisson::deviance, _1, _2, _3);
+    }
+    else if (model_name == "binomial") {
+      variance_ = boost::bind(&Imp_Binomial::variance, _1);
+      deviance_ = boost::bind(&Imp_Binomial::deviance, _1, _2, _3);
+    }
+
     if (transfer_name == "identity") {
       // transfer() 's been overloaded, have to specify the function signature
       transfer_ = boost::bind(static_cast<double (*)(double)>(
@@ -312,6 +328,14 @@ struct Imp_Experiment {
     return transfer_second_deriv_(u);
   }
 
+  double variance(double u) const {
+    return variance_(u);
+  }
+
+  double deviance(const mat& y, const mat& mu, const mat& wt) const {
+    return deviance_(y, mu, wt);
+  }
+
 private:
   uni_func_type transfer_;
   mmult_func_type mat_transfer_;
@@ -319,6 +343,9 @@ private:
   uni_func_type transfer_second_deriv_;
 
   learning_rate_type lr_;
+
+  uni_func_type variance_;
+  deviance_type deviance_;
 };
 
 struct Imp_Size{
