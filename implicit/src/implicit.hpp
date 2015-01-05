@@ -118,10 +118,6 @@ struct Imp_Identity_Transfer {
   static double second_derivative(double u) {
     return 0.;
   }
-
-  static double link(double u) {
-
-  }
 };
 
 // Exponentional transfer function
