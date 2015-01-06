@@ -1,7 +1,15 @@
 #ifndef IMPLICIT_BASEDEF_HPP
 #define IMPLICIT_BASEDEF_HPP
 
-#include "RcppArmadillo.h"
+// In unittest, switch this to 0
+#define __R__ 0
+
+#if __R__
+	#include "RcppArmadillo.h"
+#else
+	#include <armadillo>
+#endif
+
 #include <boost/function.hpp>
 #include <math.h>
 #include <string>
