@@ -13,7 +13,9 @@
 
 using namespace arma;
 
-#define nullptr NULL
+#if __cplusplus == 199711L
+  #define nullptr NULL
+#endif
 #define DEBUG 1
 
 struct Imp_DataPoint;
