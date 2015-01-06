@@ -96,16 +96,17 @@ struct Imp_Pxdim_Learn_Rate
   static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, 
                           unsigned t, unsigned p,
                           score_func_type score_func) {
-    mat Idiag(p, p, fill::eye);
+    static mat Idiag(p, p, fill::eye);
     mat Gi = score_func(theta_old, data_pt);
     Idiag = Idiag + diagmat(Gi * Gi.t());
+    mat Idiag_inv(Idiag);
 
     for (unsigned i = 0; i < p; ++i) {
-      if (abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag.at(i, i) = 1. / Idiag.at(i, i);
+      if (abs(Idiag_inv.at(i, i)) > 1e-8) {
+        Idiag_inv.at(i, i) = 1. / Idiag_inv.at(i, i);
       }
     }
-    return Idiag;
+    return Idiag_inv;
   }
 };
 
@@ -376,7 +377,11 @@ struct Imp_Experiment {
   friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
     os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
           "    Transfer function: " << exprm.transfer_name <<  "\n" <<
-          "    Learning rate: " << exprm.lr_type << std::endl;
+          "    Learning rate: " << exprm.lr_type << "\n\n" <<
+          "    Trace: " << (exprm.trace ? "On" : "Off") << "\n" <<
+          "    Deviance: " << (exprm.dev ? "On" : "Off") << "\n" <<
+          "    Convergence: " << (exprm.convergence ? "On" : "Off") << "\n" <<
+          "    Epsilon: " << exprm.epsilon << "\n" << std::endl;
     return os;
   }
 
