@@ -245,6 +245,10 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     experiment$epsilon = control$epsilon
     experiment$offset = as.matrix(offset)
     out <- run_online_algorithm(dataset, experiment, method, F)
+    
+    if (length(out) == 0) {
+      stop("An error has occured, program stopped. ")
+    }
     mu = as.numeric(out$mu)
     eta = as.numeric(out$eta)
     coef = as.numeric(out$coefficients)

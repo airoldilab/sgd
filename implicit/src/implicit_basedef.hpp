@@ -2,7 +2,7 @@
 #define IMPLICIT_BASEDEF_HPP
 
 // In unittest, switch this to 0
-#define __R__ 0
+#define __R__ 1
 
 #if __R__
 	#include "RcppArmadillo.h"
