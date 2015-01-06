@@ -245,14 +245,19 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     experiment$trace = control$trace
     experiment$convergence = control$convergence
     experiment$epsilon = control$epsilon
-    experiment$offset = as.matrix(offset)
+    experiment$offset = as.matrix(offset[good])
     out <- run_online_algorithm(dataset, experiment, method, F)
-    
     if (length(out) == 0) {
       stop("An error has occured, program stopped. ")
     }
-    mu = as.numeric(out$mu)
-    eta = as.numeric(out$eta)
+    temp.mu = as.numeric(out$mu)
+    mu = rep(0, length(good))
+    mu[good] = temp.mu
+    mu[!good] = NA
+    temp.eta = as.numeric(out$eta)
+    eta = rep(0, length(good))
+    eta[good] = temp.eta
+    eta[!good] = NA
     coef = as.numeric(out$coefficients)
     dev = out$deviance
     residuals = as.numeric((y - mu)/mu.eta(eta))
