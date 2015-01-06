@@ -11,7 +11,7 @@ implicit.control <- function(epsilon = 1e-08, trace = FALSE, deviance = FALSE, c
   list(epsilon = epsilon, trace = trace, deviance = deviance, convergence=convergence)
 }
 
-# A generic function to dispatch calls
+
 implicit <- function(x, ...) UseMethod("implicit")
 
 # if class(x) is formula, call implicit.formula
@@ -33,7 +33,9 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
     print(family)
     stop("'family' not recognized")
   }
-  
+  #get data from environment
+  if (missing(data)) 
+    data <- environment(formula)
   #check the validity of method
   if (!is.character(method))
     stop("'method' must be a string")
@@ -127,10 +129,9 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   # calculate null.deviance: The deviance for the null model, comparable with deviance. 
   # The null model will include the offset, and an intercept if there is one in the model.
   if (length(offset) && attr(mt, "intercept") > 0L) {
-    ######TODO: call fit for null model here
     fit2 <- implicit.fit(x = X[, "(Intercept)", drop = FALSE], y = Y, weights = weights, 
                       offset = offset, family = family, control = control, 
-                      intercept = TRUE)
+                      intercept = TRUE, method = method, lr.type=lr.type)
     fit$null.deviance <- fit2$deviance
   }
   
@@ -213,6 +214,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     coef <- numeric()
     iter <- 0L
     rank <- 0L
+    converged <- FALSE
   } else
   {
     #set the initial value for theta
@@ -252,6 +254,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
     residuals = as.numeric((y - mu)/mu.eta(eta))
     iter = experiment$p
     rank = out$rank
+    converged = out$converged
   }
   names(residuals) <- ynames
   names(mu) <- ynames
@@ -275,7 +278,7 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
        linear.predictors = eta, deviance = dev, aic = aic.model, 
        null.deviance = nulldev, iter = iter, weights = weights, 
        df.residual = resdf, df.null = nulldf, y = y, 
-       estimates = if(!EMPTY) out$estimates)
+       estimates = if(!EMPTY) out$estimates, converged = if(control$convergence) converged)
   ######TODO in C: deal with offset
   ######TODO compare all results with glm
   ######TODO unit test on all checks

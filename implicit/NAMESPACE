@@ -1,3 +1,5 @@
 useDynLib(implicit)
 importFrom(Rcpp, evalCpp)
-exportPattern("^[[:alpha:]]+")
+export(implicit)
+export(implicit.fit)
+S3method(implicit, formula)
