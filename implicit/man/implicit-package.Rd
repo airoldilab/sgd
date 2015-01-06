@@ -6,7 +6,7 @@
  specified by giving a symbolic description of the linear predictor and
   a description of the error distribution. Stochastic Gradient Descent (SGD),
   averaged-SGD (ASGD), implicit-SGD can be used for model fitting.}
-\author{Tian Lan, Ye Kuang, Panos Toulis}
+\author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}
 \references{
 Toulis, Panos, et al. Statistical analysis of stochastic gradient 
 methods for generalized linear models.

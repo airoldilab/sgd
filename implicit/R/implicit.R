@@ -166,7 +166,7 @@ implicit.transfer.name <- function(link.name) {
 
 implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
                           offset = rep(0, nobs), family = gaussian(), 
-                          control = list(), intercept = TRUE, method="implicit", lr.type)  {
+                          control = list(), intercept = TRUE, method="implicit", lr.type, ...)  {
   control <- do.call("implicit.control", control)
   x <- as.matrix(x)
   xnames <- dimnames(x)[[2L]]
