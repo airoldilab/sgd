@@ -6,32 +6,6 @@
 
 using namespace Rcpp;
 
-// hello_world
-void hello_world();
-RcppExport SEXP implicit_hello_world() {
-BEGIN_RCPP
-    {
-        Rcpp::RNGScope __rngScope;
-        hello_world();
-    }
-    return R_NilValue;
-END_RCPP
-}
-// test
-arma::mat test(arma::mat input1);
-RcppExport SEXP implicit_test(SEXP input1SEXP) {
-BEGIN_RCPP
-    SEXP __sexp_result;
-    {
-        Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< arma::mat >::type input1(input1SEXP );
-        arma::mat __result = test(input1);
-        PROTECT(__sexp_result = Rcpp::wrap(__result));
-    }
-    UNPROTECT(1);
-    return __sexp_result;
-END_RCPP
-}
 // run_online_algorithm
 Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP algorithm, SEXP verbose);
 RcppExport SEXP implicit_run_online_algorithm(SEXP datasetSEXP, SEXP experimentSEXP, SEXP algorithmSEXP, SEXP verboseSEXP) {

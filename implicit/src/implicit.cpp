@@ -54,8 +54,8 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
-  mat at = experiment.learning_rate(theta_old, datapoint, t);
-  mat score_t = experiment.score_function(theta_old, datapoint);
+  mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
+  mat score_t = experiment.score_function(theta_old, datapoint, experiment.offset[t-1]);
   if (!is_finite(score_t))
     good_gradient = false;
   mat theta_new = theta_old + mat(at * score_t);
@@ -78,7 +78,7 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
-  mat at = experiment.learning_rate(theta_old, datapoint, t);
+  mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   vec diag_lr = at.diag();
   double average_lr = 0.;
   for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
@@ -88,7 +88,7 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 
   double normx = dot(datapoint.x, datapoint.x);
 
-  Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx);
+  Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx, experiment.offset[t-1]);
   Implicit_fn implicit_fn(average_lr, get_score_coeff);
 
   double rt = average_lr * get_score_coeff(0);

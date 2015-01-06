@@ -33,8 +33,8 @@ struct Imp_Pxdim_Learn_Rate;
 
 typedef boost::function<double (double)> uni_func_type;
 typedef boost::function<mat (const mat&)> mmult_func_type;
-typedef boost::function<mat (const mat&, const Imp_DataPoint&)> score_func_type;
-typedef boost::function<mat (const mat&, const Imp_DataPoint&, unsigned, unsigned)> learning_rate_type;
+typedef boost::function<mat (const mat&, const Imp_DataPoint&, double)> score_func_type;
+typedef boost::function<mat (const mat&, const Imp_DataPoint&, double, unsigned, unsigned)> learning_rate_type;
 typedef boost::function<double (const mat&, const mat&, const mat&)> deviance_type;
 
 struct Imp_DataPoint {
@@ -84,7 +84,7 @@ struct Imp_OnlineOutput{
  */
 struct Imp_Unidim_Learn_Rate
 {
-  static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, 
+  static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p,
                           double gamma, double alpha, double c, double scale) {
     double lr = scale * gamma * pow(1 + alpha * gamma * t, -c);
@@ -98,10 +98,10 @@ struct Imp_Pxdim_Learn_Rate
 {
   static mat Idiag;
 
-  static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, 
+  static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p,
                           score_func_type score_func) {
-    mat Gi = score_func(theta_old, data_pt);
+    mat Gi = score_func(theta_old, data_pt, offset);
     Idiag = Idiag + diagmat(Gi * Gi.t());
     mat Idiag_inv(Idiag);
 
@@ -335,24 +335,24 @@ struct Imp_Experiment {
 
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
     lr_ = boost::bind(&Imp_Unidim_Learn_Rate::learning_rate, 
-                      _1, _2, _3, _4, gamma, alpha, c, scale);
+                      _1, _2, _3, _4, _5, gamma, alpha, c, scale);
     lr_type = "Uni-dimension learning rate";
   }
 
   void init_px_dim_learning_rate() {
-    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2);
+    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
     lr_ = boost::bind(&Imp_Pxdim_Learn_Rate::learning_rate,
-                      _1, _2, _3, _4, score_func);
+                      _1, _2, _3, _4, _5, score_func);
     lr_type = "Px-dimension learning rate";
   }
 
-  mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, unsigned t) const {
+  mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr(t);
-    return lr_(theta_old, data_pt, t, p);
+    return lr_(theta_old, data_pt, offset, t, p);
   }
 
-  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint) const {
-    return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old)))*datapoint.x).t();
+  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
+    return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old))+offset)*datapoint.x).t();
   }
 
   double h_transfer(double u) const {
@@ -420,28 +420,28 @@ struct Get_score_coeff{
 
   //Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
   Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
-      const mat& t, double n) : experiment(e), datapoint(d), theta_old(t), normx(n) {}
+      const mat& t, double n, double off) : experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
 
   double operator() (double ksi) const{
     return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
-                     + normx * ksi);
+                     + normx * ksi +offset);
   }
 
   double first_derivative (double ksi) const{
     return experiment.h_first_derivative(dot(theta_old, datapoint.x)
-           + normx * ksi)*normx;
+           + normx * ksi + offset)*normx;
   }
 
   double second_derivative (double ksi) const{
     return experiment.h_second_derivative(dot(theta_old, datapoint.x)
-             + normx * ksi)*normx*normx;
+             + normx * ksi + offset)*normx*normx;
   }
 
-  //const Imp_Experiment<TRANSFER>& experiment;
   const Imp_Experiment& experiment;
   const Imp_DataPoint& datapoint;
   const mat& theta_old;
   double normx;
+  double offset;
 };
 
 // Root finding functor for Implicit-SGD update

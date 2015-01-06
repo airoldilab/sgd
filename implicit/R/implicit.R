@@ -279,4 +279,5 @@ implicit.fit <- function (x, y, weights = rep(1, nobs), start = NULL,
   ######TODO in C: deal with offset
   ######TODO compare all results with glm
   ######TODO unit test on all checks
+  ######TODO write start value
 }
