@@ -67,10 +67,13 @@ struct Imp_Dataset
 struct Imp_OnlineOutput{
   //Construct Imp_OnlineOutput compatible with
   //the shape of data
-  Imp_OnlineOutput(const Imp_Dataset& data):estimates(mat(data.X.n_cols, data.X.n_rows)){}
+  Imp_OnlineOutput(const Imp_Dataset& data, const mat& init)
+   :estimates(mat(data.X.n_cols, data.X.n_rows)), initial(init) {}
+
   Imp_OnlineOutput(){}
 //@members
   mat estimates;
+  mat initial;
 //@methods
   mat last_estimate(){
     return estimates.col(estimates.n_cols-1);
@@ -93,10 +96,11 @@ struct Imp_Unidim_Learn_Rate
 // p dimension learning rate
 struct Imp_Pxdim_Learn_Rate
 {
+  static mat Idiag;
+
   static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, 
                           unsigned t, unsigned p,
                           score_func_type score_func) {
-    static mat Idiag(p, p, fill::eye);
     mat Gi = score_func(theta_old, data_pt);
     Idiag = Idiag + diagmat(Gi * Gi.t());
     mat Idiag_inv(Idiag);
@@ -108,7 +112,12 @@ struct Imp_Pxdim_Learn_Rate
     }
     return Idiag_inv;
   }
+
+  static void reinit(unsigned p) {
+    Idiag = mat(p, p, fill::eye);
+  }
 };
+mat Imp_Pxdim_Learn_Rate::Idiag = mat();
 
 // Identity transfer function
 struct Imp_Identity_Transfer {
@@ -377,7 +386,8 @@ struct Imp_Experiment {
   friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
     os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
           "    Transfer function: " << exprm.transfer_name <<  "\n" <<
-          "    Learning rate: " << exprm.lr_type << "\n\n" <<
+          "    Learning rate: " << exprm.lr_type << "\n" <<
+          "    Initial value: " << exprm.start << "\n\n" <<
           "    Trace: " << (exprm.trace ? "On" : "Off") << "\n" <<
           "    Deviance: " << (exprm.dev ? "On" : "Off") << "\n" <<
           "    Convergence: " << (exprm.convergence ? "On" : "Off") << "\n" <<

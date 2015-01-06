@@ -54,7 +54,8 @@ Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
 // Here, t=1 is the first estimate, which in matrix will be its 0-th col
 mat Imp_onlineOutput_estimate(const Imp_OnlineOutput& online_out, unsigned t){
   if (t==0){
-      return(mat(online_out.estimates.n_rows, 1, fill::zeros));
+      //return(mat(online_out.estimates.n_rows, 1, fill::zeros));
+    return online_out.initial;
   }
   t = t-1;
   mat column = mat(online_out.estimates.col(t));
@@ -234,10 +235,11 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     exprm.init_uni_dim_learning_rate(1., lr_alpha, 2./3., 1.);
   }
   else if (lr_type == "px-dim") {
+    Imp_Pxdim_Learn_Rate::reinit(exprm.p);
     exprm.init_px_dim_learning_rate();
   }
   
-  Imp_OnlineOutput out(data);
+  Imp_OnlineOutput out(data, exprm.start);
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 
   //check if the number of observations is greater than the rank of X
