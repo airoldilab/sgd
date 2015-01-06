@@ -15,28 +15,6 @@
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(BH)]]
 
-
-
-// hello world function 
-// 
-//
-// [[Rcpp::export]]
-void hello_world() {
-    Rcpp::Rcout<<"Hello!"<<"  "<<boost::math::gcd(12, 8)<<std::endl;
-}
-
-
-// Function to output function results for testing
-// This function should cause conflicts in merging
-// This function should be REMOVED after debugging
-//
-// [[Rcpp::export]]
-arma::mat test(arma::mat input1){
-  Imp_Dataset input;
-  input.X = input1;
-  return mat();
-}
-
 //return the nsamples and p of a dataset
 Imp_Size Imp_dataset_size(const Imp_Dataset& dataset){
   Imp_Size size;

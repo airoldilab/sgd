@@ -117,6 +117,7 @@ struct Imp_Pxdim_Learn_Rate
     Idiag = mat(p, p, fill::eye);
   }
 };
+
 mat Imp_Pxdim_Learn_Rate::Idiag = mat();
 
 // Identity transfer function
