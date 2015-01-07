@@ -1,7 +1,6 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
-#include "implicit.hpp"
-#include <boost/math/common_factor.hpp>
+#include "implicit.h"
 #include <stdlib.h>
 
 // via the depends attribute we tell Rcpp to create hooks for

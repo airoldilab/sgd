@@ -1,11 +1,11 @@
-#ifndef IMPLICIT_EXPERIMENT_HPP
-#define IMPLICIT_EXPERIMENT_HPP
+#ifndef IMPLICIT_EXPERIMENT_H
+#define IMPLICIT_EXPERIMENT_H
 
-#include "implicit_basedef.hpp"
-#include "implicit_data.hpp"
-#include "implicit_family.hpp"
-#include "implicit_learningrate.hpp"
-#include "implicit_transfer.hpp"
+#include "implicit_basedef.h"
+#include "implicit_data.h"
+#include "implicit_family.h"
+#include "implicit_learningrate.h"
+#include "implicit_transfer.h"
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>

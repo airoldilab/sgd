@@ -1,5 +1,5 @@
-#ifndef IMPLICIT_BASEDEF_HPP
-#define IMPLICIT_BASEDEF_HPP
+#ifndef IMPLICIT_BASEDEF_H
+#define IMPLICIT_BASEDEF_H
 
 // In unittest, switch this to 0
 #define __R__ 1
