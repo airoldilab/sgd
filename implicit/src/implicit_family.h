@@ -13,6 +13,10 @@ struct Imp_Binomial;
 struct Imp_Gaussian {
   static std::string family;
   
+  static double bfunc_for_score(double h) {
+    return 1.;
+  }
+
   static double variance(double u) {
     return 1.;
   }
@@ -27,6 +31,14 @@ std::string Imp_Gaussian::family = "gaussian";
 // poisson model family
 struct Imp_Poisson {
   static std::string family;
+
+  static double bfunc_for_score(double h) {
+    if (h) {
+      return 1. / h;
+    }
+    Rcpp::Rcout << "Out of valid range in b func for Poisson." << std::endl;
+    return 1.;
+  }
   
   static double variance(double u) {
     return u;
@@ -48,6 +60,14 @@ std::string Imp_Poisson::family = "poisson";
 // binomial model family
 struct Imp_Binomial {
   static std::string family;
+
+  static double bfunc_for_score(double h) {
+    if (h > 0. && h < 1.) {
+      return (1./h + 1./(1.-h));
+    }
+    Rcpp::Rcout << "Out of valid range in b func for Binomial." << std::endl;
+    return 1.;
+  }
   
   static double variance(double u) {
     return u * (1. - u);
@@ -62,6 +82,7 @@ struct Imp_Binomial {
     }
     return sum(r);
   }
+
 private:
   static double y_log_y(double y, double mu) {
     return (y) ? (y * log(y/mu)) : 0.;
@@ -73,6 +94,14 @@ std::string Imp_Binomial::family = "binomial";
 struct Imp_Gamma
 {
   static std::string family;
+
+  static double bfunc_for_score(double h) {
+    if (h) {
+      return 1. / (h * h);
+    }
+    Rcpp::Rcout << "Out of valid range in b func for Gamma." << std::endl;
+    return 1.;
+  }
 
   static double variance(double u) {
     return pow(u, 2);

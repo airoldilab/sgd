@@ -36,18 +36,22 @@ struct Imp_Experiment {
   Imp_Experiment(std::string m_name, std::string tr_name)
   :model_name(m_name), transfer_name(tr_name) {
     if (model_name == "gaussian") {
+      bfunc_score_ = boost::bind(&Imp_Gaussian::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Gaussian::variance, _1);
       deviance_ = boost::bind(&Imp_Gaussian::deviance, _1, _2, _3);
     }
     else if (model_name == "poisson") {
+      bfunc_score_ = boost::bind(&Imp_Poisson::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Poisson::variance, _1);
       deviance_ = boost::bind(&Imp_Poisson::deviance, _1, _2, _3);
     }
     else if (model_name == "binomial") {
+      bfunc_score_ = boost::bind(&Imp_Binomial::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Binomial::variance, _1);
       deviance_ = boost::bind(&Imp_Binomial::deviance, _1, _2, _3);
     }
     else if (model_name == "Gamma") {
+      bfunc_score_ = boost::bind(&Imp_Gamma::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Gamma::variance, _1);
       deviance_ = boost::bind(&Imp_Gamma::deviance, _1, _2, _3);
     }
@@ -118,7 +122,12 @@ struct Imp_Experiment {
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
-    return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old))+offset)*datapoint.x).t();
+    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old))+offset)*datapoint.x).t();
+    double theta_xn = as_scalar(datapoint.x * theta_old) + offset;
+    double h_val = h_transfer(theta_xn);
+    double temp = (datapoint.y - h_val)*bfunc_score_(h_val)*h_first_derivative(theta_xn);
+    Rcpp::Rcout << temp << std::endl;
+    return (temp * datapoint.x).t();
   }
 
   double h_transfer(double u) const {
@@ -169,6 +178,7 @@ private:
 
   learning_rate_type lr_;
 
+  uni_func_type bfunc_score_;
   uni_func_type variance_;
   deviance_type deviance_;
   boost::function<bool (double)> valideta_;
