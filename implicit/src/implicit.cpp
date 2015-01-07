@@ -226,9 +226,9 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   }
 
   // print out info
-  Rcpp::Rcout << data;
-  Rcpp::Rcout << exprm;
-  Rcpp::Rcout << "    Method: " << algo << std::endl;
+  //Rcpp::Rcout << data;
+  //Rcpp::Rcout << exprm;
+  //Rcpp::Rcout << "    Method: " << algo << std::endl;
 
   bool good_gradient = true;
   bool good_validity = true;
