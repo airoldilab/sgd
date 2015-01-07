@@ -47,6 +47,10 @@ struct Imp_Experiment {
       variance_ = boost::bind(&Imp_Binomial::variance, _1);
       deviance_ = boost::bind(&Imp_Binomial::deviance, _1, _2, _3);
     }
+    else if (model_name == "Gamma") {
+      variance_ = boost::bind(&Imp_Gamma::variance, _1);
+      deviance_ = boost::bind(&Imp_Gamma::deviance, _1, _2, _3);
+    }
 
     if (transfer_name == "identity") {
       // transfer() 's been overloaded, have to specify the function signature
@@ -81,6 +85,17 @@ struct Imp_Experiment {
       transfer_second_deriv_ = boost::bind(
                       &Imp_Logistic_Transfer::second_derivative, _1);
       valideta_ = boost::bind(&Imp_Logistic_Transfer::valideta, _1);
+    }
+    else if (transfer_name == "inverse") {
+      transfer_ = boost::bind(static_cast<double (*)(double)>(
+                      &Imp_Inverse_Transfer::transfer), _1);
+      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
+                      &Imp_Inverse_Transfer::transfer), _1);
+      transfer_first_deriv_ = boost::bind(
+                      &Imp_Inverse_Transfer::first_derivative, _1);
+      transfer_second_deriv_ = boost::bind(
+                      &Imp_Inverse_Transfer::second_derivative, _1);
+      valideta_ = boost::bind(&Imp_Inverse_Transfer::valideta, _1);
     }
   }
 

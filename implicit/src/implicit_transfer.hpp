@@ -32,6 +32,42 @@ struct Imp_Identity_Transfer {
   }
 };
 
+// Inverse transfer function
+struct Imp_Inverse_Transfer {
+  static double transfer(double u) {
+    if (valideta(u)) {
+      return -1. / u;
+    }
+    return 0.;
+  }
+
+  static mat transfer(const mat& u) {
+    mat result = mat(u);
+    for (unsigned i = 0; i < result.n_rows; ++i) {
+      result(i, 0) = transfer(u(i, 0));
+    }
+    return result;
+  }
+
+  static double first_derivative(double u) {
+    if (valideta(u)) {
+      return 1. / pow(u, 2);
+    }
+    return 0.;
+  }
+
+  static double second_derivative(double u) {
+    if (valideta(u)) {
+      return -2. / pow(u, 3);
+    }
+    return 0.;
+  }
+
+  static bool valideta(double eta) {
+    return eta != 0;
+  }
+};
+
 // Exponentional transfer function
 struct Imp_Exp_Transfer {
   static double transfer(double u) {

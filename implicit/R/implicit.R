@@ -153,8 +153,8 @@ implicit.transfer.name <- function(link.name) {
   if(!is.character(link.name)) {
     stop("link name must be a string")
   }
-  link.names <- c("identity", "log", "logit")
-  transfer.names <- c("identity", "exp", "logistic")
+  link.names <- c("identity", "log", "logit", "inverse")
+  transfer.names <- c("identity", "exp", "logistic", "inverse")
   match.indices <- match(link.names, link.name, 0L)
   if (sum(match.indices) == 0L) {
     stop("no match link function founded!")

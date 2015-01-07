@@ -70,4 +70,23 @@ private:
 
 std::string Imp_Binomial::family = "binomial";
 
+struct Imp_Gamma
+{
+  static std::string family;
+
+  static double variance(double u) {
+    return pow(u, 2);
+  }
+
+  static double deviance(const mat& y, const mat& mu, const mat& wt) {
+    vec r(y.n_elem);
+    for (unsigned i = 0; i < r.n_elem; ++i) {
+      r(i) = -2. * wt(i) * (log(y(i) ? y(i)/mu(i) : 1.) - (y(i)-mu(i)) / mu(i));
+    }
+    return sum(r);
+  }
+};
+
+std::string Imp_Gamma::family = "Gamma";
+
 #endif
