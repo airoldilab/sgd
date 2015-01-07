@@ -1,7 +1,7 @@
-#ifndef IMPLICIT_TRANSFER_HPP
-#define IMPLICIT_TRANSFER_HPP
+#ifndef IMPLICIT_TRANSFER_H
+#define IMPLICIT_TRANSFER_H
 
-#include "implicit_basedef.hpp"
+#include "implicit_basedef.h"
 
 using namespace arma;
 

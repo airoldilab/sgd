@@ -1,8 +1,8 @@
-#ifndef IMPLICIT_LEARNINGRATE_HPP
-#define IMPLICIT_LEARNINGRATE_HPP
+#ifndef IMPLICIT_LEARNINGRATE_H
+#define IMPLICIT_LEARNINGRATE_H
 
-#include "implicit_basedef.hpp"
-#include "implicit_data.hpp"
+#include "implicit_basedef.h"
+#include "implicit_data.h"
 
 using namespace arma;
 

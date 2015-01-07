@@ -3,10 +3,12 @@ Type: Package
 Title: Implicit SGD for Fitting Generalized Linear Models
 Version: 1.0
 Date: 2014-12-09
-Author: Tian Lan, Ye Kuang, Panos Toulis
-Maintainer: Panos Toulis <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
-Imports: Rcpp (>= 0.11.3)
-Depends: Rcpp (>= 0.11.3), RcppArmadillo(>= 0.3.4.4)
+Author: Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi
+Maintainer: Panos Toulis <ptoulis@fas.harvard.edu>
+Description: \code{implicit} is used to fit generalized linear models, 
+ specified by giving a symbolic description of the linear predictor and
+  a description of the error distribution. Stochastic Gradient Descent (SGD),
+  averaged-SGD (ASGD), implicit-SGD can be used for model fitting. 
+License: GPL-2
+Imports: Rcpp (>= 0.11.3), MASS
 LinkingTo: Rcpp, RcppArmadillo, BH

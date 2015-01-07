@@ -1,7 +1,6 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
-#include "implicit.hpp"
-#include <boost/math/common_factor.hpp>
+#include "implicit.h"
 #include <stdlib.h>
 
 // via the depends attribute we tell Rcpp to create hooks for
@@ -297,14 +296,17 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   double dev = exprm.deviance(data.Y, mu, exprm.weights);
 
   //check the convergence of the algorithm
+  bool converged = true;
   if (exprm.convergence){
     mat old_eta;
     mat old_mu;
     old_eta = data.X * out.estimates.col(out.estimates.n_cols-2);
     old_mu = exprm.h_transfer(old_eta);
     double dev2 = exprm.deviance(data.Y, old_mu, exprm.weights);
-    if (std::abs(dev-dev2) > exprm.epsilon)
+    if (std::abs(dev-dev2) > exprm.epsilon){
       Rcpp::Rcout<<"warning: implicit.fit: algorithm did not converge"<<std::endl;
+      converged = false;
+    }
   }
 
 
@@ -317,6 +319,6 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
             Rcpp::Named("last") = out.last_estimate(),
 	    Rcpp::Named("mu") = mu, Rcpp::Named("eta") = eta,
 	    Rcpp::Named("coefficients") = coef, Rcpp::Named("rank") = X_rank,
-	    Rcpp::Named("deviance") = dev);
+	    Rcpp::Named("deviance") = dev, Rcpp::Named("converged") = converged);
   return Rcpp::List();
 }

@@ -1,7 +1,7 @@
-#ifndef IMPLICIT_FAMILY_HPP
-#define IMPLICIT_FAMILY_HPP
+#ifndef IMPLICIT_FAMILY_H
+#define IMPLICIT_FAMILY_H
 
-#include "implicit_basedef.hpp"
+#include "implicit_basedef.h"
 
 using namespace arma;
 

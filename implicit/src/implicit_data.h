@@ -1,8 +1,8 @@
-#ifndef IMPLICIT_DATA_HPP
-#define IMPLICIT_DATA_HPP
+#ifndef IMPLICIT_DATA_H
+#define IMPLICIT_DATA_H
 
 #include <iostream>
-#include "implicit_basedef.hpp"
+#include "implicit_basedef.h"
 
 using namespace arma;
 
