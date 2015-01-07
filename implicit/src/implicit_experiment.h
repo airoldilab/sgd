@@ -126,7 +126,6 @@ struct Imp_Experiment {
     double theta_xn = as_scalar(datapoint.x * theta_old) + offset;
     double h_val = h_transfer(theta_xn);
     double temp = (datapoint.y - h_val)*bfunc_score_(h_val)*h_first_derivative(theta_xn);
-    Rcpp::Rcout << temp << std::endl;
     return (temp * datapoint.x).t();
   }
 
