@@ -70,83 +70,12 @@ struct Imp_Experiment {
       transfer_ptr_type tp(new Imp_Logistic_Transfer());
       transfer_obj_ = tp;
     }
-    /*
-    if (model_name == "gaussian") {
-      // bfunc_score_ = boost::bind(&Imp_Gaussian::bfunc_for_score, _1);
-      variance_ = boost::bind(&Imp_Gaussian::variance, _1);
-      deviance_ = boost::bind(&Imp_Gaussian::deviance, _1, _2, _3);
-    }
-    else if (model_name == "poisson") {
-      // bfunc_score_ = boost::bind(&Imp_Poisson::bfunc_for_score, _1);
-      variance_ = boost::bind(&Imp_Poisson::variance, _1);
-      deviance_ = boost::bind(&Imp_Poisson::deviance, _1, _2, _3);
-    }
-    else if (model_name == "binomial") {
-      // bfunc_score_ = boost::bind(&Imp_Binomial::bfunc_for_score, _1);
-      variance_ = boost::bind(&Imp_Binomial::variance, _1);
-      deviance_ = boost::bind(&Imp_Binomial::deviance, _1, _2, _3);
-    }
-    else if (model_name == "Gamma") {
-      // bfunc_score_ = boost::bind(&Imp_Gamma::bfunc_for_score, _1);
-      variance_ = boost::bind(&Imp_Gamma::variance, _1);
-      deviance_ = boost::bind(&Imp_Gamma::deviance, _1, _2, _3);
-    }
-
-    if (transfer_name == "identity") {
-      // transfer() 's been overloaded, have to specify the function signature
-      transfer_ = boost::bind(static_cast<double (*)(double)>(
-                      &Imp_Identity_Transfer::transfer), _1);
-      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
-                      &Imp_Identity_Transfer::transfer), _1);
-      transfer_first_deriv_ = boost::bind(
-                      &Imp_Identity_Transfer::first_derivative, _1);
-      transfer_second_deriv_ = boost::bind(
-                      &Imp_Identity_Transfer::second_derivative, _1);
-      valideta_ = boost::bind(&Imp_Identity_Transfer::valideta, _1);
-    }
-    else if (transfer_name == "exp") {
-      transfer_ = boost::bind(static_cast<double (*)(double)>(
-                      &Imp_Exp_Transfer::transfer), _1);
-      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
-                      &Imp_Exp_Transfer::transfer), _1);
-      transfer_first_deriv_ = boost::bind(
-                      &Imp_Exp_Transfer::first_derivative, _1);
-      transfer_second_deriv_ = boost::bind(
-                      &Imp_Exp_Transfer::second_derivative, _1);
-      valideta_ = boost::bind(&Imp_Exp_Transfer::valideta, _1);
-    }
-    else if (transfer_name == "logistic") {
-      transfer_ = boost::bind(static_cast<double (*)(double)>(
-                      &Imp_Logistic_Transfer::transfer), _1);
-      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
-                      &Imp_Logistic_Transfer::transfer), _1);
-      transfer_first_deriv_ = boost::bind(
-                      &Imp_Logistic_Transfer::first_derivative, _1);
-      transfer_second_deriv_ = boost::bind(
-                      &Imp_Logistic_Transfer::second_derivative, _1);
-      valideta_ = boost::bind(&Imp_Logistic_Transfer::valideta, _1);
-    }
-    else if (transfer_name == "inverse") {
-      transfer_ = boost::bind(static_cast<double (*)(double)>(
-                      &Imp_Inverse_Transfer::transfer), _1);
-      mat_transfer_ = boost::bind(static_cast<mat (*)(const mat&)>(
-                      &Imp_Inverse_Transfer::transfer), _1);
-      transfer_first_deriv_ = boost::bind(
-                      &Imp_Inverse_Transfer::first_derivative, _1);
-      transfer_second_deriv_ = boost::bind(
-                      &Imp_Inverse_Transfer::second_derivative, _1);
-      valideta_ = boost::bind(&Imp_Inverse_Transfer::valideta, _1);
-    }
-    */
   }
 
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
     learnrate_ptr_type lp(new Imp_Unidim_Learn_Rate(gamma, alpha, c, scale));
     lr_obj_ = lp;
-    /*
-    lr_ = boost::bind(&Imp_Unidim_Learn_Rate::learning_rate, 
-                      _1, _2, _3, _4, _5, gamma, alpha, c, scale);
-    */
+
     lr_type = "Uni-dimension learning rate";
   }
 
@@ -155,21 +84,12 @@ struct Imp_Experiment {
     
     learnrate_ptr_type lp(new Imp_Unidim_Eigen_Learn_Rate(score_func));
     lr_obj_ = lp;
-    /*
-    lr_ = boost::bind(&Imp_Unidim_Eigen_Learn_Rate::learning_rate,
-                      _1, _2, _3, _4, _5, score_func);
-    */
+ 
     lr_type = "Uni-dimension eigenvalue learning rate";
   }
 
   void init_pdim_learning_rate() {
     // remember to init @p before call this!
-    /*
-    Imp_Pdim_Learn_Rate::reinit(p);
-    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
-    lr_ = boost::bind(&Imp_Pdim_Learn_Rate::learning_rate,
-                      _1, _2, _3, _4, _5, score_func);
-    */
     score_func_type score_func = create_score_func_instance();
 
     learnrate_ptr_type lp(new Imp_Pdim_Learn_Rate(p, score_func));
@@ -179,12 +99,6 @@ struct Imp_Experiment {
 
   void init_pdim_weighted_learning_rate(double alpha = .5) {
     // remember to init @p before call this!
-    /*
-    Imp_Pdim_Weighted_Learn_Rate::reinit(p);
-    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
-    lr_ = boost::bind(&Imp_Pdim_Weighted_Learn_Rate::learning_rate,
-                      _1, _2, _3, _4, _5, score_func, alpha);
-    */
     score_func_type score_func = create_score_func_instance();
 
     learnrate_ptr_type lp(new Imp_Pdim_Weighted_Learn_Rate(p, alpha, score_func));
@@ -199,13 +113,11 @@ struct Imp_Experiment {
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
-    return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) *datapoint.x).t();
-    /*
+    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) *datapoint.x).t();
     double theta_xn = as_scalar(datapoint.x * theta_old) + offset;
     double h_val = h_transfer(theta_xn);
-    double temp = (datapoint.y - h_val)*bfunc_score_(h_val)*h_first_derivative(theta_xn);
+    double temp = (datapoint.y - h_val)*bfunc_for_score(h_val)*h_first_derivative(theta_xn);
     return (temp * datapoint.x).t();
-    */
   }
 
   double h_transfer(double u) const {
@@ -221,27 +133,26 @@ struct Imp_Experiment {
   //YKuang
   double h_first_derivative(double u) const {
     return transfer_obj_->first_derivative(u);
-    // return transfer_first_deriv_(u);
   }
   //YKuang
   double h_second_derivative(double u) const {
     return transfer_obj_->second_derivative(u);
-    // return transfer_second_deriv_(u);
   }
   
   bool valideta(double eta) const{
     return transfer_obj_->valideta(eta);
-    // return valideta_(eta);
+  }
+
+  double bfunc_for_score(double u) const {
+    return family_obj_->bfunc_for_score(u);
   }
 
   double variance(double u) const {
     return family_obj_->variance(u);
-    // return variance_(u);
   }
 
   double deviance(const mat& y, const mat& mu, const mat& wt) const {
     return family_obj_->deviance(y, mu, wt);
-    // return deviance_(y, mu, wt);
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
@@ -260,19 +171,6 @@ private:
     score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
     return score_func;
   }
-  /*
-  uni_func_type transfer_;
-  mmult_func_type mat_transfer_;
-  uni_func_type transfer_first_deriv_;
-  uni_func_type transfer_second_deriv_;
-  boost::function<bool (double)> valideta_;
-
-  uni_func_type bfunc_score_;
-  uni_func_type variance_;
-  deviance_type deviance_;
-
-  learning_rate_type lr_;
-  */
 
   typedef boost::shared_ptr<Imp_Transfer_Base> transfer_ptr_type;
   transfer_ptr_type transfer_obj_;
@@ -287,7 +185,6 @@ private:
 // Compute score function coeff and its derivative for Implicit-SGD update
 struct Get_score_coeff {
 
-  //Get_score_coeff(const Imp_Experiment<TRANSFER>& e, const Imp_DataPoint& d,
   Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
       const mat& t, double n, double off) : experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
 
@@ -328,7 +225,6 @@ struct Implicit_fn {
   }
   
   double at;
-  //const Get_score_coeff<TRANSFER>& g;
   const Get_score_coeff& g;
 };
 
