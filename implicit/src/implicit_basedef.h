@@ -10,6 +10,10 @@
 	#include <armadillo>
 #endif
 
+#if __cplusplus == 199711L
+	#define nullptr NULL
+#endif
+
 #include <boost/function.hpp>
 #include <math.h>
 #include <string>

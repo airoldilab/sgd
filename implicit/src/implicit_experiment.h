@@ -6,6 +6,8 @@
 #include "implicit_family.h"
 #include "implicit_learningrate.h"
 #include "implicit_transfer.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
@@ -36,22 +38,56 @@ struct Imp_Experiment {
   Imp_Experiment(std::string m_name, std::string tr_name)
   :model_name(m_name), transfer_name(tr_name) {
     if (model_name == "gaussian") {
-      bfunc_score_ = boost::bind(&Imp_Gaussian::bfunc_for_score, _1);
+      family_ptr_type fp(new Imp_Gaussian());
+      family_obj_ = fp;
+    }
+    else if (model_name == "poisson") {
+      family_ptr_type fp(new Imp_Poisson());
+      family_obj_ = fp;
+    }
+    else if (model_name == "binomial") {
+      family_ptr_type fp(new Imp_Binomial());
+      family_obj_ = fp;
+    }
+    else if (model_name == "gamma") {
+      family_ptr_type fp(new Imp_Gamma());
+      family_obj_ = fp;
+    }
+
+    if (transfer_name == "identity") {
+      transfer_ptr_type tp(new Imp_Identity_Transfer());
+      transfer_obj_ = tp;
+    }
+    else if (transfer_name == "exp") {
+      transfer_ptr_type tp(new Imp_Exp_Transfer());
+      transfer_obj_ = tp;
+    }
+    else if (transfer_name == "inverse") {
+      transfer_ptr_type tp(new Imp_Inverse_Transfer());
+      transfer_obj_ = tp;
+    }
+    else if (transfer_name == "logistic") {
+      transfer_ptr_type tp(new Imp_Logistic_Transfer());
+      transfer_obj_ = tp;
+    }
+    /*
+    if (model_name == "gaussian") {
+      // bfunc_score_ = boost::bind(&Imp_Gaussian::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Gaussian::variance, _1);
       deviance_ = boost::bind(&Imp_Gaussian::deviance, _1, _2, _3);
     }
     else if (model_name == "poisson") {
-      bfunc_score_ = boost::bind(&Imp_Poisson::bfunc_for_score, _1);
+      // bfunc_score_ = boost::bind(&Imp_Poisson::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Poisson::variance, _1);
       deviance_ = boost::bind(&Imp_Poisson::deviance, _1, _2, _3);
     }
     else if (model_name == "binomial") {
-      bfunc_score_ = boost::bind(&Imp_Binomial::bfunc_for_score, _1);
+      // bfunc_score_ = boost::bind(&Imp_Binomial::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Binomial::variance, _1);
       deviance_ = boost::bind(&Imp_Binomial::deviance, _1, _2, _3);
     }
     else if (model_name == "Gamma") {
-      bfunc_score_ = boost::bind(&Imp_Gamma::bfunc_for_score, _1);
+      // bfunc_score_ = boost::bind(&Imp_Gamma::bfunc_for_score, _1);
       variance_ = boost::bind(&Imp_Gamma::variance, _1);
       deviance_ = boost::bind(&Imp_Gamma::deviance, _1, _2, _3);
     }
@@ -101,6 +137,7 @@ struct Imp_Experiment {
                       &Imp_Inverse_Transfer::second_derivative, _1);
       valideta_ = boost::bind(&Imp_Inverse_Transfer::valideta, _1);
     }
+    */
   }
 
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
@@ -150,32 +187,39 @@ struct Imp_Experiment {
   }
 
   double h_transfer(double u) const {
-    return transfer_(u);
+    return transfer_obj_->transfer(u);
+    //return transfer_(u);
   }
 
   mat h_transfer(const mat& u) const {
-    return mat_transfer_(u);
+    return transfer_obj_->transfer(u);
+    // return mat_transfer_(u);
   }
 
   //YKuang
-  double h_first_derivative(double u) const{
-    return transfer_first_deriv_(u);
+  double h_first_derivative(double u) const {
+    return transfer_obj_->first_derivative(u);
+    // return transfer_first_deriv_(u);
   }
   //YKuang
-  double h_second_derivative(double u) const{
-    return transfer_second_deriv_(u);
+  double h_second_derivative(double u) const {
+    return transfer_obj_->second_derivative(u);
+    // return transfer_second_deriv_(u);
+  }
+  
+  bool valideta(double eta) const{
+    return transfer_obj_->valideta(eta);
+    // return valideta_(eta);
   }
 
   double variance(double u) const {
-    return variance_(u);
+    return family_obj_->variance(u);
+    // return variance_(u);
   }
 
   double deviance(const mat& y, const mat& mu, const mat& wt) const {
-    return deviance_(y, mu, wt);
-  }
-
-  bool valideta(double eta) const{
-    return valideta_(eta);
+    return family_obj_->deviance(y, mu, wt);
+    // return deviance_(y, mu, wt);
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
@@ -190,17 +234,24 @@ struct Imp_Experiment {
   }
 
 private:
+  /*
   uni_func_type transfer_;
   mmult_func_type mat_transfer_;
   uni_func_type transfer_first_deriv_;
   uni_func_type transfer_second_deriv_;
-
-  learning_rate_type lr_;
+  boost::function<bool (double)> valideta_;
 
   uni_func_type bfunc_score_;
   uni_func_type variance_;
   deviance_type deviance_;
-  boost::function<bool (double)> valideta_;
+  */
+  learning_rate_type lr_;
+
+  typedef boost::shared_ptr<Imp_Transfer_Base> transfer_ptr_type;
+  transfer_ptr_type transfer_obj_;
+
+  typedef boost::shared_ptr<Imp_Family_Base> family_ptr_type;
+  family_ptr_type family_obj_;
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update

@@ -5,127 +5,117 @@
 
 using namespace arma;
 
+struct Imp_Transfer_Base;
 struct Imp_Identity_Transfer;
+struct Imp_Inverse_Transfer;
 struct Imp_Exp_Transfer;
 struct Imp_Logistic_Transfer;
 
+struct Imp_Transfer_Base {
+  virtual double transfer(double u) const = 0;
+
+  virtual mat transfer(const mat& u) const {
+    mat result = mat(u);
+    for (unsigned i = 0; i < result.n_rows; ++i) {
+      result(i, 0) = transfer(u(i, 0));
+    }
+    return result;
+  }
+
+  virtual double first_derivative(double u) const = 0;
+  virtual double second_derivative(double u) const = 0;
+  virtual bool valideta(double eta) const = 0;
+};
+
 // Identity transfer function
-struct Imp_Identity_Transfer {
-  static double transfer(double u) {
+struct Imp_Identity_Transfer : public Imp_Transfer_Base {
+  virtual double transfer(double u) const {
     return u;
   }
 
-  static mat transfer(const mat& u) {
-    return u;
-  }
-
-  static double first_derivative(double u) {
+  virtual double first_derivative(double u) const {
     return 1.;
   }
 
-  static double second_derivative(double u) {
+  virtual double second_derivative(double u) const {
     return 0.;
   }
 
-  static bool valideta(double eta){
+  virtual bool valideta(double eta) const {
     return true;
   }
 };
 
 // Inverse transfer function
-struct Imp_Inverse_Transfer {
-  static double transfer(double u) {
+struct Imp_Inverse_Transfer : public Imp_Transfer_Base {
+  virtual double transfer(double u) const {
     if (valideta(u)) {
       return -1. / u;
     }
     return 0.;
   }
 
-  static mat transfer(const mat& u) {
-    mat result = mat(u);
-    for (unsigned i = 0; i < result.n_rows; ++i) {
-      result(i, 0) = transfer(u(i, 0));
-    }
-    return result;
-  }
-
-  static double first_derivative(double u) {
+  virtual double first_derivative(double u) const {
     if (valideta(u)) {
       return 1. / pow(u, 2);
     }
     return 0.;
   }
 
-  static double second_derivative(double u) {
+  virtual double second_derivative(double u) const {
     if (valideta(u)) {
       return -2. / pow(u, 3);
     }
     return 0.;
   }
 
-  static bool valideta(double eta) {
+  virtual bool valideta(double eta) const {
     return eta != 0;
   }
 };
 
 // Exponentional transfer function
-struct Imp_Exp_Transfer {
-  static double transfer(double u) {
+struct Imp_Exp_Transfer : public Imp_Transfer_Base {
+  virtual double transfer(double u) const {
     return exp(u);
   }
 
-  static mat transfer(const mat& u) {
-    mat result = mat(u);
-    for (unsigned i = 0; i < result.n_rows; ++i) {
-      result(i, 0) = transfer(u(i, 0));
-    }
-    return result;
-  }
-
-  static double first_derivative(double u) {
+  virtual double first_derivative(double u) const {
     return exp(u);
   }
 
-  static double second_derivative(double u) {
+  virtual double second_derivative(double u) const {
     return exp(u);
   }
 
-  static bool valideta(double eta){
+  virtual bool valideta(double eta) const {
     return true;
   }
 };
 
 // Logistic transfer function
-struct Imp_Logistic_Transfer {
-  static double transfer(double u) {
+struct Imp_Logistic_Transfer : public Imp_Transfer_Base {
+  virtual double transfer(double u) const {
     return sigmoid(u);
   }
 
-  static mat transfer(const mat& u) {
-    mat result = mat(u);
-    for (unsigned i = 0; i < result.n_rows; ++i) {
-      result(i, 0) = transfer(u(i, 0));
-    }
-    return result;
-  }
-
-  static double first_derivative(double u) {
+  virtual double first_derivative(double u) const {
     double sig = sigmoid(u);
     return sig * (1. - sig);
   }
 
-  static double second_derivative(double u) {
+  virtual double second_derivative(double u) const {
     double sig = sigmoid(u);
     return 2*pow(sig, 3) - 3*pow(sig, 2) + 2*sig;
   }
 
-  static bool valideta(double eta){
+  virtual bool valideta(double eta) const {
     return true;
   }
 
 private:
   // sigmoid function
-  static double sigmoid(double u) {
+  double sigmoid(double u) const {
       return 1. / (1. + exp(-u));
   }
 };

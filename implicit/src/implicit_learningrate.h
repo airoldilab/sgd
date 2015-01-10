@@ -6,15 +6,25 @@
 
 using namespace arma;
 
+struct Imp_Learn_Rate_Base;
 struct Imp_Unidim_Learn_Rate;
 struct Imp_Unidim_Eigen_Learn_Rate;
 struct Imp_Pdim_Learn_Rate;
 struct Imp_Pdim_Weighted_Learn_Rate;
 
+struct Imp_Learn_Rate_Base
+{
+  virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
+                          unsigned t, unsigned p) = 0;
+};
+
 /* 1 dimension (scalar) learning rate, suggested in Xu's paper
  */
 struct Imp_Unidim_Learn_Rate
 {
+  Imp_Unidim_Learn_Rate(double g, double a, double c_, double s) :
+  gamma(g), alpha(a), c(c_), scale(s) { }
+  
   static mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p,
                           double gamma, double alpha, double c, double scale) {
