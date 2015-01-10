@@ -43,9 +43,9 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
     stop("'method' not recognized")
   
   #check the validity of learning rate type
-  lr.types = c('uni-dim', 'px-dim')
+  lr.types = c('uni-dim', 'uni-dim-eigen', 'p-dim', 'p-dim-weighted')
   if (is.numeric(lr.type)) {
-    if (lr.type < 1 | lr.type > 2) {
+    if (lr.type < 1 | lr.type > length(lr.types)) {
       stop("'lr.type' out of range")
     }
     lr.type = lr.types[lr.type]

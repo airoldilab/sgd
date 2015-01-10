@@ -209,9 +209,14 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     double lr_alpha = min(eigval).real();
     exprm.init_uni_dim_learning_rate(1., lr_alpha, 2./3., 1.);
   }
-  else if (lr_type == "px-dim") {
-    Imp_Pxdim_Learn_Rate::reinit(exprm.p);
-    exprm.init_px_dim_learning_rate();
+  else if (lr_type == "uni-dim-eigen") {
+    exprm.init_uni_dim_eigen_learning_rate();
+  }
+  else if (lr_type == "p-dim") {
+    exprm.init_pdim_learning_rate();
+  }
+  else if (lr_type == "p-dim-weighted") {
+    exprm.init_pdim_weighted_learning_rate(.5);
   }
   
   Imp_OnlineOutput out(data, exprm.start);

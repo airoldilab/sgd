@@ -256,14 +256,15 @@ postProcess.poisson <- function() {
   plot(ts, y, type="l")
 }
 
+library(implicit)
+
 poisson.e = poisson.experiment(niters=50000)
 poisson.dataset = poisson.e$sample.dataset()
 X = poisson.dataset$X
 Y = poisson.dataset$Y
-result.cpp <- implicit(Y~X-1, data=poisson.dataset, family = poisson(link='log'), method="sgd", lr.type="px-dim",
-                       start = c(0, 1), control=list(deviance=F, trace=F, convergence=T, epsilon=0.00001),
-                       offset = rep(1, 50000))
-result.glm <- glm(Y~X-1, data=poisson.dataset, family=poisson(link='log'), offset = rep(1, 50000))
+result.cpp <- implicit(Y~X-1, data=poisson.dataset, family = poisson, method="sgd", lr.type="p-dim-weighted",
+                       control=list(deviance=F, trace=F, convergence=T, epsilon=0.00001))
+result.glm <- glm(Y~X-1, data=poisson.dataset, family=poisson(link='log'))
 
 microbenchmark(run.test.imp.r(poisson.dataset, poisson.e), run.test.imp.c(poisson.dataset, poisson.e), times=5)
 benchmark(replications=5, run.test.imp.c(poisson.dataset, poisson.e), run.test.imp.r(poisson.dataset, poisson.e))

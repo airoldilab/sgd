@@ -109,11 +109,29 @@ struct Imp_Experiment {
     lr_type = "Uni-dimension learning rate";
   }
 
-  void init_px_dim_learning_rate() {
+  void init_uni_dim_eigen_learning_rate() {
     score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
-    lr_ = boost::bind(&Imp_Pxdim_Learn_Rate::learning_rate,
+    lr_ = boost::bind(&Imp_Unidim_Eigen_Learn_Rate::learning_rate,
                       _1, _2, _3, _4, _5, score_func);
-    lr_type = "Px-dimension learning rate";
+    lr_type = "Uni-dimension eigenvalue learning rate";
+  }
+
+  void init_pdim_learning_rate() {
+    // remember to init @p before call this!
+    Imp_Pdim_Learn_Rate::reinit(p);
+    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
+    lr_ = boost::bind(&Imp_Pdim_Learn_Rate::learning_rate,
+                      _1, _2, _3, _4, _5, score_func);
+    lr_type = "P-dimension learning rate";
+  }
+
+  void init_pdim_weighted_learning_rate(double alpha = .5) {
+    // remember to init @p before call this!
+    Imp_Pdim_Weighted_Learn_Rate::reinit(p);
+    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
+    lr_ = boost::bind(&Imp_Pdim_Weighted_Learn_Rate::learning_rate,
+                      _1, _2, _3, _4, _5, score_func, alpha);
+    lr_type = "P-dimension weighted learning rate";
   }
 
   mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
@@ -122,11 +140,13 @@ struct Imp_Experiment {
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
-    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x * theta_old))+offset)*datapoint.x).t();
+    return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) *datapoint.x).t();
+    /*
     double theta_xn = as_scalar(datapoint.x * theta_old) + offset;
     double h_val = h_transfer(theta_xn);
     double temp = (datapoint.y - h_val)*bfunc_score_(h_val)*h_first_derivative(theta_xn);
     return (temp * datapoint.x).t();
+    */
   }
 
   double h_transfer(double u) const {
