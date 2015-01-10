@@ -189,7 +189,7 @@ methods for generalized linear models.
   ## an example with offsets from Venables & Ripley (2002, p.189)
   utils::data(anorexia, package = "MASS")
 
-  anorex.1 <- glm(Postwt ~ Prewt + Treat + offset(Prewt),
+  anorex.1 <- implicit(Postwt ~ Prewt + Treat + offset(Prewt),
                   family = gaussian, data = anorexia)
 }
 \author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}

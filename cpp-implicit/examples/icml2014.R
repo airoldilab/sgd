@@ -269,13 +269,13 @@ microbenchmark(run.test.imp.r(poisson.dataset, poisson.e), run.test.imp.c(poisso
 benchmark(replications=5, run.test.imp.c(poisson.dataset, poisson.e), run.test.imp.r(poisson.dataset, poisson.e))
 
 # generate data first as this part should not be the responsibility in the algorithm
-normal.e = normal.experiment(niters=1000, p=100)
+normal.e = normal.experiment(niters=50000, p=20)
 normal.data = normal.e$sample.dataset()
 X = normal.data$X
 Y = normal.data$Y
 
-result.cpp <- implicit(Y~X-1, data=normal.data, family = gaussian, method="implicit", lr.type="uni-dim",
-                       control=list(deviance=T, trace=F, convergence=T))
+result.cpp <- implicit(Y~X-1, data=normal.data, family = gaussian, method="implicit", lr.type="px-dim",
+                       control=list(deviance=F, trace=F, convergence=T))
 
 run.test.normal.imp.c <- function(norm.e, norm.data) {
   c = run_online_algorithm(norm.data, norm.e, 'implicit', F)
