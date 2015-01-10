@@ -12,6 +12,12 @@ struct Imp_Exp_Transfer;
 struct Imp_Logistic_Transfer;
 
 struct Imp_Transfer_Base {
+#if DEBUG
+  virtual ~Imp_Transfer_Base() {
+    Rcpp::Rcout << "Transfer object released! " << std::endl;
+  }
+#endif
+
   virtual double transfer(double u) const = 0;
 
   virtual mat transfer(const mat& u) const {

@@ -141,39 +141,61 @@ struct Imp_Experiment {
   }
 
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
+    learnrate_ptr_type lp(new Imp_Unidim_Learn_Rate(gamma, alpha, c, scale));
+    lr_obj_ = lp;
+    /*
     lr_ = boost::bind(&Imp_Unidim_Learn_Rate::learning_rate, 
                       _1, _2, _3, _4, _5, gamma, alpha, c, scale);
+    */
     lr_type = "Uni-dimension learning rate";
   }
 
   void init_uni_dim_eigen_learning_rate() {
-    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
+    score_func_type score_func = create_score_func_instance();
+    
+    learnrate_ptr_type lp(new Imp_Unidim_Eigen_Learn_Rate(score_func));
+    lr_obj_ = lp;
+    /*
     lr_ = boost::bind(&Imp_Unidim_Eigen_Learn_Rate::learning_rate,
                       _1, _2, _3, _4, _5, score_func);
+    */
     lr_type = "Uni-dimension eigenvalue learning rate";
   }
 
   void init_pdim_learning_rate() {
     // remember to init @p before call this!
+    /*
     Imp_Pdim_Learn_Rate::reinit(p);
     score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
     lr_ = boost::bind(&Imp_Pdim_Learn_Rate::learning_rate,
                       _1, _2, _3, _4, _5, score_func);
+    */
+    score_func_type score_func = create_score_func_instance();
+
+    learnrate_ptr_type lp(new Imp_Pdim_Learn_Rate(p, score_func));
+    lr_obj_ = lp;
     lr_type = "P-dimension learning rate";
   }
 
   void init_pdim_weighted_learning_rate(double alpha = .5) {
     // remember to init @p before call this!
+    /*
     Imp_Pdim_Weighted_Learn_Rate::reinit(p);
     score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
     lr_ = boost::bind(&Imp_Pdim_Weighted_Learn_Rate::learning_rate,
                       _1, _2, _3, _4, _5, score_func, alpha);
+    */
+    score_func_type score_func = create_score_func_instance();
+
+    learnrate_ptr_type lp(new Imp_Pdim_Weighted_Learn_Rate(p, alpha, score_func));
+    lr_obj_ = lp;
+
     lr_type = "P-dimension weighted learning rate";
   }
 
   mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
-    //return lr(t);
-    return lr_(theta_old, data_pt, offset, t, p);
+    //return lr_(theta_old, data_pt, offset, t, p);
+    return lr_obj_->learning_rate(theta_old, data_pt, offset, t, p);
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
@@ -234,6 +256,10 @@ struct Imp_Experiment {
   }
 
 private:
+  score_func_type create_score_func_instance() {
+    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
+    return score_func;
+  }
   /*
   uni_func_type transfer_;
   mmult_func_type mat_transfer_;
@@ -244,14 +270,18 @@ private:
   uni_func_type bfunc_score_;
   uni_func_type variance_;
   deviance_type deviance_;
-  */
+
   learning_rate_type lr_;
+  */
 
   typedef boost::shared_ptr<Imp_Transfer_Base> transfer_ptr_type;
   transfer_ptr_type transfer_obj_;
 
   typedef boost::shared_ptr<Imp_Family_Base> family_ptr_type;
   family_ptr_type family_obj_;
+
+  typedef boost::shared_ptr<Imp_Learn_Rate_Base> learnrate_ptr_type;
+  learnrate_ptr_type lr_obj_;
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update

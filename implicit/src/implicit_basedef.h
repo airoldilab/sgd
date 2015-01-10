@@ -3,6 +3,7 @@
 
 // In unittest, switch this to 0
 #define __R__ 1
+#define DEBUG 1
 
 #if __R__
 	#include "RcppArmadillo.h"

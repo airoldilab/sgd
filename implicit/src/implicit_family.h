@@ -13,6 +13,12 @@ struct Imp_Gamma;
 
 struct Imp_Family_Base
 {
+#if DEBUG
+  virtual ~Imp_Family_Base() {
+    Rcpp::Rcout << "Family object released" << std::endl;
+  }
+#endif
+  
   virtual double bfunc_for_score(double h) const = 0;
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
