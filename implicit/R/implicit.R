@@ -1,8 +1,5 @@
 source('R/RcppExports.R')
 
-############################################
-##TODO:Give warning if not converged?     ##
-############################################
 #Set the control according to user input
 implicit.control <- function(epsilon = 1e-08, trace = FALSE, deviance = FALSE, convergence=FALSE) 
 {
@@ -61,12 +58,9 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
   
   mf <- match.call(expand.dots = FALSE)
 
-  #return(list(call=call, mf=mf))
   #build dataframe according to the formula
   m <- match(c("formula", "data", "subset", "weights", "na.action", 
                "offset"), names(mf), 0L)
-  if (!is.character(method) && !is.function(method)) 
-    stop("invalid 'method' argument")
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels
   mf[[1L]] <- quote(stats::model.frame)
@@ -105,17 +99,6 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
       stop(gettextf("number of offsets is %d should equal %d (number of observations)", 
                     length(offset), NROW(Y)), domain = NA)
   }
-  
-  ###### TODO: plug in fit function
-  # fit function should return 
-  # list(coefficients = coef, residuals = residuals, fitted.values = mu, 
-  # effects = if (!EMPTY) fit$effects, R = if (!EMPTY) Rmat, 
-  # rank = rank, qr = if (!EMPTY) structure(fit[c("qr", "rank", 
-  #                                               "qraux", "pivot", "tol")], class = "qr"), family = family, 
-  # linear.predictors = eta, deviance = dev, aic = aic.model, 
-  # null.deviance = nulldev, iter = iter, weights = wt, prior.weights = weights, 
-  # df.residual = resdf, df.null = nulldf, y = y, converged = conv, 
-  # boundary = boundary)
   
   fit <- implicit.fit(x = X, y = Y, weights = weights, start = start,
                       offset = offset, family = family, 
