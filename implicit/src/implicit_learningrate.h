@@ -71,11 +71,19 @@ private:
 struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
 {
   Imp_Pdim_Learn_Rate(unsigned p, const score_func_type& sf) : 
-    Idiag(mat(p, p, fill::eye)), score_func(sf) { }
+    Idiag(mat(p, p, fill::eye)), score_func(sf), count(0) { }
 
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
     mat Gi = score_func(theta_old, data_pt, offset);
+  #if DEBUG
+    if (count < 5) {
+      Rcpp::Rcout << "Iteration: " << count << std::endl;
+      Rcpp::Rcout << "Gi: \n" << Gi;
+      Rcpp::Rcout << "Idiag: \n" << Idiag << std::endl;
+      ++count;
+    }
+  #endif
     Idiag = Idiag + diagmat(Gi * Gi.t());
     mat Idiag_inv(Idiag);
 
@@ -89,6 +97,7 @@ struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
   }
 
 private:
+  int count;
   mat Idiag;
   score_func_type score_func;
 };
@@ -97,11 +106,19 @@ private:
 struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
 {
   Imp_Pdim_Weighted_Learn_Rate(unsigned p, double a, const score_func_type& sf) :
-    Idiag(mat(p, p, fill::eye)), alpha(a), score_func(sf) { }
+    Idiag(mat(p, p, fill::eye)), alpha(a), score_func(sf), count(0) { }
 
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
     mat Gi = score_func(theta_old, data_pt, offset);
+  #if DEBUG
+    if (count < 5) {
+      Rcpp::Rcout << "Iteration: " << count << std::endl;
+      Rcpp::Rcout << "Gi: \n" << Gi;
+      Rcpp::Rcout << "Idiag: \n" << Idiag << std::endl;
+      ++count;
+    }
+  #endif
     Idiag = (1.-alpha) * Idiag + alpha * diagmat(Gi * Gi.t());
     mat Idiag_inv(Idiag);
 
@@ -115,9 +132,33 @@ struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
   }
 
 private:
+  int count;
   mat Idiag;
   double alpha;
   score_func_type score_func;
+};
+
+struct Imp_Pdim_Fisher_Learn_Rate : public Imp_Learn_Rate_Base
+{
+  Imp_Pdim_Fisher_Learn_Rate(const uni_func_type& h_first) : h_first_derivative(h_first) { }
+
+  virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
+                        unsigned t, unsigned p) {
+    mat fisher_est = h_first_derivative(as_scalar(data_pt.x * theta_old) + offset) * data_pt.x.t() * data_pt.x;
+    fisher_est = diagmat(fisher_est);
+  #if 0
+    Rcpp::Rcout << "Fisher est: \n" << fisher_est << std::endl;
+  #endif
+    for (unsigned i = 0; i < p; ++i) {
+      if (std::abs(fisher_est.at(i, i)) > 1e-8) {
+        fisher_est.at(i, i) = 1. / fisher_est.at(i, i) / t;
+      }
+    }
+
+    return fisher_est;
+  }
+private:
+  uni_func_type h_first_derivative;
 };
 
 #endif

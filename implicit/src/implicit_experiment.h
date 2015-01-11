@@ -107,13 +107,22 @@ struct Imp_Experiment {
     lr_type = "P-dimension weighted learning rate";
   }
 
+  void init_pdim_fisher_learning_rate() {
+    uni_func_type h_first = boost::bind(&Imp_Experiment::h_first_derivative, this, _1);
+
+    learnrate_ptr_type lp(new Imp_Pdim_Fisher_Learn_Rate(h_first));
+    lr_obj_ = lp;
+
+    lr_type = "P-dimension fisher learning rate";
+  }
+
   mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr_(theta_old, data_pt, offset, t, p);
     return lr_obj_->learning_rate(theta_old, data_pt, offset, t, p);
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
-    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) *datapoint.x).t();
+    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) * datapoint.x).t();
     double theta_xn = as_scalar(datapoint.x * theta_old) + offset;
     double h_val = h_transfer(theta_xn);
     double temp = (datapoint.y - h_val)*bfunc_for_score(h_val)*h_first_derivative(theta_xn);
