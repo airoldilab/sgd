@@ -1,8 +1,6 @@
 library(mvtnorm)
 library(implicit)
-empirical.variance <- function(model, method, nreps, niters){
-  
-}
+
 
 sample.x.normal <- function(niters, np, mean=rep(0,np), A){
   if (length(mean) != np)
@@ -34,13 +32,22 @@ sample.y.normal <- function(mu, sd=1){
 }
 
 
-sample.x.poisson <- function(niters, np, lambda=rep(10,np)){
+sample.x.poisson <- function(niters, np, lambda=rep(2,np)){
   if (length(lambda) != np)
     stop('dimension of lambda is wrong')
   lambda = rep(lambda, niters)
   X = rpois(length(lambda), lambda)
   X = matrix(X, ncol=np, nrow=niters, byrow = T)
   X
+}
+
+sample.x.uniform <- function(niters, np){
+  Q = 0.2
+  code = sample(0:2, size=niters, replace=T, prob=c((1-2*Q), Q, Q))
+  X = matrix(0, nrow=niters, ncol=2)
+  X[,1] <- as.numeric(code==1)*10
+  X[,2] <- as.numeric(code==2)*10
+  return(X)
 }
 
 sample.y.poisson <- function(mu){
