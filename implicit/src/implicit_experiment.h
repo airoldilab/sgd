@@ -107,15 +107,6 @@ struct Imp_Experiment {
     lr_type = "P-dimension weighted learning rate";
   }
 
-  void init_pdim_fisher_learning_rate() {
-    uni_func_type h_first = boost::bind(&Imp_Experiment::h_first_derivative, this, _1);
-
-    learnrate_ptr_type lp(new Imp_Pdim_Fisher_Learn_Rate(h_first));
-    lr_obj_ = lp;
-
-    lr_type = "P-dimension fisher learning rate";
-  }
-
   mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr_(theta_old, data_pt, offset, t, p);
     return lr_obj_->learning_rate(theta_old, data_pt, offset, t, p);
