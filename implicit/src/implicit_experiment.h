@@ -139,6 +139,10 @@ struct Imp_Experiment {
     // return mat_transfer_(u);
   }
 
+  double g_link(double u) const {
+    return transfer_obj_->link(u);
+  }
+
   //YKuang
   double h_first_derivative(double u) const {
     return transfer_obj_->first_derivative(u);
