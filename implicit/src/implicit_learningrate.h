@@ -81,7 +81,7 @@ struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
 
     for (unsigned i = 0; i < p; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / pow(Idiag.at(i, i), -2./3.);
+        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i); pow(Idiag.at(i, i), -2./3.);
       }
     }
 
@@ -117,6 +117,33 @@ struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
 private:
   mat Idiag;
   double alpha;
+  score_func_type score_func;
+};
+
+// p dimension learning rate
+struct Imp_AdaGrad_Learn_Rate : public Imp_Learn_Rate_Base
+{
+  Imp_AdaGrad_Learn_Rate(unsigned p, double c_, const score_func_type& sf) : 
+    Idiag(mat(p, p, fill::eye)), c(c_), score_func(sf) { }
+
+  virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
+                          unsigned t, unsigned p) {
+    mat Gi = score_func(theta_old, data_pt, offset);
+    Idiag = Idiag + diagmat(Gi * Gi.t());
+    mat Idiag_inv(Idiag);
+
+    for (unsigned i = 0; i < p; ++i) {
+      if (std::abs(Idiag.at(i, i)) > 1e-8) {
+        Idiag_inv.at(i, i) = 1. / pow(Idiag.at(i, i), c);
+      }
+    }
+
+    return Idiag_inv;
+  }
+
+private:
+  mat Idiag;
+  double c;
   score_func_type score_func;
 };
 

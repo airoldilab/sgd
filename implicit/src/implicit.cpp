@@ -227,6 +227,9 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   else if (lr_type == "p-dim-weighted") {
     exprm.init_pdim_weighted_learning_rate(1.);
   }
+  else if (lr_type == "adagrad") {
+    exprm.init_adagrad_learning_rate(2./3.);
+  }
   
   Imp_OnlineOutput out(data, exprm.start);
   unsigned nsamples = Imp_dataset_size(data).nsamples;
