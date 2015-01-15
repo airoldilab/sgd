@@ -96,12 +96,13 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
       lower = rt;
   }
   else{
-      upper = rt;
-      lower = 0;
+    double u = 0
+    upper = rt;
+    lower = 0;
   }
   double result;
   if (lower != upper){
-      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower+upper)/2, lower, upper, 14);
+      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, 14);
   }
   else
     result = lower;

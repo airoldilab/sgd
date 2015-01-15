@@ -45,8 +45,8 @@ sample.x.uniform <- function(niters, np){
   Q = 0.2
   code = sample(0:2, size=niters, replace=T, prob=c((1-2*Q), Q, Q))
   X = matrix(0, nrow=niters, ncol=2)
-  X[,1] <- as.numeric(code==1)*10
-  X[,2] <- as.numeric(code==2)*10
+  X[,1] <- as.numeric(code==1)
+  X[,2] <- as.numeric(code==2)
   return(X)
 }
 

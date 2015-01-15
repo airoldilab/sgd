@@ -14,14 +14,26 @@ source('functions.R')
 #     theta.control: a list of arguments to be passed to sample.theta
 #     y.control: a list of arguments to be passed to sample.x
 
-result = empirical.variance('poisson', list('implicit'), list('uni-dim', 'p-dim'),
-                   np=20, nreps=1, niters=10000, plot=T)
-plot(result$mean.estimates$implicit[['p-dim']][17,])
+result = empirical.variance('normal', list('implicit','sgd'), list('uni-dim', 'p-dim'),
+                   np=20, nreps=10, niters=50000, plot=T)
+
+par(mfrow=c(2, 2))
+plot(result$mean.estimates$implicit[['p-dim']][1, ], xlab='iter', ylab='estimate')
+plot(result$mean.estimates$implicit[['p-dim']][5, ], xlab='iter', ylab='estimate')
+plot(result$mean.estimates$implicit[['p-dim']][10, ], xlab='iter', ylab='estimate')
+plot(result$mean.estimates$implicit[['p-dim']][15, ], xlab='iter', ylab='estimate')
+par(mfrow=c(1,1))
+
+
 result$estimates$implicit[['p-dim']][1, ,50000]
 dim(result$mean.estimates$sgd[['p-dim']])
 
 model = list(sample.x=sample.x.uniform, sample.theta=sample.theta.const, 
              sample.y=sample.y.poisson, family = poisson())
-result = empirical.variance(model, list('implicit'), list('p-dim'),
-                            np=2, nreps=1, niters=10000, plot=F, theta.control=list(theta=c(log(2), log(4))))
+result = empirical.variance(model, list('implicit','sgd'), list('uni-dim', 'p-dim'),
+                            np=2, nreps=10, niters=50000, plot=T, theta.control=list(theta=c(log(2), log(4))))
+par(mfrow=c(1, 2))
+plot(result$mean.estimates$implicit[['p-dim']][1, ], xlab='iter', ylab='estimate')
+plot(result$mean.estimates$implicit[['p-dim']][2, ], xlab='iter', ylab='estimate')
+par(mfrow=c(1, 2))
 plot(result$mean.estimates$implicit[['p-dim']][2,])
