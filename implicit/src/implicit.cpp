@@ -49,12 +49,21 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 //template<typename TRANSFER>
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
+  static int count = 0;
+
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
   mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   mat score_t = experiment.score_function(theta_old, datapoint, experiment.offset[t-1]);
   if (!is_finite(score_t))
     good_gradient = false;
+#if 0
+  if (count < 10) {
+    Rcpp::Rcout << "learning rate: \n" << at;
+    Rcpp::Rcout << "Score function: \n" << score_t << std::endl;
+    ++count;
+  }
+#endif
   mat theta_new = theta_old + mat(at * score_t);
   online_out.estimates.col(t-1) = theta_new;
   return theta_new;
@@ -217,7 +226,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     exprm.init_pdim_learning_rate();
   }
   else if (lr_type == "p-dim-weighted") {
-    exprm.init_pdim_weighted_learning_rate(.5);
+    exprm.init_pdim_weighted_learning_rate(1.);
   }
   
   Imp_OnlineOutput out(data, exprm.start);
@@ -257,6 +266,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
       }
       good_validity = validity_check(data,theta, t, exprm);
       if (!good_validity)
+        Rcpp::Rcout << theta << std::endl;
       	return Rcpp::List();
     }
     else if (algo == "implicit" || algo == "a-implicit"){

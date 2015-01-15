@@ -28,6 +28,8 @@ struct Imp_Transfer_Base {
     return result;
   }
 
+  virtual double link(double u) const = 0;
+
   virtual double first_derivative(double u) const = 0;
   virtual double second_derivative(double u) const = 0;
   virtual bool valideta(double eta) const = 0;
@@ -36,6 +38,10 @@ struct Imp_Transfer_Base {
 // Identity transfer function
 struct Imp_Identity_Transfer : public Imp_Transfer_Base {
   virtual double transfer(double u) const {
+    return u;
+  }
+
+  virtual double link(double u) const {
     return u;
   }
 
@@ -56,6 +62,13 @@ struct Imp_Identity_Transfer : public Imp_Transfer_Base {
 struct Imp_Inverse_Transfer : public Imp_Transfer_Base {
   virtual double transfer(double u) const {
     if (valideta(u)) {
+      return -1. / u;
+    }
+    return 0.;
+  }
+
+  virtual double link(double u) const {
+    if (u) {
       return -1. / u;
     }
     return 0.;
@@ -86,6 +99,14 @@ struct Imp_Exp_Transfer : public Imp_Transfer_Base {
     return exp(u);
   }
 
+  virtual double link(double u) const {
+    if (u > 0.) {
+      return log(u);
+    }
+
+    return 0.;
+  }
+
   virtual double first_derivative(double u) const {
     return exp(u);
   }
@@ -103,6 +124,13 @@ struct Imp_Exp_Transfer : public Imp_Transfer_Base {
 struct Imp_Logistic_Transfer : public Imp_Transfer_Base {
   virtual double transfer(double u) const {
     return sigmoid(u);
+  }
+
+  virtual double link(double u) const {
+    if (u > 0. && u < 1.) {
+      return log(u / (1. - u));
+    }
+    return 0.;
   }
 
   virtual double first_derivative(double u) const {

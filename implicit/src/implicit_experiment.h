@@ -113,7 +113,7 @@ struct Imp_Experiment {
   }
 
   mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
-    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) *datapoint.x).t();
+    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) * datapoint.x).t();
     double theta_xn = as_scalar(datapoint.x * theta_old) + offset;
     double h_val = h_transfer(theta_xn);
     double temp = (datapoint.y - h_val)*bfunc_for_score(h_val)*h_first_derivative(theta_xn);
@@ -128,6 +128,10 @@ struct Imp_Experiment {
   mat h_transfer(const mat& u) const {
     return transfer_obj_->transfer(u);
     // return mat_transfer_(u);
+  }
+
+  double g_link(double u) const {
+    return transfer_obj_->link(u);
   }
 
   //YKuang
