@@ -131,6 +131,10 @@ empirical.variance <- function(model, method, learning.rate, np, nreps, niters, 
     X = do.call(sample.x, c(list(niters=niters, np=np), x.control))
     theta = do.call(sample.theta, c(list(np=np), theta.control))
     Y = do.call(sample.y, c(list(mu=family$linkinv(X%*%theta)), y.control))
+    if (any(is.na(X)))
+      stop('NA in sampled X')
+    if (any(is.na(Y)))
+      stop('NA in sampled Y')
     true.thetas[, i] = theta
     for (m in method){
       for (l in learning.rate){
@@ -140,7 +144,6 @@ empirical.variance <- function(model, method, learning.rate, np, nreps, niters, 
       }
     }
   }
-  
  # get the trace of covariance matrix
  var = list()
  mean.estimates = list()
@@ -174,5 +177,6 @@ empirical.variance <- function(model, method, learning.rate, np, nreps, niters, 
    }
    par(mfrow=c(1,1))
  }
- list(variance = var, true.thetas = true.thetas, mean.estimates = mean.estimates, estimates = estimates)
+ list(variance = var, true.thetas = true.thetas, mean.estimates = mean.estimates, 
+      estimates = estimates, X = X, Y = Y)
 }

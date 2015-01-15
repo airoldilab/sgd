@@ -49,7 +49,6 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 //template<typename TRANSFER>
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
-  static int count = 0;
 
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
@@ -58,6 +57,7 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   if (!is_finite(score_t))
     good_gradient = false;
 #if 0
+  static int count = 0;
   if (count < 10) {
     Rcpp::Rcout << "learning rate: \n" << at;
     Rcpp::Rcout << "Score function: \n" << score_t << std::endl;
@@ -105,8 +105,9 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
       lower = rt;
   }
   else{
-    double u = 0
-    upper = rt;
+    double u = 0;
+    u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
+    upper = std::min(rt, u);
     lower = 0;
   }
   double result;
@@ -141,7 +142,7 @@ bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const
   }
 
   //check if eta is in the support
-  double eta = exprm.offset[t-1] + as_scalar(Imp_get_dataset_point(data, t).x * theta);
+  double eta = exprm.offset[t-1] + dot(Imp_get_dataset_point(data, t).x, theta);
   if (!exprm.valideta(eta)){
     Rcpp::Rcout<<"no valid set of coefficients has been found: please supply starting values"<<t<<std::endl;
     return false;
@@ -150,11 +151,15 @@ bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const
   //check the variance of the expectation of Y
   double mu_var = exprm.variance(exprm.h_transfer(eta));
   if (!is_finite(mu_var)){
-    Rcpp::Rcout<<"NA in V(mu)"<<t<<std::endl;
+    Rcpp::Rcout<<"NA in V(mu) in iteration "<<t<<std::endl;
+    Rcpp::Rcout<<"current theta: "<<theta<<std::endl;
+    Rcpp::Rcout<<"current eta: "<<eta<<std::endl;
     return false;
   }
   if (mu_var == 0){
-    Rcpp::Rcout<<"0 in V(mu)"<<t<<std::endl;
+    Rcpp::Rcout<<"0 in V(mu) in iteration"<<t<<std::endl;
+    Rcpp::Rcout<<"current theta: "<<theta<<std::endl;
+    Rcpp::Rcout<<"current eta: "<<eta<<std::endl;
     return false;
   }
   double deviance = 0;

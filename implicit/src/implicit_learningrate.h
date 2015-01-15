@@ -71,7 +71,7 @@ private:
 struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
 {
   Imp_Pdim_Learn_Rate(unsigned p, const score_func_type& sf) : 
-    Idiag(mat(p, p, fill::eye)), score_func(sf), count(0) { }
+    count(0), Idiag(mat(p, p, fill::eye)), score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
