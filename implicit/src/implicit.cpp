@@ -228,7 +228,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     exprm.init_pdim_weighted_learning_rate(1.);
   }
   else if (lr_type == "adagrad") {
-    exprm.init_adagrad_learning_rate(2./3.);
+    exprm.init_adagrad_learning_rate(.5);
   }
   
   Imp_OnlineOutput out(data, exprm.start);
