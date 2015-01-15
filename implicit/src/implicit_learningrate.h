@@ -81,7 +81,7 @@ struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
 
     for (unsigned i = 0; i < p; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i); pow(Idiag.at(i, i), -2./3.);
+        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i);
       }
     }
 
@@ -107,7 +107,7 @@ struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
 
     for (unsigned i = 0; i < p; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / pow(Idiag.at(i, i), -2./3.);
+        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i) / t;
       }
     }
 
