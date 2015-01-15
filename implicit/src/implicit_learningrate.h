@@ -76,8 +76,8 @@ struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
     mat Gi = score_func(theta_old, data_pt, offset);
-  #if DEBUG
-    if (count < 5) {
+  #if 0
+    if (count < 10) {
       Rcpp::Rcout << "Iteration: " << count << std::endl;
       Rcpp::Rcout << "Gi: \n" << Gi;
       Rcpp::Rcout << "Idiag: \n" << Idiag << std::endl;
@@ -89,7 +89,7 @@ struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
 
     for (unsigned i = 0; i < p; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i);
+        Idiag_inv.at(i, i) = 1. / sqrt(Idiag.at(i, i));
       }
     }
 
@@ -97,9 +97,9 @@ struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
   }
 
 private:
-  int count;
   mat Idiag;
   score_func_type score_func;
+  int count;
 };
 
 // p dimension learning rate weighted by alpha
@@ -111,7 +111,7 @@ struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
     mat Gi = score_func(theta_old, data_pt, offset);
-  #if DEBUG
+  #if 0
     if (count < 5) {
       Rcpp::Rcout << "Iteration: " << count << std::endl;
       Rcpp::Rcout << "Gi: \n" << Gi;
@@ -124,7 +124,7 @@ struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
 
     for (unsigned i = 0; i < p; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i) / t;
+        Idiag_inv.at(i, i) = 1. / sqrt(Idiag.at(i, i)) / t;
       }
     }
 
@@ -132,10 +132,10 @@ struct Imp_Pdim_Weighted_Learn_Rate : public Imp_Learn_Rate_Base
   }
 
 private:
-  int count;
   mat Idiag;
   double alpha;
   score_func_type score_func;
+  int count;
 };
 
 #endif

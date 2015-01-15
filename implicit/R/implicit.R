@@ -48,6 +48,7 @@ implicit.formula <- function(formula, family = gaussian, data, weights, subset,
     lr.type = lr.types[lr.type]
   }
   else if (is.character(lr.type)) {
+    lr.type <- tolower(lr.type)
     if (!(lr.type %in% lr.types)) {
       stop("'lr.type' not recognized")
     }

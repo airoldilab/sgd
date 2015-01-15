@@ -324,11 +324,14 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     }
   }
 
-
   mat coef = out.last_estimate();
   //check the number of covariates
-  if (X_rank < Imp_dataset_size(data).p)
-    coef.rows(X_rank, coef.n_rows-1) = datum::nan;
+  if (X_rank < Imp_dataset_size(data).p) {
+    for (int i = X_rank; i < coef.n_rows; i++) {
+      coef.row(i) = datum::nan;
+    }
+    //coef.rows(X_rank, coef.n_rows-1) = datum::nan;
+  }
 
   return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
             Rcpp::Named("last") = out.last_estimate(),
