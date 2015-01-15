@@ -107,6 +107,15 @@ struct Imp_Experiment {
     lr_type = "P-dimension weighted learning rate";
   }
 
+  void init_adagrad_learning_rate(double c = 0.67) {
+    score_func_type score_func = create_score_func_instance();
+
+    learnrate_ptr_type lp(new Imp_AdaGrad_Learn_Rate(p, c, score_func));
+    lr_obj_ = lp;
+
+    lr_type = "P-dimension AdaGrad learning rate";
+  }
+
   mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr_(theta_old, data_pt, offset, t, p);
     return lr_obj_->learning_rate(theta_old, data_pt, offset, t, p);

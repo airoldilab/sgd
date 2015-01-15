@@ -14,14 +14,15 @@ source('functions.R')
 #     theta.control: a list of arguments to be passed to sample.theta
 #     y.control: a list of arguments to be passed to sample.x
 
-result = empirical.variance('poisson', list('implicit', 'sgd'), list('p-dim'),
-                   np=2, nreps=10, niters=50000, plot=T)
+result = empirical.variance('normal', list('implicit', 'sgd'), list('p-dim', 'uni-dim'),
+                   np=20, nreps=1, niters=10000, plot=T, theta.control = list(theta=seq(1,20 , length.out = 20)),
+                   y.control=list(sd=1))
 
 par(mfrow=c(2, 2))
-plot(result$mean.estimates$implicit[['p-dim']][1, ], xlab='iter', ylab='estimate')
-plot(result$mean.estimates$implicit[['p-dim']][5, ], xlab='iter', ylab='estimate')
-plot(result$mean.estimates$implicit[['p-dim']][10, ], xlab='iter', ylab='estimate')
-plot(result$mean.estimates$implicit[['p-dim']][15, ], xlab='iter', ylab='estimate')
+plot(result$mean.estimates$implicit[['p-dim']][1, ], xlab='iter', ylab='estimate', type='l')
+plot(result$mean.estimates$implicit[['p-dim']][5, ], xlab='iter', ylab='estimate', type='l')
+plot(result$mean.estimates$implicit[['p-dim']][15, ], xlab='iter', ylab='estimate', type='l')
+plot(result$mean.estimates$implicit[['p-dim']][20, ], xlab='iter', ylab='estimate', type='l')
 par(mfrow=c(1,1))
 
 
