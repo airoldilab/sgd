@@ -1,4 +1,4 @@
-useDynLib(implicit)
+useDynLib(sgd)
 importFrom(Rcpp, evalCpp)
 import(MASS)
 export(implicit)
