@@ -52,7 +52,7 @@
 
   \item{intercept}{logical. Should an intercept be included in the \emph{null} model?}
 
-  \item{lr.type}{the type of learning rate to be used for fitting the model. The default method "un-dim" uses the one-dimensional learning rate. The alternative method "px-dim" uses the p-dimensional learning rate.}
+  \item{lr.type}{the type of learning rate to be used for fitting the model. The default method "un-dim" uses the one-dimensional learning rate. The method "px-dim" uses the p-dimensional learning rate. The method "adagrad" is more aggressive than "px-dim"}
 
   \item{...}{arguments to be used to form the default control argument if it is not supplied directly.}
 }
