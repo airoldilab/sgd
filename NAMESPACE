@@ -1,0 +1,6 @@
+useDynLib(sgd)
+importFrom(Rcpp, evalCpp)
+import(MASS)
+export(sgd)
+export(sgd.fit)
+S3method(sgd, formula)

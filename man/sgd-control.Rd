@@ -1,12 +1,12 @@
-\name{implicit.control}
-\alias{implicit.control}
+\name{sgd.control}
+\alias{sgd.control}
 \title{Auxiliary for Controlling GLM Fitting}
 \description{
-  Auxiliary function for \code{\link{implicit}} fitting. Typically only used internally by \code{\link{implicit.fit}}, but may be used to construct a \code{control} argument to either function.
+  Auxiliary function for \code{\link{sgd}} fitting. Typically only used internally by \code{\link{sgd.fit}}, but may be used to construct a \code{control} argument to either function.
 }
 
 \usage{
-  implicit.control(epsilon = 1e-08, trace = FALSE, deviance = FALSE, convergence=FALSE) 
+  sgd.control(epsilon = 1e-08, trace = FALSE, deviance = FALSE, convergence=FALSE)
 }
 \arguments{
   \item{epsilon}{positive convergence tolerance \eqn{\epsilon}; the iterations converge when \eqn{|dev - dev_{old}|/(|dev| + 0.1) < \epsilon}}
@@ -19,7 +19,7 @@
 }
 
 \details{
-  The control argument of \code{\link{implicit}} is by default passed to the \code{control} argument of \code{\link{implicit.fit}}, which uses its elements as arguments to \code{glm.control}: the latter provides defaults and sanity checking.
+  The control argument of \code{\link{sgd}} is by default passed to the \code{control} argument of \code{\link{sgd.fit}}, which uses its elements as arguments to \code{glm.control}: the latter provides defaults and sanity checking.
 }
 
 \value{
@@ -32,9 +32,9 @@
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
   print(d.AD <- data.frame(treatment, outcome, counts))
-  implicit.D93 <- implicit(counts ~ outcome + treatment, family = poisson(),
+  sgd.D93 <- sgd(counts ~ outcome + treatment, family = poisson(),
    convergence=TRUE, trace=TRUE)
-  print(implicit.D93)
+  print(sgd.D93)
 }
 \author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}
 

@@ -2,6 +2,6 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 run_online_algorithm <- function(dataset, experiment, algorithm, verbose) {
-    .Call('implicit_run_online_algorithm', PACKAGE = 'implicit', dataset, experiment, algorithm, verbose)
+    .Call("implicit_run_online_algorithm", PACKAGE="sgd", dataset, experiment, algorithm, verbose)
 }
 
