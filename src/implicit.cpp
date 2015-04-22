@@ -84,44 +84,48 @@ mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
   Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
-  mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
-  vec diag_lr = at.diag();
-  double average_lr = 0.;
-  for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
-    average_lr += diag_lr[i];
-  }
-  average_lr /= diag_lr.n_elem;
+  mat theta_new;
+  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson" || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
+    mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
+    vec diag_lr = at.diag();
+    double average_lr = 0.;
+    for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
+      average_lr += diag_lr[i];
+    }
+    average_lr /= diag_lr.n_elem;
 
-  double normx = dot(datapoint.x, datapoint.x);
+    double normx = dot(datapoint.x, datapoint.x);
 
-  Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx, experiment.offset[t-1]);
-  Implicit_fn implicit_fn(average_lr, get_score_coeff);
+    Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx, experiment.offset[t-1]);
+    Implicit_fn implicit_fn(average_lr, get_score_coeff);
 
-  double rt = average_lr * get_score_coeff(0);
-  double lower = 0;
-  double upper = 0;
-  if (rt < 0){
-      upper = 0;
-      lower = rt;
+    double rt = average_lr * get_score_coeff(0);
+    double lower = 0;
+    double upper = 0;
+    if (rt < 0){
+        upper = 0;
+        lower = rt;
+    }
+    else{
+      double u = 0;
+      u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
+      upper = std::min(rt, u);
+      lower = 0;
+    }
+    double result;
+    if (lower != upper){
+        result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, 14);
+    }
+    else
+      result = lower;
+    theta_new = theta_old + result * datapoint.x.t();
+    online_out.estimates.col(t-1) = theta_new;
+  } else if (experiment.model_name == "...") {
+    // code here
   }
-  else{
-    double u = 0;
-    u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
-    upper = std::min(rt, u);
-    lower = 0;
-  }
-  double result;
-  if (lower != upper){
-      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, 14);
-  }
-  else
-    result = lower;
-  mat theta_new = theta_old + result * datapoint.x.t();
-  online_out.estimates.col(t-1) = theta_new;
   return theta_new;
 }
 
-// YKuang
 // transform the output of average SGD
 void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 	mat avg_estimates(sgd_onlineOutput.estimates.n_rows, 1);
@@ -193,12 +197,11 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose){
   Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
-  //Rcpp::List LR = Experiment["lr"];
-  
-  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
-  std::string transfer_name = Rcpp::as<std::string>(Experiment["transfer.name"]);
 
-  Imp_Experiment exprm(model_name, transfer_name);
+  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
+  Rcpp::List model_attrs = Experiment["model.attrs"];
+
+  Imp_Experiment exprm(model_name, model_attrs);
 
   Imp_Dataset data;
   data.X = Rcpp::as<mat>(Dataset["X"]);
@@ -236,7 +239,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   else if (lr_type == "adagrad") {
     exprm.init_adagrad_learning_rate(.5);
   }
-  
+
   Imp_OnlineOutput out(data, exprm.start);
   unsigned nsamples = Imp_dataset_size(data).nsamples;
 

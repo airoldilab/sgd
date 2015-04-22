@@ -19,12 +19,18 @@ struct Imp_Experiment;
 struct Get_score_coeff;
 struct Implicit_fn;
 
+// Idea to use base class
+//struct Imp_Experiment {
+//};
+//
+//struct Imp_Experiment_Glm(Imp_Experiment) {
+
 struct Imp_Experiment {
 //@members
   unsigned p;
   unsigned n_iters;
   std::string model_name;
-  std::string transfer_name;
+  Rcpp::List model_attrs;
   std::string lr_type;
   mat offset;
   mat weights;
@@ -35,8 +41,8 @@ struct Imp_Experiment {
   bool convergence;
 
 //@methods
-  Imp_Experiment(std::string m_name, std::string tr_name)
-  :model_name(m_name), transfer_name(tr_name) {
+  Imp_Experiment(std::string m_name, Rcpp::List mp_attrs)
+  :model_name(m_name), model_attrs(mp_attrs) {
     if (model_name == "gaussian") {
       family_ptr_type fp(new Imp_Gaussian());
       family_obj_ = fp;
@@ -54,21 +60,26 @@ struct Imp_Experiment {
       family_obj_ = fp;
     }
 
-    if (transfer_name == "identity") {
-      transfer_ptr_type tp(new Imp_Identity_Transfer());
-      transfer_obj_ = tp;
-    }
-    else if (transfer_name == "exp") {
-      transfer_ptr_type tp(new Imp_Exp_Transfer());
-      transfer_obj_ = tp;
-    }
-    else if (transfer_name == "inverse") {
-      transfer_ptr_type tp(new Imp_Inverse_Transfer());
-      transfer_obj_ = tp;
-    }
-    else if (transfer_name == "logistic") {
-      transfer_ptr_type tp(new Imp_Logistic_Transfer());
-      transfer_obj_ = tp;
+    if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
+      std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
+      if (transfer_name == "identity") {
+        transfer_ptr_type tp(new Imp_Identity_Transfer());
+        transfer_obj_ = tp;
+      }
+      else if (transfer_name == "exp") {
+        transfer_ptr_type tp(new Imp_Exp_Transfer());
+        transfer_obj_ = tp;
+      }
+      else if (transfer_name == "inverse") {
+        transfer_ptr_type tp(new Imp_Inverse_Transfer());
+        transfer_obj_ = tp;
+      }
+      else if (transfer_name == "logistic") {
+        transfer_ptr_type tp(new Imp_Logistic_Transfer());
+        transfer_obj_ = tp;
+      }
+    } else if (model_name == "...") {
+      // code here
     }
   }
 
@@ -81,10 +92,10 @@ struct Imp_Experiment {
 
   void init_uni_dim_eigen_learning_rate() {
     score_func_type score_func = create_score_func_instance();
-    
+
     learnrate_ptr_type lp(new Imp_Unidim_Eigen_Learn_Rate(score_func));
     lr_obj_ = lp;
- 
+
     lr_type = "Uni-dimension eigenvalue learning rate";
   }
 
@@ -129,6 +140,7 @@ struct Imp_Experiment {
     return (temp * datapoint.x).t();
   }
 
+  // TODO not all models have these methods
   double h_transfer(double u) const {
     return transfer_obj_->transfer(u);
     //return transfer_(u);
@@ -143,15 +155,14 @@ struct Imp_Experiment {
     return transfer_obj_->link(u);
   }
 
-  //YKuang
   double h_first_derivative(double u) const {
     return transfer_obj_->first_derivative(u);
   }
-  //YKuang
+
   double h_second_derivative(double u) const {
     return transfer_obj_->second_derivative(u);
   }
-  
+
   bool valideta(double eta) const{
     return transfer_obj_->valideta(eta);
   }
@@ -170,7 +181,7 @@ struct Imp_Experiment {
 
   friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
     os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
-          "    Transfer function: " << exprm.transfer_name <<  "\n" <<
+          //"    Transfer function: " << exprm.transfer_name <<  "\n" <<
           "    Learning rate: " << exprm.lr_type << "\n\n" <<
           "    Trace: " << (exprm.trace ? "On" : "Off") << "\n" <<
           "    Deviance: " << (exprm.dev ? "On" : "Off") << "\n" <<
@@ -236,7 +247,7 @@ struct Implicit_fn {
     tuple_type result(value, first, second);
     return result;
   }
-  
+
   double at;
   const Get_score_coeff& g;
 };

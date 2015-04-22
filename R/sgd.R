@@ -232,7 +232,8 @@ sgd.fit <- function (x, y, weights=rep(1, nobs), start=NULL,
     dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
     experiment <- list()
     experiment$name <- family$family
-    experiment$transfer.name <- sgd.transfer.name(family$link)
+    experiment$model.attrs <- list()
+    experiment$model.attrs$transfer.name <- sgd.transfer.name(family$link)
     experiment$niters <- length(dataset$Y)
     experiment$lr.type <- lr.type
     experiment$p <- dim(dataset$X)[2]
