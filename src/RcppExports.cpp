@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // run_online_algorithm
 Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP algorithm, SEXP verbose);
-RcppExport SEXP implicit_run_online_algorithm(SEXP datasetSEXP, SEXP experimentSEXP, SEXP algorithmSEXP, SEXP verboseSEXP) {
+RcppExport SEXP sgd_run_online_algorithm(SEXP datasetSEXP, SEXP experimentSEXP, SEXP algorithmSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
