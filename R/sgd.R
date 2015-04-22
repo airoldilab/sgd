@@ -1,8 +1,8 @@
 source("R/RcppExports.R")
 
-# Set the control according to user input.
 sgd.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
                         convergence=FALSE) {
+  # Set the control according to user input.
   if (!is.numeric(epsilon) || epsilon <= 0) {
     stop("value of 'epsilon' must be > 0")
   }
@@ -10,14 +10,13 @@ sgd.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 }
 
 sgd <- function(x, ...) UseMethod("sgd")
-
 # If class(x) is formula, call sgd.formula.
 
-# Call method when the first argument is a formula
 sgd.formula <- function(formula, family=gaussian, data, weights, subset,
                         na.action, start=NULL, offset, control=list(...),
                         model=TRUE, method="implicit", x=FALSE, y=TRUE,
                         contrasts=NULL, lr.type="uni-dim", ...) {
+  # Call method when the first argument is a formula
   # the call parameter to return
   call <- match.call()
 
@@ -89,7 +88,6 @@ sgd.formula <- function(formula, family=gaussian, data, weights, subset,
     }
   }
 
-
   if (!is.empty.model(mt)) {
     X <- model.matrix(mt, mf, contrasts)
   } else {
@@ -133,7 +131,7 @@ sgd.formula <- function(formula, family=gaussian, data, weights, subset,
     fit$null.deviance <- fit2$deviance
   }
 
-  # include x and y in the returned value
+  # Include x and y in the returned value.
   if (x) {
     fit$x <- X
   }
@@ -146,7 +144,7 @@ sgd.formula <- function(formula, family=gaussian, data, weights, subset,
   fit <- c(fit, list(call=call, formula=formula, terms=mt,
                      data=data, offset=offset, control=control, method=method,
                      contrasts=attr(X, "contrasts"), xlevels=.getXlevels(mt, mf)))
-  class(fit) <- c(fit$class, c("implicit", "glm", "lm"))
+  class(fit) <- c(fit$class, c("sgd", "glm", "lm"))
   return(fit)
 }
 
@@ -156,11 +154,10 @@ sgd.transfer.name <- function(link.name) {
   }
   link.names <- c("identity", "log", "logit", "inverse")
   transfer.names <- c("identity", "exp", "logistic", "inverse")
-  match.indices <- match(link.names, link.name, 0L)
-  if (sum(match.indices) == 0L) {
+  transfer.idx <- which(link.names == link.name)
+  if (length(transfer.idx) == 0) {
     stop("no match link function founded!")
   }
-  transfer.idx <- which(match.indices == 1L)
   return(transfer.names[transfer.idx])
 }
 
@@ -218,13 +215,12 @@ sgd.fit <- function (x, y, weights=rep(1, nobs), start=NULL,
     converged <- FALSE
   } else {
     # Set the initial value for theta.
-    start <- if (!is.null(start))
-      if (length(start) != nvars)
-        stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s",
-                      nvars, paste(deparse(xnames), collapse=", ")), domain=NA) else
-      start else {
-        rep(0, nvars)
-      }
+    if (!is.null(start) & length(start) != nvars) {
+      stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s",
+                    nvars, paste(deparse(xnames), collapse=", ")), domain=NA)
+    } else {
+      start <- rep(0, nvars)
+    }
     eta <- sum(x[1, ] * start)+offset[1]
     if (!valideta(eta)) {
       stop("cannot find valid starting values: please specify some", call.=FALSE)
@@ -247,9 +243,9 @@ sgd.fit <- function (x, y, weights=rep(1, nobs), start=NULL,
     experiment$convergence <- control$convergence
     experiment$epsilon <- control$epsilon
     experiment$offset <- as.matrix(offset[good])
-    out <- run_online_algorithm(dataset, experiment, method, F)
+    out <- run_online_algorithm(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
-      stop("An error has occured, program stopped. ")
+      stop("An error has occured, program stopped.")
     }
     temp.mu <- as.numeric(out$mu)
     mu <- rep(0, length(good))

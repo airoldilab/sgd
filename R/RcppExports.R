@@ -4,4 +4,3 @@
 run_online_algorithm <- function(dataset, experiment, algorithm, verbose) {
     .Call("implicit_run_online_algorithm", PACKAGE="sgd", dataset, experiment, algorithm, verbose)
 }
-
