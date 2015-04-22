@@ -16,15 +16,11 @@
 using namespace arma;
 
 struct Imp_Experiment;
-struct Get_score_coeff;
-struct Implicit_fn;
+//TODO
+//struct Get_score_coeff;
+//struct Implicit_fn;
 
-// Idea to use base class
-//struct Imp_Experiment {
-//};
-//
-//struct Imp_Experiment_Glm(Imp_Experiment) {
-
+// Base experiment class for arbitrary model
 struct Imp_Experiment {
 //@members
   unsigned p;
@@ -42,7 +38,26 @@ struct Imp_Experiment {
 
 //@methods
   Imp_Experiment(std::string m_name, Rcpp::List mp_attrs)
-  :model_name(m_name), model_attrs(mp_attrs) {
+  : model_name(m_name), model_attrs(mp_attrs) {
+  }
+
+  void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale);
+  void init_uni_dim_eigen_learning_rate();
+  void init_pdim_learning_rate();
+  void init_pdim_weighted_learning_rate(double alpha = .5);
+  void init_adagrad_learning_rate(double c = 0.67);
+  mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const;
+  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const;
+};
+
+
+// Experiment class for arbitrary model
+struct Imp_Experiment_Glm : public Imp_Experiment {
+//@members
+
+//@methods
+  Imp_Experiment_Glm(std::string m_name, Rcpp::List mp_attrs)
+  : Imp_Experiment(m_name, mp_attrs) {
     if (model_name == "gaussian") {
       family_ptr_type fp(new Imp_Gaussian());
       family_obj_ = fp;
@@ -192,7 +207,7 @@ struct Imp_Experiment {
 
 private:
   score_func_type create_score_func_instance() {
-    score_func_type score_func = boost::bind(&Imp_Experiment::score_function, this, _1, _2, _3);
+    score_func_type score_func = boost::bind(&Imp_Experiment_Glm::score_function, this, _1, _2, _3);
     return score_func;
   }
 
@@ -207,9 +222,10 @@ private:
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update
+template<typename EXPERIMENT>
 struct Get_score_coeff {
 
-  Get_score_coeff(const Imp_Experiment& e, const Imp_DataPoint& d,
+  Get_score_coeff(const EXPERIMENT& e, const Imp_DataPoint& d,
       const mat& t, double n, double off) : experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
 
   double operator() (double ksi) const{
@@ -227,7 +243,7 @@ struct Get_score_coeff {
              + normx * ksi + offset)*normx*normx;
   }
 
-  const Imp_Experiment& experiment;
+  const EXPERIMENT& experiment;
   const Imp_DataPoint& datapoint;
   const mat& theta_old;
   double normx;
@@ -235,11 +251,11 @@ struct Get_score_coeff {
 };
 
 // Root finding functor for Implicit-SGD update
+template<typename EXPERIMENT>
 struct Implicit_fn {
   typedef boost::math::tuple<double, double, double> tuple_type;
 
-  //Implicit_fn(double a, const Get_score_coeff<TRANSFER>& get_score): at(a), g(get_score){}
-  Implicit_fn(double a, const Get_score_coeff& get_score): at(a), g(get_score){}
+  Implicit_fn(double a, const Get_score_coeff<EXPERIMENT>& get_score): at(a), g(get_score){}
   tuple_type operator() (double u) const{
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);
@@ -249,7 +265,7 @@ struct Implicit_fn {
   }
 
   double at;
-  const Get_score_coeff& g;
+  const Get_score_coeff<EXPERIMENT>& g;
 };
 
 #endif

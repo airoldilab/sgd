@@ -3,6 +3,10 @@
 #include "implicit.h"
 #include <stdlib.h>
 
+// Auxiliary function
+template<typename EXPERIMENT>
+Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT exprm, Rcpp::List Experiment);
+
 // via the depends attribute we tell Rcpp to create hooks for
 // RcppArmadillo so that the build process will know what to do
 // This file will be compiled with C++11
@@ -46,9 +50,9 @@ Imp_DataPoint Imp_get_dataset_point(const Imp_Dataset& dataset, unsigned t){
 }
 
 // return the new estimate of parameters, using SGD
-//template<typename TRANSFER>
+template<typename EXPERIMENT>
 mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
+	const Imp_Dataset& data_history, const EXPERIMENT& experiment, bool& good_gradient){
 
   Imp_DataPoint datapoint = Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
@@ -70,59 +74,55 @@ mat Imp_sgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
 }
 
 // return the new estimate of parameters, using ASGD
-//template<typename TRANSFER>
+template<typename EXPERIMENT>
 mat Imp_asgd_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment, bool& good_gradient){
+	const Imp_Dataset& data_history, const EXPERIMENT& experiment, bool& good_gradient){
 	return Imp_sgd_online_algorithm(t, online_out, data_history, experiment, good_gradient);
 }
 
-//Tlan
 // return the new estimate of parameters, using implicit SGD
-//template<typename TRANSFER>
+// TODO add per model
 mat Imp_implicit_online_algorithm(unsigned t, Imp_OnlineOutput& online_out,
-	const Imp_Dataset& data_history, const Imp_Experiment& experiment){
+	const Imp_Dataset& data_history, const Imp_Experiment_Glm& experiment){
   Imp_DataPoint datapoint= Imp_get_dataset_point(data_history, t);
   mat theta_old = Imp_onlineOutput_estimate(online_out, t-1);
 
   mat theta_new;
-  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson" || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
-    mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
-    vec diag_lr = at.diag();
-    double average_lr = 0.;
-    for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
-      average_lr += diag_lr[i];
-    }
-    average_lr /= diag_lr.n_elem;
-
-    double normx = dot(datapoint.x, datapoint.x);
-
-    Get_score_coeff get_score_coeff(experiment, datapoint, theta_old, normx, experiment.offset[t-1]);
-    Implicit_fn implicit_fn(average_lr, get_score_coeff);
-
-    double rt = average_lr * get_score_coeff(0);
-    double lower = 0;
-    double upper = 0;
-    if (rt < 0){
-        upper = 0;
-        lower = rt;
-    }
-    else{
-      double u = 0;
-      u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
-      upper = std::min(rt, u);
-      lower = 0;
-    }
-    double result;
-    if (lower != upper){
-        result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, 14);
-    }
-    else
-      result = lower;
-    theta_new = theta_old + result * datapoint.x.t();
-    online_out.estimates.col(t-1) = theta_new;
-  } else if (experiment.model_name == "...") {
-    // code here
+  mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
+  vec diag_lr = at.diag();
+  double average_lr = 0.;
+  for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
+    average_lr += diag_lr[i];
   }
+  average_lr /= diag_lr.n_elem;
+
+  double normx = dot(datapoint.x, datapoint.x);
+
+  Get_score_coeff<Imp_Experiment_Glm> get_score_coeff(experiment, datapoint, theta_old, normx, experiment.offset[t-1]);
+  Implicit_fn<Imp_Experiment_Glm> implicit_fn(average_lr, get_score_coeff);
+
+  double rt = average_lr * get_score_coeff(0);
+  double lower = 0;
+  double upper = 0;
+  if (rt < 0){
+      upper = 0;
+      lower = rt;
+  }
+  else{
+    double u = 0;
+    u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
+    upper = std::min(rt, u);
+    lower = 0;
+  }
+  double result;
+  if (lower != upper){
+      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, 14);
+  }
+  else
+    result = lower;
+  theta_new = theta_old + result * datapoint.x.t();
+  online_out.estimates.col(t-1) = theta_new;
+
   return theta_new;
 }
 
@@ -139,7 +139,8 @@ void asgd_transform_output(Imp_OnlineOutput& sgd_onlineOutput){
 	}
 }
 
-bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const Imp_Experiment& exprm){
+// TODO add per model
+bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const Imp_Experiment_Glm& exprm){
   //check if all estimates are finite
   if (!is_finite(theta)){
     Rcpp::Rcout<<"warning: non-finite coefficients at iteration "<<t<<std::endl;
@@ -195,13 +196,27 @@ bool validity_check(const Imp_Dataset& data, const mat& theta, unsigned t, const
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 	SEXP verbose){
-  Rcpp::List Dataset(dataset);
   Rcpp::List Experiment(experiment);
 
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   Rcpp::List model_attrs = Experiment["model.attrs"];
 
-  Imp_Experiment exprm(model_name, model_attrs);
+  if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
+    Imp_Experiment_Glm exprm(model_name, model_attrs);
+    return run_experiment(dataset, algorithm, verbose, exprm, Experiment);
+  } else if (model_name == "...") {
+    //Imp_Experiment_Svm exprm(model_name, model_attrs);
+    //return run_experiment(dataset, algorithm, verbose, exprm);
+    return Rcpp::List();
+  } else {
+    return Rcpp::List();
+  }
+}
+
+template<typename EXPERIMENT>
+// TODO terrible memory efficiency
+Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT exprm, Rcpp::List Experiment){
+  Rcpp::List Dataset(dataset);
 
   Imp_Dataset data;
   data.X = Rcpp::as<mat>(Dataset["X"]);
@@ -247,7 +262,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   unsigned X_rank = rank(data.X);
   if (X_rank > nsamples){
     Rcpp::Rcout<<"X matrix has rank "<<X_rank<<", but only "
-	<<nsamples<<" observation"<<std::endl;
+        <<nsamples<<" observation"<<std::endl;
     return Rcpp::List();
   }
 
@@ -262,23 +277,23 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     if (algo == "sgd") {
       mat theta = Imp_sgd_online_algorithm(t, out, data, exprm, good_gradient);
       if (!good_gradient){
-	Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
-	return Rcpp::List();
+        Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
+        return Rcpp::List();
       }
       good_validity = validity_check(data,theta, t, exprm);
       if (!good_validity)
-	return Rcpp::List();
+        return Rcpp::List();
     }
     else if (algo == "asgd") {
       mat theta = Imp_asgd_online_algorithm(t, out, data, exprm, good_gradient);
       if (!good_gradient){
-	Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
-      	return Rcpp::List();
+        Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
+        return Rcpp::List();
       }
       good_validity = validity_check(data,theta, t, exprm);
       if (!good_validity)
         Rcpp::Rcout << theta << std::endl;
-      	return Rcpp::List();
+        return Rcpp::List();
     }
     else if (algo == "implicit" || algo == "a-implicit"){
       mat theta = Imp_implicit_online_algorithm(t, out, data, exprm);
@@ -287,7 +302,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
       }
       good_validity = validity_check(data,theta, t, exprm);
       if (!good_validity)
-      	return Rcpp::List();
+        return Rcpp::List();
     }
   }
   if (algo == "asgd" || algo == "a-implicit") {
@@ -301,12 +316,12 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
   mu = exprm.h_transfer(eta);
   for(int i=0; i<eta.n_rows; ++i){
       if (!is_finite(eta[i])){
-	Rcpp::Rcout<<"warning: NaN or non-finite eta"<<std::endl;
-	break;
+        Rcpp::Rcout<<"warning: NaN or non-finite eta"<<std::endl;
+        break;
       }
       if (!exprm.valideta(eta[i])){
-	Rcpp::Rcout<<"warning: eta is not in the support"<<std::endl;
-	break;
+        Rcpp::Rcout<<"warning: eta is not in the support"<<std::endl;
+        break;
       }
   }
 

@@ -16,6 +16,7 @@
 #endif
 
 #include <boost/function.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <math.h>
 #include <string>
 #include <cstddef>
