@@ -1,8 +1,8 @@
 #ifndef IMPLICIT_LEARNINGRATE_H
 #define IMPLICIT_LEARNINGRATE_H
 
-#include "implicit_basedef.h"
-#include "implicit_data.h"
+#include "sgd_basedef.h"
+#include "sgd_data.h"
 
 using namespace arma;
 
@@ -14,7 +14,7 @@ struct Imp_Pdim_Weighted_Learn_Rate;
 
 struct Imp_Learn_Rate_Base
 {
-  
+
 #if DEBUG
   virtual ~Imp_Learn_Rate_Base() {
     Rcpp::Rcout << "learning rate object released" << std::endl;
@@ -31,7 +31,7 @@ struct Imp_Unidim_Learn_Rate : public Imp_Learn_Rate_Base
 {
   Imp_Unidim_Learn_Rate(double g, double a, double c_, double s) :
   gamma(g), alpha(a), c(c_), scale(s) { }
-  
+
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
     double lr = scale * gamma * pow(1 + alpha * gamma * t, -c);
@@ -70,7 +70,7 @@ private:
 // p dimension learning rate
 struct Imp_Pdim_Learn_Rate : public Imp_Learn_Rate_Base
 {
-  Imp_Pdim_Learn_Rate(unsigned p, const score_func_type& sf) : 
+  Imp_Pdim_Learn_Rate(unsigned p, const score_func_type& sf) :
     Idiag(mat(p, p, fill::eye)), score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,
@@ -123,7 +123,7 @@ private:
 // p dimension learning rate
 struct Imp_AdaGrad_Learn_Rate : public Imp_Learn_Rate_Base
 {
-  Imp_AdaGrad_Learn_Rate(unsigned p, double c_, const score_func_type& sf) : 
+  Imp_AdaGrad_Learn_Rate(unsigned p, double c_, const score_func_type& sf) :
     Idiag(mat(p, p, fill::eye)), c(c_), score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset,

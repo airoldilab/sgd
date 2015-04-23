@@ -1,7 +1,7 @@
 #ifndef IMPLICIT_FAMILY_H
 #define IMPLICIT_FAMILY_H
 
-#include "implicit_basedef.h"
+#include "sgd_basedef.h"
 
 using namespace arma;
 
@@ -18,7 +18,7 @@ struct Imp_Family_Base
     Rcpp::Rcout << "Family object released" << std::endl;
   }
 #endif
-  
+
   virtual double bfunc_for_score(double h) const = 0;
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
@@ -48,7 +48,7 @@ struct Imp_Poisson : public Imp_Family_Base {
     Rcpp::Rcout << "Out of valid range in b func for Poisson." << std::endl;
     return 1.;
   }
-  
+
   virtual double variance(double u) const {
     return u;
   }
@@ -74,7 +74,7 @@ struct Imp_Binomial : public Imp_Family_Base
     Rcpp::Rcout << "Out of valid range in b func for Binomial." << std::endl;
     return 1.;
   }
-  
+
   virtual double variance(double u) const {
     return u * (1. - u);
   }

@@ -1,7 +1,7 @@
 #ifndef IMPLICIT_TRANSFER_H
 #define IMPLICIT_TRANSFER_H
 
-#include "implicit_basedef.h"
+#include "sgd_basedef.h"
 
 using namespace arma;
 

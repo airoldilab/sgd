@@ -2,7 +2,7 @@
 #define IMPLICIT_DATA_H
 
 #include <iostream>
-#include "implicit_basedef.h"
+#include "sgd_basedef.h"
 
 using namespace arma;
 
@@ -35,7 +35,7 @@ struct Imp_Dataset
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Imp_Dataset& dataset) {
-    os << "  Dataset:\n" << "    X has " << dataset.X.n_cols << " features\n" << 
+    os << "  Dataset:\n" << "    X has " << dataset.X.n_cols << " features\n" <<
           "    Total of " << dataset.X.n_rows << " data points" << std::endl;
     return os;
   }

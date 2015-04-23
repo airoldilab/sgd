@@ -1,11 +1,11 @@
 #ifndef IMPLICIT_EXPERIMENT_H
 #define IMPLICIT_EXPERIMENT_H
 
-#include "implicit_basedef.h"
-#include "implicit_data.h"
-#include "implicit_family.h"
-#include "implicit_learningrate.h"
-#include "implicit_transfer.h"
+#include "sgd_basedef.h"
+#include "sgd_data.h"
+#include "sgd_family.h"
+#include "sgd_learningrate.h"
+#include "sgd_transfer.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/math/tools/roots.hpp>

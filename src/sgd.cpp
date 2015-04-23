@@ -1,6 +1,6 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
-#include "implicit.h"
+#include "sgd.h"
 #include <stdlib.h>
 
 // Auxiliary function
@@ -206,7 +206,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
     return run_experiment(dataset, algorithm, verbose, exprm, Experiment);
   } else if (model_name == "...") {
     //Imp_Experiment_Svm exprm(model_name, model_attrs);
-    //return run_experiment(dataset, algorithm, verbose, exprm);
+    //return run_experiment(dataset, algorithm, verbose, exprm, Experiment);
     return Rcpp::List();
   } else {
     return Rcpp::List();
@@ -214,8 +214,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 }
 
 template<typename EXPERIMENT>
-// TODO terrible memory efficiency
-Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT exprm, Rcpp::List Experiment){
+Rcpp::List run_experiment(SEXP& dataset, SEXP& algorithm, SEXP& verbose, EXPERIMENT& exprm, Rcpp::List& Experiment){
   Rcpp::List Dataset(dataset);
 
   Imp_Dataset data;
