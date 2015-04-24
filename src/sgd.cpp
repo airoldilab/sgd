@@ -214,7 +214,7 @@ Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
 }
 
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(SEXP& dataset, SEXP& algorithm, SEXP& verbose, EXPERIMENT& exprm, Rcpp::List& Experiment){
+Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT exprm, Rcpp::List Experiment){
   Rcpp::List Dataset(dataset);
 
   Imp_Dataset data;
