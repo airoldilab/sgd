@@ -9,7 +9,7 @@ with several built-in models:
 * Generalized linear models (GLMs)
 * Linear support vector machines (SVMs)
 * Cox proportional hazards model
-* Generalized addition models (GAMs)
+* Generalized additive models (GAMs)
 * ...
 
 ## Installation
