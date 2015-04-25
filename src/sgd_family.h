@@ -1,20 +1,20 @@
-#ifndef IMPLICIT_FAMILY_H
-#define IMPLICIT_FAMILY_H
+#ifndef SGD_FAMILY_H
+#define SGD_FAMILY_H
 
 #include "sgd_basedef.h"
 
 using namespace arma;
 
-struct Imp_Family_Base;
-struct Imp_Gaussian;
-struct Imp_Poisson;
-struct Imp_Binomial;
-struct Imp_Gamma;
+struct Sgd_Family_Base;
+struct Sgd_Gaussian;
+struct Sgd_Poisson;
+struct Sgd_Binomial;
+struct Sgd_Gamma;
 
-struct Imp_Family_Base
+struct Sgd_Family_Base
 {
 #if DEBUG
-  virtual ~Imp_Family_Base() {
+  virtual ~Sgd_Family_Base() {
     Rcpp::Rcout << "Family object released" << std::endl;
   }
 #endif
@@ -25,7 +25,7 @@ struct Imp_Family_Base
 };
 
 // gaussian model family
-struct Imp_Gaussian : public Imp_Family_Base {
+struct Sgd_Gaussian : public Sgd_Family_Base {
   virtual double bfunc_for_score(double h) const {
     return 1.;
   }
@@ -40,7 +40,7 @@ struct Imp_Gaussian : public Imp_Family_Base {
 };
 
 // poisson model family
-struct Imp_Poisson : public Imp_Family_Base {
+struct Sgd_Poisson : public Sgd_Family_Base {
   virtual double bfunc_for_score(double h) const {
     if (h) {
       return 1. / h;
@@ -65,7 +65,7 @@ struct Imp_Poisson : public Imp_Family_Base {
 };
 
 // binomial model family
-struct Imp_Binomial : public Imp_Family_Base
+struct Sgd_Binomial : public Sgd_Family_Base
 {
   virtual double bfunc_for_score(double h) const {
     if (h > 0. && h < 1.) {
@@ -95,7 +95,7 @@ private:
   }
 };
 
-struct Imp_Gamma : public Imp_Family_Base
+struct Sgd_Gamma : public Sgd_Family_Base
 {
   virtual double bfunc_for_score(double h) const {
     if (h) {

@@ -1,5 +1,5 @@
-#ifndef IMPLICIT_EXPERIMENT_H
-#define IMPLICIT_EXPERIMENT_H
+#ifndef SGD_EXPERIMENT_H
+#define SGD_EXPERIMENT_H
 
 #include "sgd_basedef.h"
 #include "sgd_data.h"
@@ -15,13 +15,13 @@
 
 using namespace arma;
 
-struct Imp_Experiment;
+struct Sgd_Experiment;
 //TODO
 //struct Get_score_coeff;
 //struct Implicit_fn;
 
 // Base experiment class for arbitrary model
-struct Imp_Experiment {
+struct Sgd_Experiment {
 //@members
   unsigned p;
   unsigned n_iters;
@@ -37,7 +37,7 @@ struct Imp_Experiment {
   bool convergence;
 
 //@methods
-  Imp_Experiment(std::string m_name, Rcpp::List mp_attrs)
+  Sgd_Experiment(std::string m_name, Rcpp::List mp_attrs)
   : model_name(m_name), model_attrs(mp_attrs) {
   }
 
@@ -46,51 +46,51 @@ struct Imp_Experiment {
   void init_pdim_learning_rate();
   void init_pdim_weighted_learning_rate(double alpha = .5);
   void init_adagrad_learning_rate(double c = 0.67);
-  mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const;
-  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const;
+  mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const;
+  mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
 };
 
 
 // Experiment class for arbitrary model
-struct Imp_Experiment_Glm : public Imp_Experiment {
+struct Sgd_Experiment_Glm : public Sgd_Experiment {
 //@members
 
 //@methods
-  Imp_Experiment_Glm(std::string m_name, Rcpp::List mp_attrs)
-  : Imp_Experiment(m_name, mp_attrs) {
+  Sgd_Experiment_Glm(std::string m_name, Rcpp::List mp_attrs)
+  : Sgd_Experiment(m_name, mp_attrs) {
     if (model_name == "gaussian") {
-      family_ptr_type fp(new Imp_Gaussian());
+      family_ptr_type fp(new Sgd_Gaussian());
       family_obj_ = fp;
     }
     else if (model_name == "poisson") {
-      family_ptr_type fp(new Imp_Poisson());
+      family_ptr_type fp(new Sgd_Poisson());
       family_obj_ = fp;
     }
     else if (model_name == "binomial") {
-      family_ptr_type fp(new Imp_Binomial());
+      family_ptr_type fp(new Sgd_Binomial());
       family_obj_ = fp;
     }
     else if (model_name == "gamma") {
-      family_ptr_type fp(new Imp_Gamma());
+      family_ptr_type fp(new Sgd_Gamma());
       family_obj_ = fp;
     }
 
     if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
       if (transfer_name == "identity") {
-        transfer_ptr_type tp(new Imp_Identity_Transfer());
+        transfer_ptr_type tp(new Sgd_Identity_Transfer());
         transfer_obj_ = tp;
       }
       else if (transfer_name == "exp") {
-        transfer_ptr_type tp(new Imp_Exp_Transfer());
+        transfer_ptr_type tp(new Sgd_Exp_Transfer());
         transfer_obj_ = tp;
       }
       else if (transfer_name == "inverse") {
-        transfer_ptr_type tp(new Imp_Inverse_Transfer());
+        transfer_ptr_type tp(new Sgd_Inverse_Transfer());
         transfer_obj_ = tp;
       }
       else if (transfer_name == "logistic") {
-        transfer_ptr_type tp(new Imp_Logistic_Transfer());
+        transfer_ptr_type tp(new Sgd_Logistic_Transfer());
         transfer_obj_ = tp;
       }
     } else if (model_name == "...") {
@@ -99,7 +99,7 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
   }
 
   void init_uni_dim_learning_rate(double gamma, double alpha, double c, double scale) {
-    learnrate_ptr_type lp(new Imp_Unidim_Learn_Rate(gamma, alpha, c, scale));
+    learnrate_ptr_type lp(new Sgd_Unidim_Learn_Rate(gamma, alpha, c, scale));
     lr_obj_ = lp;
 
     lr_type = "Uni-dimension learning rate";
@@ -108,7 +108,7 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
   void init_uni_dim_eigen_learning_rate() {
     score_func_type score_func = create_score_func_instance();
 
-    learnrate_ptr_type lp(new Imp_Unidim_Eigen_Learn_Rate(score_func));
+    learnrate_ptr_type lp(new Sgd_Unidim_Eigen_Learn_Rate(score_func));
     lr_obj_ = lp;
 
     lr_type = "Uni-dimension eigenvalue learning rate";
@@ -118,7 +118,7 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
     // remember to init @p before call this!
     score_func_type score_func = create_score_func_instance();
 
-    learnrate_ptr_type lp(new Imp_Pdim_Learn_Rate(p, score_func));
+    learnrate_ptr_type lp(new Sgd_Pdim_Learn_Rate(p, score_func));
     lr_obj_ = lp;
     lr_type = "P-dimension learning rate";
   }
@@ -127,7 +127,7 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
     // remember to init @p before call this!
     score_func_type score_func = create_score_func_instance();
 
-    learnrate_ptr_type lp(new Imp_Pdim_Weighted_Learn_Rate(p, alpha, score_func));
+    learnrate_ptr_type lp(new Sgd_Pdim_Weighted_Learn_Rate(p, alpha, score_func));
     lr_obj_ = lp;
 
     lr_type = "P-dimension weighted learning rate";
@@ -136,18 +136,18 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
   void init_adagrad_learning_rate(double c = 0.67) {
     score_func_type score_func = create_score_func_instance();
 
-    learnrate_ptr_type lp(new Imp_AdaGrad_Learn_Rate(p, c, score_func));
+    learnrate_ptr_type lp(new Sgd_AdaGrad_Learn_Rate(p, c, score_func));
     lr_obj_ = lp;
 
     lr_type = "P-dimension AdaGrad learning rate";
   }
 
-  mat learning_rate(const mat& theta_old, const Imp_DataPoint& data_pt, double offset, unsigned t) const {
+  mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr_(theta_old, data_pt, offset, t, p);
     return lr_obj_->learning_rate(theta_old, data_pt, offset, t, p);
   }
 
-  mat score_function(const mat& theta_old, const Imp_DataPoint& datapoint, double offset) const {
+  mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
     //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) * datapoint.x).t();
     double theta_xn = dot(datapoint.x, theta_old) + offset;
     double h_val = h_transfer(theta_xn);
@@ -194,7 +194,7 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
     return family_obj_->deviance(y, mu, wt);
   }
 
-  friend std::ostream& operator<<(std::ostream& os, const Imp_Experiment& exprm) {
+  friend std::ostream& operator<<(std::ostream& os, const Sgd_Experiment& exprm) {
     os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
           //"    Transfer function: " << exprm.transfer_name <<  "\n" <<
           "    Learning rate: " << exprm.lr_type << "\n\n" <<
@@ -207,17 +207,17 @@ struct Imp_Experiment_Glm : public Imp_Experiment {
 
 private:
   score_func_type create_score_func_instance() {
-    score_func_type score_func = boost::bind(&Imp_Experiment_Glm::score_function, this, _1, _2, _3);
+    score_func_type score_func = boost::bind(&Sgd_Experiment_Glm::score_function, this, _1, _2, _3);
     return score_func;
   }
 
-  typedef boost::shared_ptr<Imp_Transfer_Base> transfer_ptr_type;
+  typedef boost::shared_ptr<Sgd_Transfer_Base> transfer_ptr_type;
   transfer_ptr_type transfer_obj_;
 
-  typedef boost::shared_ptr<Imp_Family_Base> family_ptr_type;
+  typedef boost::shared_ptr<Sgd_Family_Base> family_ptr_type;
   family_ptr_type family_obj_;
 
-  typedef boost::shared_ptr<Imp_Learn_Rate_Base> learnrate_ptr_type;
+  typedef boost::shared_ptr<Sgd_Learn_Rate_Base> learnrate_ptr_type;
   learnrate_ptr_type lr_obj_;
 };
 
@@ -225,7 +225,7 @@ private:
 template<typename EXPERIMENT>
 struct Get_score_coeff {
 
-  Get_score_coeff(const EXPERIMENT& e, const Imp_DataPoint& d,
+  Get_score_coeff(const EXPERIMENT& e, const Sgd_DataPoint& d,
       const mat& t, double n, double off) : experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
 
   double operator() (double ksi) const{
@@ -244,7 +244,7 @@ struct Get_score_coeff {
   }
 
   const EXPERIMENT& experiment;
-  const Imp_DataPoint& datapoint;
+  const Sgd_DataPoint& datapoint;
   const mat& theta_old;
   double normx;
   double offset;

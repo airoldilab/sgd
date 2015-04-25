@@ -1,5 +1,5 @@
-#ifndef IMPLICIT_H
-#define IMPLICIT_H
+#ifndef SGD_H
+#define SGD_H
 
 #include "sgd_basedef.h"
 #include "sgd_data.h"

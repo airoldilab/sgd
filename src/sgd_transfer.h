@@ -1,19 +1,19 @@
-#ifndef IMPLICIT_TRANSFER_H
-#define IMPLICIT_TRANSFER_H
+#ifndef SGD_TRANSFER_H
+#define SGD_TRANSFER_H
 
 #include "sgd_basedef.h"
 
 using namespace arma;
 
-struct Imp_Transfer_Base;
-struct Imp_Identity_Transfer;
-struct Imp_Inverse_Transfer;
-struct Imp_Exp_Transfer;
-struct Imp_Logistic_Transfer;
+struct Sgd_Transfer_Base;
+struct Sgd_Identity_Transfer;
+struct Sgd_Inverse_Transfer;
+struct Sgd_Exp_Transfer;
+struct Sgd_Logistic_Transfer;
 
-struct Imp_Transfer_Base {
+struct Sgd_Transfer_Base {
 #if DEBUG
-  virtual ~Imp_Transfer_Base() {
+  virtual ~Sgd_Transfer_Base() {
     Rcpp::Rcout << "Transfer object released! " << std::endl;
   }
 #endif
@@ -36,7 +36,7 @@ struct Imp_Transfer_Base {
 };
 
 // Identity transfer function
-struct Imp_Identity_Transfer : public Imp_Transfer_Base {
+struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
   virtual double transfer(double u) const {
     return u;
   }
@@ -59,7 +59,7 @@ struct Imp_Identity_Transfer : public Imp_Transfer_Base {
 };
 
 // Inverse transfer function
-struct Imp_Inverse_Transfer : public Imp_Transfer_Base {
+struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
   virtual double transfer(double u) const {
     if (valideta(u)) {
       return -1. / u;
@@ -94,7 +94,7 @@ struct Imp_Inverse_Transfer : public Imp_Transfer_Base {
 };
 
 // Exponentional transfer function
-struct Imp_Exp_Transfer : public Imp_Transfer_Base {
+struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
   virtual double transfer(double u) const {
     return exp(u);
   }
@@ -121,7 +121,7 @@ struct Imp_Exp_Transfer : public Imp_Transfer_Base {
 };
 
 // Logistic transfer function
-struct Imp_Logistic_Transfer : public Imp_Transfer_Base {
+struct Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
   virtual double transfer(double u) const {
     return sigmoid(u);
   }
