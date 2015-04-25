@@ -17,7 +17,8 @@ sgd.default <- function(x, ...) {
   stop("class of x is not a formula, matrix, or function")
 }
 
-sgd.formula <- function(formula, model, data, model.control,
+sgd.formula <- function(formula, model, data,
+                        model.control=list(),
                         sgd.control=list(method="implicit", start=NULL,
                                          lr.type="uni-dim", ...),
                         ...) {
@@ -44,16 +45,16 @@ sgd.formula <- function(formula, model, data, model.control,
     data <- environment(formula)
   }
 
-  if (!missing(model.control)) {
-    if (!is.list(model.control))  {
-      stop("sgd.control is not a list")
-    }
-
-    # Set model.control according to user input and the default values.
-    model.control <- do.call("sgd.model.valid", c(model.control, model=model))
+  # Set model.control according to user input and the default values.
+  if (!is.list(model.control))  {
+    stop("'model.control' is not a list")
   }
+  model.control <- do.call("sgd.model.valid", c(model.control, model=model))
 
   # Set sgd.control according to user input and the default values.
+  if (!is.list(sgd.control))  {
+    stop("'sgd.control' is not a list")
+  }
   control <- do.call("sgd.sgd.control.valid", sgd.control)
 
   # 2. Build dataframe according to the formula.
@@ -277,6 +278,28 @@ sgd.control.implicit <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 # Auxiliary functions: safe checking
 ################################################################################
 
+sgd.model.valid <- function(model, temp=list(...), ...) {
+  # TODO documentation
+  family <- temp$family
+  if (model == "glm") {
+      # Check the validity of family.
+    if (is.null("family")) family <- "gaussian"
+    if (is.character(family)) {
+      family <- get(family, mode="function", envir=parent.frame())
+    }
+    if (is.function(family)) {
+      family <- family()
+    }
+    if (is.null(family$family)) {
+      print(family)
+      stop("'family' not recognized")
+    }
+    return(list(family=family))
+  } else {
+    stop("model not specified")
+  }
+}
+
 sgd.sgd.control.valid <- function(method="implicit", start=NULL, lr.type="uni-dim", ...) {
   # TODO documentation
   # Check the validity of learning rate type.
@@ -308,28 +331,6 @@ sgd.sgd.control.valid <- function(method="implicit", start=NULL, lr.type="uni-di
     stop("'method' not recognized")
   }
   return(list(method=method, start=start, lr.type=lr.type))
-}
-
-sgd.model.valid <- function(model, temp=list(...), ...) {
-  # TODO documentation
-  family <- temp$family
-  if (model == "glm") {
-      # Check the validity of family.
-    if (is.null("family")) family <- "gaussian"
-    if (is.character(family)) {
-      family <- get(family, mode="function", envir=parent.frame())
-    }
-    if (is.function(family)) {
-      family <- family()
-    }
-    if (is.null(family$family)) {
-      print(family)
-      stop("'family' not recognized")
-    }
-    return(list(family=family))
-  } else {
-    stop("model not specified")
-  }
 }
 
 ################################################################################
