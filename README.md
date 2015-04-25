@@ -21,14 +21,14 @@ library.
 if (packageVersion("devtools") < 1.6) {
   install.packages("devtools")
 }
-devtools::install_github("lantian2012/sgd-r-package")
+devtools::install_github("airoldilab/sgd")
 ```
 **Note that as this is currently a private repository, one must generate an
 authorization token to install from Github**. [Generate a personal access token
 (PAT)](https://github.com/settings/applications) and supply it as an argument to
 `auth_token`:
 ```{R}
-devtools::install_github("lantian2012/sgd-r-package", auth_token="auth_token_here")
+devtools::install_github("airoldilab/sgd", auth_token="auth_token_here")
 ```
 
 To install locally, one must install the dependencies manually and zip this repo

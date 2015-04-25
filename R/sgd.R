@@ -1,35 +1,42 @@
 source("R/RcppExports.R")
 
-sgd.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
-                        convergence=FALSE) {
-  # Set the control according to user input.
-  if (!is.numeric(epsilon) || epsilon <= 0) {
-    stop("value of 'epsilon' must be > 0")
-  }
-  list(epsilon=epsilon, trace=trace, deviance=deviance, convergence=convergence)
-}
-
+################################################################################
+# Classes
+################################################################################
 sgd <- function(x, ...) UseMethod("sgd")
 # If class(x) is formula, call sgd.formula.
+# If class(x) is function, call sgd.function.
+# If class(x) is matrix, call sgd.matrix.
+# Otherwise, error.
 
-sgd.formula <- function(formula, family=gaussian, data, weights, subset,
-                        na.action, start=NULL, offset, control=list(...),
-                        model=TRUE, method="implicit", x=FALSE, y=TRUE,
-                        contrasts=NULL, lr.type="uni-dim", ...) {
+################################################################################
+# Methods
+################################################################################
+
+sgd.default <- function(x, ...) {
+  stop("class of x is not a formula, matrix, or function")
+}
+
+sgd.formula <- function(formula, model, data, model.control,
+                        sgd.control=list(method="implicit", start=NULL,
+                                         lr.type="uni-dim", ...),
+                        ...) {
+  # TODO
+  # weights: how to weight using each data point; can be a parameter in sgd.control
+  # subset: a subset of data points; can be a parameter in sgd.control
+  # na.action: how to deal when data has NA; can be a parameter in sgd.control
+  # model: logical value determining whether to output the X data frame
+  # x,y: logical value determining whether to output the x and/or y
+  # family: string determining which family in exponential family; can be a paramter in model.control (for GLMs)
+  # offset: logical value determining whether to include intercept; can be a parameter in model.control
+  # contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
   # Call method when the first argument is a formula
   # the call parameter to return
   call <- match.call()
 
-  # Check the validity of family.
-  if (is.character(family)) {
-    family <- get(family, mode="function", envir=parent.frame())
-  }
-  if (is.function(family)) {
-    family <- family()
-  }
-  if (is.null(family$family)) {
-    print(family)
-    stop("'family' not recognized")
+  # 1. Safe check.
+  if (missing(model)) {
+    stop("model not specified")
   }
 
   # Get data from environment.
@@ -37,47 +44,25 @@ sgd.formula <- function(formula, family=gaussian, data, weights, subset,
     data <- environment(formula)
   }
 
-  # Check the validity of method.
-  if (!is.character(method)) {
-    stop("'method' must be a string")
-  } else if (!(method %in% c("implicit", "asgd", "sgd", "model.frame"))) {
-    stop("'method' not recognized")
+  if (!missing(model.control)) {
+    if (!is.list(model.control))  {
+      stop("sgd.control is not a list")
+    }
+
+    # Set model.control according to user input and the default values.
+    model.control <- do.call("sgd.model.valid", c(model.control, model=model))
   }
 
-  # Check the validity of learning rate type.
-  lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
-  if (is.numeric(lr.type)) {
-    if (lr.type < 1 | lr.type > length(lr.types)) {
-      stop("'lr.type' out of range")
-    }
-    lr.type <- lr.types[lr.type]
-  } else if (is.character(lr.type)) {
-    lr.type <- tolower(lr.type)
-    if (!(lr.type %in% lr.types)) {
-      stop("'lr.type' not recognized")
-    }
-  } else {
-    stop("invalid 'lr.type'")
-  }
+  # Set sgd.control according to user input and the default values.
+  control <- do.call("sgd.sgd.control.valid", sgd.control)
 
+  # 2. Build dataframe according to the formula.
   mf <- match.call(expand.dots=FALSE)
-
-  # Build dataframe according to the formula.
-  m <- match(c("formula", "data", "subset", "weights", "na.action",
-               "offset"), names(mf), 0L)
+  m <- match(c("formula", "data"), names(mf), 0L)
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels
   mf[[1L]] <- quote(stats::model.frame)
   mf <- eval(mf, parent.frame())
-
-  # If method=="model.frame", return the dataframe without fitting.
-  if (identical(method, "model.frame")) {
-    return(mf)
-  }
-
-  mt <- attr(mf, "terms")
-  # Set control according to user input and the default values.
-  control <- do.call("sgd.control", control)
 
   Y <- model.response(mf, "any")
   if (length(dim(Y)) == 1L) {
@@ -88,83 +73,58 @@ sgd.formula <- function(formula, family=gaussian, data, weights, subset,
     }
   }
 
+  mt <- attr(mf, "terms")
   if (!is.empty.model(mt)) {
-    X <- model.matrix(mt, mf, contrasts)
+    X <- model.matrix(mt, mf)
   } else {
     X <- matrix(, NROW(Y), 0L)
   }
 
-  # Check parameters for fitting.
-  weights <- as.vector(model.weights(mf))
-  if (!is.null(weights) && !is.numeric(weights)) {
-    stop("'weights' must be a numeric vector")
+  # 3. Fit!
+  if (model == "glm") {
+    fit <- sgd.fit.glm
+  } else {
+    print(model)
+    stop("'model' not recognized")
   }
-  if (!is.null(weights) && any(weights < 0)) {
-    stop("negative weights not allowed")
-  }
-  offset <- as.vector(model.offset(mf))
-  if (!is.null(offset)) {
-    if (length(offset) != NROW(Y)) {
-      stop(gettextf("number of offsets is %d should equal %d (number of observations)",
-                    length(offset), NROW(Y)), domain=NA)
-    }
-  }
-
-  fit <- sgd.fit(x=X, y=Y, weights=weights, start=start,
-                 offset=offset, family=family, control=control,
-                 intercept=attr(mt, "intercept") > 0L, method=method,
-                 lr.type=lr.type)
-
-  # Model frame should be included as a component of the returned value.
-  if (model) {
-    fit$model <- mf
-  }
-
-  # Calculate null.deviance: the deviance for the null model, comparable with
-  # deviance.
-  # The null model will include the offset, and an intercept if there is one in
-  # the model.
-  if (length(offset) && attr(mt, "intercept") > 0L) {
-    fit2 <- sgd.fit(x=X[, "(Intercept)", drop=FALSE], y=Y, weights=weights,
-                    offset=offset, family=family, control=control,
-                    intercept=TRUE, method=method, lr.type=lr.type)
-    fit$null.deviance <- fit2$deviance
-  }
-
-  # Include x and y in the returned value.
-  if (x) {
-    fit$x <- X
-  }
-  if (!y) {
-    fit$y <- NULL
-  }
-
-  # The returned value should be the same as glm, so the returned object can be
-  # used by all functions compatible with glm.
-  fit <- c(fit, list(call=call, formula=formula, terms=mt,
-                     data=data, offset=offset, control=control, method=method,
-                     contrasts=attr(X, "contrasts"), xlevels=.getXlevels(mt, mf)))
-  class(fit) <- c(fit$class, c("sgd", "glm", "lm"))
-  return(fit)
+  out <- do.call("fit", c(list(x=X, y=Y), model.control, sgd.control))
+  class(out) <- c(out$class, "sgd")
+  return(out)
 }
 
-sgd.transfer.name <- function(link.name) {
-  if(!is.character(link.name)) {
-    stop("link name must be a string")
-  }
-  link.names <- c("identity", "log", "logit", "inverse")
-  transfer.names <- c("identity", "exp", "logistic", "inverse")
-  transfer.idx <- which(link.names == link.name)
-  if (length(transfer.idx) == 0) {
-    stop("no match link function founded!")
-  }
-  return(transfer.names[transfer.idx])
+sgd.function <- function(x, fn.control=list(gr=NULL, lower=-Inf, upper=Inf),
+                        sgd.control=list(method="implicit", start=NULL,
+                                         lr.type="uni-dim", ...),
+                        ...) {
+  # TODO
+  #
+  # Args:
+  #   x: loss function
+  #   gr: gradient of loss function
+  # TODO run_online_algorithm will not work on this as it relies on data
 }
 
-sgd.fit <- function (x, y, weights=rep(1, nobs), start=NULL,
+sgd.matrix <- function(x, y, model, model.control,
+                        sgd.control=list(method="implicit", start=NULL,
+                                         lr.type="uni-dim", ...),
+                        ...) {
+  # TODO
+}
+
+################################################################################
+# Generic methods
+################################################################################
+
+print.sgd <- function() {}# TODO
+
+################################################################################
+# Auxiliary functions: model fitting
+################################################################################
+
+sgd.fit.glm <- function(x, y, weights=rep(1, nobs), start=NULL,
                      offset=rep(0, nobs), family=gaussian(), control=list(),
                      intercept=TRUE, method="implicit", lr.type, ...)  {
-  control <- do.call("sgd.control", control)
+  control <- do.call("sgd.control.implicit", control)
   x <- as.matrix(x)
   xnames <- dimnames(x)[[2L]]
   ynames <- ifelse(is.matrix(y), rownames(y), names(y))
@@ -301,4 +261,90 @@ sgd.fit <- function (x, y, weights=rep(1, nobs), start=NULL,
   # TODO compare all results with glm
   # TODO unit test on all checks
   # TODO write start value
+}
+
+sgd.control.implicit <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
+                        convergence=FALSE) {
+  # Set the control according to user input.
+  if (!is.numeric(epsilon) || epsilon <= 0) {
+    stop("value of 'epsilon' must be > 0")
+  }
+  list(epsilon=epsilon, trace=trace, deviance=deviance, convergence=convergence)
+}
+
+
+################################################################################
+# Auxiliary functions: safe checking
+################################################################################
+
+sgd.sgd.control.valid <- function(method="implicit", start=NULL, lr.type="uni-dim", ...) {
+  # TODO documentation
+  # Check the validity of learning rate type.
+  lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
+  if (is.numeric(lr.type)) {
+    if (lr.type < 1 | lr.type > length(lr.types)) {
+      stop("'lr.type' out of range")
+    }
+    lr.type <- lr.types[lr.type]
+  } else if (is.character(lr.type)) {
+    lr.type <- tolower(lr.type)
+    if (!(lr.type %in% lr.types)) {
+      stop("'lr.type' not recognized")
+    }
+  } else {
+    stop("invalid 'lr.type'")
+  }
+
+  #Check the validity of start.
+  if (!is.null(start) & !is.numeric(start)) {
+    stop("'start' must be numeric")
+  }
+  # TODO where should we check if the dim(start) == dim(parameters)?
+
+  # Check the validity of method.
+  if (!is.character(method)) {
+    stop("'method' must be a string")
+  } else if (!(method %in% c("implicit", "asgd", "sgd"))) {
+    stop("'method' not recognized")
+  }
+  return(list(method=method, start=start, lr.type=lr.type))
+}
+
+sgd.model.valid <- function(model, temp=list(...), ...) {
+  # TODO documentation
+  family <- temp$family
+  if (model == "glm") {
+      # Check the validity of family.
+    if (is.null("family")) family <- "gaussian"
+    if (is.character(family)) {
+      family <- get(family, mode="function", envir=parent.frame())
+    }
+    if (is.function(family)) {
+      family <- family()
+    }
+    if (is.null(family$family)) {
+      print(family)
+      stop("'family' not recognized")
+    }
+    return(list(family=family))
+  } else {
+    stop("model not specified")
+  }
+}
+
+################################################################################
+# Auxiliary functions: Miscellaneous
+################################################################################
+
+sgd.transfer.name <- function(link.name) {
+  if(!is.character(link.name)) {
+    stop("link name must be a string")
+  }
+  link.names <- c("identity", "log", "logit", "inverse")
+  transfer.names <- c("identity", "exp", "logistic", "inverse")
+  transfer.idx <- which(link.names == link.name)
+  if (length(transfer.idx) == 0) {
+    stop("no match link function founded!")
+  }
+  return(transfer.names[transfer.idx])
 }
