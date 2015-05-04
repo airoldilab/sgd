@@ -55,7 +55,7 @@ sgd.formula <- function(formula, model, data,
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
-  control <- do.call("sgd.sgd.control.valid", sgd.control)
+  sgd.control <- do.call("sgd.sgd.control.valid", sgd.control)
 
   # 2. Build dataframe according to the formula.
   mf <- match.call(expand.dots=FALSE)
