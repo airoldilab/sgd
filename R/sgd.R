@@ -30,7 +30,7 @@ sgd.formula <- function(formula, model, data,
   #   model.control: list of model-specific controls
   #     family:        "glm": string specifying which family in exponential
   #                    family
-  #     intercept:     "glm": boolean specifying whether to include intercept
+  #     intercept:     "glm": logical specifying whether to include intercept
   #   sgd.control:   list of optimization-specific controls
   #     method:        character in c("implicit", "sgd", "asgd")
   #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
@@ -129,7 +129,7 @@ sgd.matrix <- function(x, y, model,
   #   model.control: list of model-specific controls
   #     family:        "glm": string specifying which family in exponential
   #                    family
-  #     intercept:     "glm": boolean specifying whether to include intercept
+  #     intercept:     "glm": logical specifying whether to include intercept
   #   sgd.control:   list of optimization-specific controls
   #     method:        character in c("implicit", "sgd", "asgd")
   #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
@@ -172,7 +172,7 @@ sgd.matrix <- function(x, y, model,
     print(model)
     stop("'model' not recognized")
   }
-  out <- fit(x=X, y=Y, model.control=model.control, sgd.control)
+  out <- fit(x=X, y=Y, model.control=model.control, sgd.control=sgd.control)
   class(out) <- c(out$class, "sgd")
   return(out)
 }
@@ -187,12 +187,12 @@ print.sgd <- function() {}# TODO
 # Auxiliary functions: model fitting
 ################################################################################
 
-# The parameters passed into this are all disorganized..
 sgd.fit.glm <- function(x, y,
                         model.control,
                         sgd.control) {
   family <- model.control$family
-  intercept <- TRUE
+  intercept <- model.control$intercept
+  #intercept <- TRUE
 
   start <- sgd.control$start
   method <- sgd.control$method
@@ -202,7 +202,7 @@ sgd.fit.glm <- function(x, y,
   weights <- rep(1, nobs)
   offset <- rep(0, nobs)
 
-  sgd.control.implicit <- do.call("sgd.control.implicit", sgd.control)
+  implicit.control <- do.call("sgd.implicit.control", sgd.control)
   x <- as.matrix(x)
   xnames <- dimnames(x)[[2L]]
   ynames <- ifelse(is.matrix(y), rownames(y), names(y))
@@ -277,10 +277,10 @@ sgd.fit.glm <- function(x, y,
     experiment$p <- dim(dataset$X)[2]
     experiment$weights <- as.matrix(weights[good])
     experiment$start <- as.matrix(start)
-    experiment$deviance <- sgd.control.implicit$deviance
-    experiment$trace <- sgd.control.implicit$trace
-    experiment$convergence <- sgd.control.implicit$convergence
-    experiment$epsilon <- sgd.control.implicit$epsilon
+    experiment$deviance <- implicit.control$deviance
+    experiment$trace <- implicit.control$trace
+    experiment$convergence <- implicit.control$convergence
+    experiment$epsilon <- implicit.control$epsilon
     experiment$offset <- as.matrix(offset[good])
     out <- run_online_algorithm(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
@@ -333,7 +333,7 @@ sgd.fit.glm <- function(x, y,
        df.null=nulldf,
        y=y,
        estimates=if(!EMPTY) out$estimates,
-       converged=if(sgd.control.implicit$convergence)
+       converged=if(implicit.control$convergence)
        converged))
   # TODO in C: deal with offset
   # TODO compare all results with glm
@@ -355,11 +355,12 @@ sgd.control.implicit <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 # Auxiliary functions: safe checking
 ################################################################################
 
-sgd.model.control.valid <- function(model, temp=list(...), ...) {
+sgd.model.control.valid <- function(model, model.control=list(...), ...) {
   # TODO documentation
-  family <- temp$family
   if (model == "glm") {
-      # Check the validity of family.
+    family <- model.control$family
+    intercept <- model.control$intercept
+    # Check the validity of family.
     if (is.null("family")) family <- "gaussian"
     if (is.character(family)) {
       family <- get(family, mode="function", envir=parent.frame())
@@ -371,7 +372,11 @@ sgd.model.control.valid <- function(model, temp=list(...), ...) {
       print(family)
       stop("'family' not recognized")
     }
-    return(list(family=family))
+    # Check the validity of intercept.
+    if (!is.logical(intercept)) {
+      stop("'intercept' not logical")
+    }
+    return(list(family=family, intercept=intercept))
   } else {
     stop("model not specified")
   }
