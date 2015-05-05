@@ -348,23 +348,23 @@ sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 sgd.model.control.valid <- function(model, model.control=list(...), ...) {
   # TODO documentation
   if (model == "glm") {
-    family <- model.control$family
-    intercept <- model.control$intercept
+    control.family <- model.control$family
+    control.intercept <- model.control$intercept
     # Check the validity of family.
-    if (is.null("family")) {
+    if (is.null(control.family)) {
       family <- gaussian()
-    } else if (is.character(family)) {
+    } else if (is.character(control.family)) {
       family <- get(family, mode="function", envir=parent.frame())()
-    } else if (is.function(family)) {
+    } else if (is.function(control.family)) {
       family <- family()
-    } else if (is.null(family$family)) {
+    } else if (is.null(control.family$family)) {
       print(family)
       stop("'family' not recognized")
     }
     # Check the validity of intercept.
-    if (is.null(intercept)) {
+    if (is.null(control.intercept)) {
       intercept <- TRUE
-    } else if (!is.logical(intercept)) {
+    } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
     return(list(family=family, intercept=intercept))

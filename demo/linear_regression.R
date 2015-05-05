@@ -9,8 +9,6 @@
 # Dimensions:
 #   N=1e4 observations
 #   d=1e2 parameters
-#
-# @pre Current working directory is the root directory of this repository
 
 library(sgd)
 
@@ -26,3 +24,4 @@ y <- cbind(1, X) %*% theta + eps
 dat <- data.frame(y=y, x=X)
 
 sgd.est <- sgd(y ~ ., data=dat, model="glm")
+sgd.est$coefficients
