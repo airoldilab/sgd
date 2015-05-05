@@ -190,34 +190,29 @@ print.sgd <- function() {}# TODO
 sgd.fit.glm <- function(x, y,
                         model.control,
                         sgd.control) {
+  xnames <- dimnames(x)[[2L]]
+  ynames <- ifelse(is.matrix(y), rownames(y), names(y))
+  N <- NROW(y) # number of observations
+  d <- ncol(x) # number of features
+  EMPTY <- d == 0
+
   family <- model.control$family
   intercept <- model.control$intercept
-  #intercept <- TRUE
 
   start <- sgd.control$start
   method <- sgd.control$method
   lr.type <- sgd.control$lr.type
-  #weights <- sgd.control$weights
-  #offset <- sgd.control$offset
-
+  if (is.null(sgd.control$weights)) {
+    weights <- rep.int(1, N)
+  } else {
+    weights <- sgd.control$weights
+  }
+  if (is.null(sgd.control$offset)) {
+    offset <- rep.int(0, N)
+  } else {
+    offset <- sgd.control$offset
+  }
   implicit.control <- do.call("sgd.implicit.control", sgd.control)
-  x <- as.matrix(x)
-  xnames <- dimnames(x)[[2L]]
-  ynames <- ifelse(is.matrix(y), rownames(y), names(y))
-  conv <- FALSE
-  nobs <- NROW(y)  # number of observations
-  nvars <- ncol(x) # number of covariates
-  EMPTY <- nvars == 0
-
-  weights <- rep.int(1, nobs)
-  offset <- rep.int(0, nobs)
-
-  if (is.null(weights)) {
-    weights <- rep.int(1, nobs)
-  }
-  if (is.null(offset)) {
-    offset <- rep.int(0, nobs)
-  }
 
   variance <- family$variance
   linkinv <- family$linkinv
@@ -226,7 +221,6 @@ sgd.fit.glm <- function(x, y,
          call.=FALSE)
   }
   dev.resids <- family$dev.resids
-  aic <- family$aic
   mu.eta <- family$mu.eta
 
   unless.null <- function(x, if.null) ifelse(is.null(x), if.null, x)
@@ -234,7 +228,7 @@ sgd.fit.glm <- function(x, y,
   validmu <- unless.null(family$validmu, function(mu) TRUE)
 
   if (EMPTY) {
-    eta <- rep.int(0, nobs) + offset
+    eta <- rep.int(0, N) + offset
     if (!valideta(eta)) {
       stop("invalid linear predictor values in empty model",
            call.=FALSE)
@@ -254,11 +248,11 @@ sgd.fit.glm <- function(x, y,
     converged <- FALSE
   } else {
     # Set the initial value for theta.
-    if (!is.null(start) & length(start) != nvars) {
+    if (!is.null(start) & length(start) != d) {
       stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s",
-                    nvars, paste(deparse(xnames), collapse=", ")), domain=NA)
+                    d, paste(deparse(xnames), collapse=", ")), domain=NA)
     } else {
-      start <- rep(0, nvars)
+      start <- rep(0, d)
     }
     eta <- sum(x[1, ] * start)+offset[1]
     if (!valideta(eta)) {
@@ -309,24 +303,17 @@ sgd.fit.glm <- function(x, y,
   names(y) <- ynames
   wtdmu <- ifelse(intercept, sum(weights * y)/sum(weights), linkinv(offset))
   nulldev <- sum(dev.resids(y, wtdmu, weights))
-  n.ok <- nobs - sum(weights == 0)
+  n.ok <- N - sum(weights == 0)
   nulldf <- n.ok - as.integer(intercept)
   resdf <- n.ok - rank
-  aic.model <- aic(y, 1, mu, weights, dev) + 2 * rank
-  if (!EMPTY) {
-    qr <- qr(x)
-  }
   names(coef) <- xnames
   return(list(coefficients=coef,
        residuals=residuals,
        fitted.values=mu,
-       R=if (!EMPTY) qr.R(qr),
        rank=rank,
-       qr=if (!EMPTY) qr,
        family=family,
        linear.predictors=eta,
        deviance=dev,
-       aic=aic.model,
        null.deviance=nulldev,
        iter=iter,
        weights=weights,
@@ -334,8 +321,7 @@ sgd.fit.glm <- function(x, y,
        df.null=nulldf,
        y=y,
        estimates=if(!EMPTY) out$estimates,
-       converged=if(implicit.control$convergence)
-       converged))
+       converged=if(implicit.control$convergence) converged))
   # TODO in C: deal with offset
   # TODO compare all results with glm
   # TODO unit test on all checks
