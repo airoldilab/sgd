@@ -352,7 +352,7 @@ sgd.model.control.valid <- function(model, model.control=list(...), ...) {
     intercept <- model.control$intercept
     # Check the validity of family.
     if (is.null("family")) {
-      family <- "gaussian"
+      family <- gaussian()
     } else if (is.character(family)) {
       family <- get(family, mode="function", envir=parent.frame())()
     } else if (is.function(family)) {
