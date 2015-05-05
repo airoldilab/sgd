@@ -172,7 +172,7 @@ sgd.matrix <- function(x, y, model,
     print(model)
     stop("'model' not recognized")
   }
-  out <- fit(x=X, y=Y, model.control=model.control, sgd.control=sgd.control)
+  out <- fit(x, y, model.control, sgd.control)
   class(out) <- c(out$class, "sgd")
   return(out)
 }
@@ -199,8 +199,6 @@ sgd.fit.glm <- function(x, y,
   lr.type <- sgd.control$lr.type
   #weights <- sgd.control$weights
   #offset <- sgd.control$offset
-  weights <- rep(1, nobs)
-  offset <- rep(0, nobs)
 
   implicit.control <- do.call("sgd.implicit.control", sgd.control)
   x <- as.matrix(x)
@@ -210,6 +208,9 @@ sgd.fit.glm <- function(x, y,
   nobs <- NROW(y)  # number of observations
   nvars <- ncol(x) # number of covariates
   EMPTY <- nvars == 0
+
+  weights <- rep.int(1, nobs)
+  offset <- rep.int(0, nobs)
 
   if (is.null(weights)) {
     weights <- rep.int(1, nobs)
@@ -341,13 +342,16 @@ sgd.fit.glm <- function(x, y,
   # TODO write start value
 }
 
-sgd.control.implicit <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
-                        convergence=FALSE) {
+sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
+                                 convergence=FALSE, ...) {
   # Set the control according to user input.
   if (!is.numeric(epsilon) || epsilon <= 0) {
     stop("value of 'epsilon' must be > 0")
   }
-  list(epsilon=epsilon, trace=trace, deviance=deviance, convergence=convergence)
+  return(list(epsilon=epsilon,
+              trace=trace,
+              deviance=deviance,
+              convergence=convergence))
 }
 
 
@@ -361,19 +365,20 @@ sgd.model.control.valid <- function(model, model.control=list(...), ...) {
     family <- model.control$family
     intercept <- model.control$intercept
     # Check the validity of family.
-    if (is.null("family")) family <- "gaussian"
-    if (is.character(family)) {
-      family <- get(family, mode="function", envir=parent.frame())
-    }
-    if (is.function(family)) {
+    if (is.null("family")) {
+      family <- "gaussian"
+    } else if (is.character(family)) {
+      family <- get(family, mode="function", envir=parent.frame())()
+    } else if (is.function(family)) {
       family <- family()
-    }
-    if (is.null(family$family)) {
+    } else if (is.null(family$family)) {
       print(family)
       stop("'family' not recognized")
     }
     # Check the validity of intercept.
-    if (!is.logical(intercept)) {
+    if (is.null(intercept)) {
+      intercept <- TRUE
+    } else if (!is.logical(intercept)) {
       stop("'intercept' not logical")
     }
     return(list(family=family, intercept=intercept))
@@ -413,7 +418,9 @@ sgd.sgd.control.valid <- function(method="implicit", lr.type="uni-dim",
   } else if (!(method %in% c("implicit", "asgd", "sgd"))) {
     stop("'method' not recognized")
   }
-  return(list(method=method, lr.type=lr.type, start=start))
+  return(list(method=method,
+              lr.type=lr.type,
+              start=start))
 }
 
 ################################################################################
