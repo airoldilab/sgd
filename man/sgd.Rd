@@ -14,46 +14,37 @@
 
 \usage{
   sgd(x, ...)
-  \method{sgd}{formula}(formula, data, model,
-                        model.control = list(),
-                        sgd.control = list(...),
-                        ...)
+  \method{sgd}{formula}(formula, data, model, model.control = list(), sgd.control = list(...), ...)
 
-  \method{sgd}{function}(x,
-                        fn.control = list(),
-                        sgd.control = list(...),
-                        ...)
+  \method{sgd}{function}(x, fn.control = list(), sgd.control = list(...), ...)
 
-  \method{sgd}{matrix}(x, y, model,
-                       model.control = list(),
-                       sgd.control = list(...),
-                       ...)
+  \method{sgd}{matrix}(x, y, model, model.control = list(), sgd.control = list(...), ...)
 }
 \arguments{
   \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted. The details of model specification are given under \code{Details}.}
 
   \item{data}{an optional data frame, list or environment (or object coercible by \code{\link[base]{as.data.frame}} to a data frame) containing the variables in the model. If not found in data, the variables are taken from environment(formula), typically the environment from which glm is called.}
 
-  \item{method}{character specifying the model to be used: "glm" (generalized linear model).}
+  \item{model}{character specifying the model to be used: "glm" (generalized linear model).}
 
   \item{model.control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
   \itemize{
-    \item{family}{("glm" only) a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
+    \item{family ("glm"): }{a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
 
-    \item{intercept}{("glm" only) logical. Should an intercept be included in the \emph{null} model?}
+    \item{intercept ("glm"): }{logical. Should an intercept be included in the \emph{null} model?}
   }
 
   \item{sgd.control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
   \itemize{
-    \item{method}{character specifying the method to be used: "sgd", "implicit", "asgd"; default is "implicit". See \code{Details}.}
+    \item{method: }{character specifying the method to be used: "sgd", "implicit", "asgd"; default is "implicit". See \code{Details}.}
 
-    \item{lr.type}{character specifying the learning rate to be used: "un-dim", "px-dim", "adagrad"; default is "un-dim". See \code{Details} for their descriptions.}
+    \item{lr.type: }{character specifying the learning rate to be used: "un-dim", "px-dim", "adagrad"; default is "un-dim". See \code{Details} for their descriptions.}
 
-    \item{start}{starting values for the parameters in the linear predictor.}
+    \item{start: }{starting values for the parameters in the linear predictor.}
 
-    \item{weights}{an optional vector of "prior weights" to be used in the fitting process. Should be NULL or a numeric vector.}
+    \item{weights: }{an optional vector of "prior weights" to be used in the fitting process. Should be NULL or a numeric vector.}
 
-    \item{offset}{this can be used to specify an a priori known component to be included in the linear predictor during fitting. This should be NULL or a numeric vector of length equal to the number of cases. One or more offset terms can be included in the formula instead or as well, and if more than one is specified their sum is used. See \code{\link[stats]{offset}}}
+    \item{offset: }{this can be used to specify an a priori known component to be included in the linear predictor during fitting. This should be NULL or a numeric vector of length equal to the number of cases. One or more offset terms can be included in the formula instead or as well, and if more than one is specified their sum is used. See \code{\link[stats]{offset}}}
   }
 
   \item{...}{arguments to be used to form the default \code{sgd.control} arguments if it is not supplied directly.}
@@ -127,7 +118,7 @@
   \code{estimates}
   TODO unknown.
 }
-
+\author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}
 \references{
   Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
   approximation by averaging. SIAM Journal on Control and Optimization,
@@ -156,4 +147,3 @@
   anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
                   family=gaussian, data=anorexia)
 }
-\author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}
