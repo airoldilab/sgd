@@ -14,48 +14,50 @@ sgd <- function(x, ...) UseMethod("sgd")
 ################################################################################
 
 sgd.default <- function(x, ...) {
-  stop("class of x is not a formula, matrix, or function")
+  stop("class of x is not a formula, function, or matrix")
 }
 
 sgd.formula <- function(formula, model, data,
                         model.control=list(),
-                        sgd.control=list(method="implicit", start=NULL,
-                                         lr.type="uni-dim", ...),
+                        sgd.control=list(...),
                         ...) {
+  # Run stochastic gradient descent for model parameters.
+  #
+  # Args:
+  #   formula:       formula specifying symbolic description of model
+  #   model:         character in c("glm")
+  #   data:          data frame for formula
+  #   model.control: list of model-specific controls
+  #     family:        "glm": string specifying which family in exponential
+  #                    family
+  #     intercept:     "glm": boolean specifying whether to include intercept
+  #   sgd.control:   list of optimization-specific controls
+  #     method:        character in c("implicit", "sgd", "asgd")
+  #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
+  #                                   "p-dim-weighted", "adagrad")
+  #     start:         initial estimate
+  #     weights:       how to weight using each data point
+  #     offset:        how to offset the model
+  #
+  # Returns:
+  #   sgd object
   # TODO
-  # weights: how to weight using each data point; can be a parameter in sgd.control
   # subset: a subset of data points; can be a parameter in sgd.control
   # na.action: how to deal when data has NA; can be a parameter in sgd.control
   # model: logical value determining whether to output the X data frame
   # x,y: logical value determining whether to output the x and/or y
-  # family: string determining which family in exponential family; can be a paramter in model.control (for GLMs)
-  # offset: logical value determining whether to include intercept; can be a parameter in model.control
   # contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
   # Call method when the first argument is a formula
   # the call parameter to return
   call <- match.call()
 
-  # 1. Safe check.
+  # 1. Validity check.
   if (missing(model)) {
     stop("model not specified")
   }
-
-  # Get data from environment.
   if (missing(data)) {
     data <- environment(formula)
   }
-
-  # Set model.control according to user input and the default values.
-  if (!is.list(model.control))  {
-    stop("'model.control' is not a list")
-  }
-  model.control <- do.call("sgd.model.valid", c(model.control, model=model))
-
-  # Set sgd.control according to user input and the default values.
-  if (!is.list(sgd.control))  {
-    stop("'sgd.control' is not a list")
-  }
-  sgd.control <- do.call("sgd.sgd.control.valid", sgd.control)
 
   # 2. Build dataframe according to the formula.
   mf <- match.call(expand.dots=FALSE)
@@ -81,35 +83,98 @@ sgd.formula <- function(formula, model, data,
     X <- matrix(, NROW(Y), 0L)
   }
 
-  # 3. Fit!
+  # 3. Pass into sgd.matrix().
+  return(sgd.matrix(X, Y, model, model.control, sgd.control))
+}
+
+sgd.function <- function(x,
+                        fn.control=list(),
+                        sgd.control=list(...),
+                        ...) {
+  # Run stochastic gradient descent for model parameters.
+  #
+  # Args:
+  #   x:             loss function
+  #   fn.control:    list of function-specific controls
+  #     gr:            gradient of loss function
+  #     lower:         lower domain of loss function
+  #     upper:         upper domain of loss function
+  #   sgd.control:   list of optimization-specific controls
+  #     method:        character in c("implicit", "sgd", "asgd")
+  #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
+  #                                   "p-dim-weighted", "adagrad")
+  #     start:         initial estimate
+  #     weights:       how to weight using each data point
+  #     offset:        how to offset the model
+  #
+  # Returns:
+  #   sgd object
+  # TODO run_online_algorithm will not work on this as it relies on data
+  # sgd.fn.control.valid
+  gr <- NULL
+  lower <- -Inf
+  upper <- Inf
+}
+
+sgd.matrix <- function(x, y, model,
+                       model.control=list(),
+                       sgd.control=list(...),
+                       ...) {
+  # Run stochastic gradient descent for model parameters.
+  #
+  # Args:
+  #   formula:       formula specifying symbolic description of model
+  #   model:         character in c("glm")
+  #   data:          data frame for formula
+  #   model.control: list of model-specific controls
+  #     family:        "glm": string specifying which family in exponential
+  #                    family
+  #     intercept:     "glm": boolean specifying whether to include intercept
+  #   sgd.control:   list of optimization-specific controls
+  #     method:        character in c("implicit", "sgd", "asgd")
+  #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
+  #                                   "p-dim-weighted", "adagrad")
+  #     start:         initial estimate
+  #     weights:       how to weight using each data point
+  #     offset:        how to offset the model
+  #
+  # Returns:
+  #   sgd object
+  # Call method when the first argument is a formula
+  # the call parameter to return
+  call <- match.call()
+
+  # 1. Validity check.
+  if (missing(x)) {
+    stop("x not specified")
+  }
+  if (missing(y)) {
+    stop("y not specified")
+  }
+  if (missing(model)) {
+    stop("model not specified")
+  }
+  if (!is.list(model.control))  {
+    stop("'model.control' is not a list")
+  } else {
+    model.control <- do.call("sgd.model.control.valid", c(model.control,
+                             model=model))
+  }
+  if (!is.list(sgd.control))  {
+    stop("'sgd.control' is not a list")
+  }
+  sgd.control <- do.call("sgd.sgd.control.valid", sgd.control)
+
+  # 2. Fit!
   if (model == "glm") {
     fit <- sgd.fit.glm
   } else {
     print(model)
     stop("'model' not recognized")
   }
-  out <- do.call("fit", c(list(x=X, y=Y), model.control, sgd.control))
+  out <- fit(x=X, y=Y, model.control=model.control, sgd.control)
   class(out) <- c(out$class, "sgd")
   return(out)
-}
-
-sgd.function <- function(x, fn.control=list(gr=NULL, lower=-Inf, upper=Inf),
-                        sgd.control=list(method="implicit", start=NULL,
-                                         lr.type="uni-dim", ...),
-                        ...) {
-  # TODO
-  #
-  # Args:
-  #   x: loss function
-  #   gr: gradient of loss function
-  # TODO run_online_algorithm will not work on this as it relies on data
-}
-
-sgd.matrix <- function(x, y, model, model.control,
-                        sgd.control=list(method="implicit", start=NULL,
-                                         lr.type="uni-dim", ...),
-                        ...) {
-  # TODO
 }
 
 ################################################################################
@@ -122,10 +187,22 @@ print.sgd <- function() {}# TODO
 # Auxiliary functions: model fitting
 ################################################################################
 
-sgd.fit.glm <- function(x, y, weights=rep(1, nobs), start=NULL,
-                     offset=rep(0, nobs), family=gaussian(), control=list(),
-                     intercept=TRUE, method="implicit", lr.type, ...)  {
-  control <- do.call("sgd.control.implicit", control)
+# The parameters passed into this are all disorganized..
+sgd.fit.glm <- function(x, y,
+                        model.control,
+                        sgd.control) {
+  family <- model.control$family
+  intercept <- TRUE
+
+  start <- sgd.control$start
+  method <- sgd.control$method
+  lr.type <- sgd.control$lr.type
+  #weights <- sgd.control$weights
+  #offset <- sgd.control$offset
+  weights <- rep(1, nobs)
+  offset <- rep(0, nobs)
+
+  sgd.control.implicit <- do.call("sgd.control.implicit", sgd.control)
   x <- as.matrix(x)
   xnames <- dimnames(x)[[2L]]
   ynames <- ifelse(is.matrix(y), rownames(y), names(y))
@@ -200,10 +277,10 @@ sgd.fit.glm <- function(x, y, weights=rep(1, nobs), start=NULL,
     experiment$p <- dim(dataset$X)[2]
     experiment$weights <- as.matrix(weights[good])
     experiment$start <- as.matrix(start)
-    experiment$deviance <- control$deviance
-    experiment$trace <- control$trace
-    experiment$convergence <- control$convergence
-    experiment$epsilon <- control$epsilon
+    experiment$deviance <- sgd.control.implicit$deviance
+    experiment$trace <- sgd.control.implicit$trace
+    experiment$convergence <- sgd.control.implicit$convergence
+    experiment$epsilon <- sgd.control.implicit$epsilon
     experiment$offset <- as.matrix(offset[good])
     out <- run_online_algorithm(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
@@ -256,7 +333,7 @@ sgd.fit.glm <- function(x, y, weights=rep(1, nobs), start=NULL,
        df.null=nulldf,
        y=y,
        estimates=if(!EMPTY) out$estimates,
-       converged=if(control$convergence)
+       converged=if(sgd.control.implicit$convergence)
        converged))
   # TODO in C: deal with offset
   # TODO compare all results with glm
@@ -278,7 +355,7 @@ sgd.control.implicit <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 # Auxiliary functions: safe checking
 ################################################################################
 
-sgd.model.valid <- function(model, temp=list(...), ...) {
+sgd.model.control.valid <- function(model, temp=list(...), ...) {
   # TODO documentation
   family <- temp$family
   if (model == "glm") {
@@ -300,7 +377,8 @@ sgd.model.valid <- function(model, temp=list(...), ...) {
   }
 }
 
-sgd.sgd.control.valid <- function(method="implicit", start=NULL, lr.type="uni-dim", ...) {
+sgd.sgd.control.valid <- function(method="implicit", lr.type="uni-dim",
+                                  start=NULL, ...) {
   # TODO documentation
   # Check the validity of learning rate type.
   lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
@@ -330,7 +408,7 @@ sgd.sgd.control.valid <- function(method="implicit", start=NULL, lr.type="uni-di
   } else if (!(method %in% c("implicit", "asgd", "sgd"))) {
     stop("'method' not recognized")
   }
-  return(list(method=method, start=start, lr.type=lr.type))
+  return(list(method=method, lr.type=lr.type, start=start))
 }
 
 ################################################################################
