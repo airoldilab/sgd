@@ -319,7 +319,6 @@ sgd.fit.glm <- function(x, y,
        weights=weights,
        df.residual=resdf,
        df.null=nulldf,
-       y=y,
        estimates=if(!EMPTY) out$estimates,
        converged=if(implicit.control$convergence) converged))
   # TODO in C: deal with offset

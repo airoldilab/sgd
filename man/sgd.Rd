@@ -1,7 +1,8 @@
 \name{sgd}
-\alias{sgd.fit}
-\alias{sgd.formula}
 \alias{sgd}
+\alias{sgd.formula}
+\alias{sgd.function}
+\alias{sgd.matrix}
 \title{Stochastic gradient descent for parameter estimation of models}
 \description{
   This package provides a fast and flexible set of tools for
@@ -69,27 +70,18 @@
 
   The terms in the formula will be re-ordered so that main effects come first, followed by the interactions, all second-order, all third-order and so on: to avoid this pass a \code{terms} object as the formula.
 
-  Non-\code{NULL weights} can be used to indicate that different observations have different dispersions (with the values in \code{weights} being inversely proportional to the dispersions); or equivalently, when the elements of \code{weights} are positive integers \code{w_i}, that each response \code{y_i} is the mean of \code{w_i} unit-weight observations. For a binomial GLM prior weights are used to give the number of trials when the response is the proportion of successes: they would rarely be used for a Poisson GLM.
-
-  \code{sgd.fit} is the workhorse function: it is not normally called directly but can be more efficient where the response vector and design matrix have already been calculated.
+  \code{sgd.matrix} is the workhorse function: it is not normally called directly but can be more efficient where the response vector and design matrix have already been calculated.
 
   All of \code{weights} and \code{offset} are evaluated in the same way as variables in \code{formula}, that is first in \code{data} and then in the environment of \code{formula}.
 
-  For the background to warning messages about "fitted probabilities numerically 0 or 1 occurred" for binomial GLMs, see Venables & Ripley (2002, pp. 197-8).
+  Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951). "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014). "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
 
   Learning rates: "un-dim" uses the one-dimensional learning rate. The method "px-dim" uses the p-dimensional learning rate. The method "adagrad" is more aggressive than "px-dim"
 }
 
 \value{
   \code{sgd}
-  returns an object of class inheriting from "sgd" which inherits from the class "\code{lm}" and "\code{glm}".
-
-  The function \code{\link[base]{summary}} (i.e., \code{summary.glm}) can be used to obtain or print a summary of the results and the function \code{\link[stats]{anova}} (i.e., \code{anova.glm}) to produce an analysis of variance table.
-
-  The generic accessor functions \code{\link[stats]{coefficients}}, \code{\link[stats]{fitted.values}} and \code{\link[stats]{residuals}} can be used to extract various useful features of the value returned by \code{sgd}.
-
-  \code{weights}
-  extracts a vector of weights, one for each case in the fit (after subsetting and na.action).
+  returns an object of class "sgd".
 
   An object of class "\code{sgd}" is a list containing at least the following components:
 
@@ -114,9 +106,6 @@
   \code{deviance}
   up to a constant, minus twice the maximized log-likelihood. Where sensible, the constant is chosen so that a saturated model has deviance zero.
 
-  \code{aic}
-  A version of \emph{Akaike's An Information Criterion}, minus twice the maximized log-likelihood plus twice the number of parameters, computed by the \code{aic} component of the family. For binomial and Poison families the dispersion is fixed at one and the number of parameters is the number of coefficients. For gaussian, Gamma and inverse gaussian families the dispersion is estimated from the residual deviance, and the number of parameters is the number of coefficients plus one. For a gaussian family the MLE of the dispersion is used so this is a valid value of AIC, but for Gamma and inverse gaussian families it is not. For families fitted by quasi-likelihood the value is NA.
-
   \code{null.deviance}
   The deviance for the null model, comparable with \code{deviance}. The null model will include the offset, and an intercept if there is one in the model. Note that this will be incorrect if the link function depends on the data other than through the fitted mean: specify a zero offset to force a correct calculation.
 
@@ -132,61 +121,27 @@
   \code{df.null}
   the residual degrees of freedom for the null model.
 
-  \code{y}
-  if requested (the default) the \code{y} vector used. (It is a vector even for a binomial model.)
-
-  \code{x}
-  if requested, the model matrix.
-
-  \code{model}
-  if requested (the default), the model frame.
-
   \code{converged}
   logical. Was the algorithm judged to have converged?
 
-  \code{call}
-  the matched call.
-
-  \code{formula}
-  the formula supplied.
-
-  \code{terms}
-  the \code{\link[stats]{terms}} object used.
-
-  \code{data}
-  the data \code{argument}.
-
-  \code{offset}
-  the offset vector used.
-
-  \code{control}
-  the value of the \code{control} argument used.
-
-  \code{method}
-  the name of the fitter function used.
-
-  \code{contrasts}
-  (where relevant) the contrasts used.
-
-  \code{xlevels}
-  (where relevant) a record of the levels of the factors used in fitting.
-
-  \code{na.action}
-  (where relevant) information returned by \code{\link[stats]{model.frame}} on the special handling of NAs.
-
-  In addition, non-empty fits will have components \code{qr} and \code{R} relating to the final  linear fit.
-
-  Objects of class "\code{sgd}" are normally of class c("\code{glm}", "\code{lm}", "\code{sgd}"), that is inherit from class "\code{lm}" and "\code{glm}", and well-designed methods for class "\code{lm}" and "\code{glm}" will be applied to the model at the final iteration.
-
+  \code{estimates}
+  TODO unknown.
 }
 
 \references{
+  Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
+  approximation by averaging. SIAM Journal on Control and Optimization,
+  30(4):838–855, 1992.
+
+  Herbert Robbins and Sutton Monro. A stochastic approximation method. The
+  Annals of Mathematical Statistics, pp. 400–407, 1951.
+
   Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of
   stochastic gradient methods for generalized linear models", In Proceedings of
   the 31st International Conference on Machine Learning (ICML), 2014.
 }
 \examples{
-  ## Dobson (1990) Page 93: Randomized Controlled Trial :
+  ## Dobson (1990, p.93): Randomized Controlled Trial
   counts <- c(18, 17, 15, 20, 10, 20, 25, 13, 12)
   outcome <- gl(3, 1, 9)
   treatment <- gl(3, 3)
@@ -195,7 +150,7 @@
                  model.control=list(family = poisson()))
   sgd.D93
 
-  ## an example with offsets from Venables & Ripley (2002, p.189)
+  ## Venables & Ripley (2002, p.189): an example with offsets
   utils::data(anorexia, package="MASS")
 
   anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),

@@ -43,6 +43,11 @@ install.packages(path_to_file, repos=NULL, type="source")
 * Panos Toulis \<ptoulis@fas.harvard.edu\>
 
 ## References
-* Panos Toulis, Jason Rennie, Edoardo M. Airoldi, "Statistical analysis of
+* Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
+  approximation by averaging. _SIAM Journal on Control and Optimization_,
+  30(4):838–855, 1992.
+* Herbert Robbins and Sutton Monro. A stochastic approximation method. _The
+  Annals of Mathematical Statistics_, pp. 400–407, 1951.
+* Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of
   stochastic gradient methods for generalized linear models", In _Proceedings of
   the 31st International Conference on Machine Learning (ICML)_, 2014.
