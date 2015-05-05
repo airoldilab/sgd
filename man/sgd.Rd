@@ -27,20 +27,20 @@
 
   \item{model}{character specifying the model to be used: "glm" (generalized linear model).}
 
-  \item{model.control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
+  \item{model.control}{a list of parameters for controlling the model.}
   \itemize{
     \item{family ("glm"): }{a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
 
     \item{intercept ("glm"): }{logical. Should an intercept be included in the \emph{null} model?}
   }
 
-  \item{sgd.control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
+  \item{sgd.control}{a list of parameters for controlling the estimation}
   \itemize{
-    \item{method: }{character specifying the method to be used: "sgd", "implicit", "asgd"; default is "implicit". See \code{Details}.}
+    \item{method: }{character specifying the method to be used: "sgd", "implicit", "asgd". Default is "implicit". See \code{Details}.}
 
-    \item{lr.type: }{character specifying the learning rate to be used: "un-dim", "px-dim", "adagrad"; default is "un-dim". See \code{Details} for their descriptions.}
+    \item{lr.type: }{character specifying the learning rate to be used: "un-dim", "px-dim", "adagrad". Default is "un-dim". See \code{Details}.}
 
-    \item{start: }{starting values for the parameters in the linear predictor.}
+    \item{start: }{starting values for the parameter estimates. Default is random initialization around the mean.}
 
     \item{weights: }{an optional vector of "prior weights" to be used in the fitting process. Should be NULL or a numeric vector.}
 
