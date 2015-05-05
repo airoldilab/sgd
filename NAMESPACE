@@ -4,6 +4,4 @@ import(MASS)
 export(sgd)
 S3method(sgd, formula)
 S3method(sgd, matrix)
-S3method(sgd, base::function)
-
-
+S3method(sgd, "function")
