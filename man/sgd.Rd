@@ -13,49 +13,53 @@
 
 \usage{
   sgd(x, ...)
-  \method{sgd}{formula}(formula, family = gaussian, data, weights, subset,
-           na.action, start = NULL, offset, control = list(...),
-           model = TRUE, method = "implicit", x = FALSE, y = TRUE, contrasts = NULL,
-           lr.type = "uni-dim", ...)
+  \method{sgd}{formula}(formula, data, model,
+                        model.control = list(),
+                        sgd.control = list(...),
+                        ...)
 
-  \method{sgd}{fit}(x, y, weights = rep(1, nobs), start = NULL,
-               offset = rep(0, nobs), family = gaussian(),
-               control = list(), intercept = TRUE, method = "implicit", lr.type, ...)
+  \method{sgd}{function}(x,
+                        fn.control = list(),
+                        sgd.control = list(...),
+                        ...)
+
+  \method{sgd}{matrix}(x, y, model,
+                       model.control = list(),
+                       sgd.control = list(...),
+                       ...)
 }
 \arguments{
-  \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted. The details of model specification are given under "\code{Details}".}
-
-  \item{family}{a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
+  \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted. The details of model specification are given under \code{Details}.}
 
   \item{data}{an optional data frame, list or environment (or object coercible by \code{\link[base]{as.data.frame}} to a data frame) containing the variables in the model. If not found in data, the variables are taken from environment(formula), typically the environment from which glm is called.}
 
-  \item{weights}{an optional vector of "prior weights" to be used in the fitting process. Should be NULL or a numeric vector.}
+  \item{method}{character specifying the model to be used: "glm" (generalized linear model).}
 
-  \item{subset}{an optional vector specifying a subset of observations to be used in the fitting process.}
+  \item{model.control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
+  \itemize{
+    \item{family}{("glm" only) a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
 
-  \item{na.action}{a function which indicates what should happen when the data contain NAs. The default is set by the na.action setting of options, and is na.fail if that is unset. The "factory-fresh" default is na.omit. Another possible value is NULL, no action. Value na.exclude can be useful.}
+    \item{intercept}{("glm" only) logical. Should an intercept be included in the \emph{null} model?}
+  }
 
-  \item{start}{starting values for the parameters in the linear predictor.}
+  \item{sgd.control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
+  \itemize{
+    \item{method}{character specifying the method to be used: "sgd", "implicit", "asgd"; default is "implicit". See \code{Details}.}
 
-  \item{offset}{this can be used to specify an a priori known component to be included in the linear predictor during fitting. This should be NULL or a numeric vector of length equal to the number of cases. One or more offset terms can be included in the formula instead or as well, and if more than one is specified their sum is used. See \code{\link[stats]{offset}}}
+    \item{lr.type}{character specifying the learning rate to be used: "un-dim", "px-dim", "adagrad"; default is "un-dim". See \code{Details} for their descriptions.}
 
-  \item{control}{a list of parameters for controlling the fitting process. For \code{sgd.fit} this is passed to \code{\link{sgd.control}}.}
+    \item{start}{starting values for the parameters in the linear predictor.}
 
-  \item{model}{a logical value indicating whether model frame should be included as a component of the returned value.}
+    \item{weights}{an optional vector of "prior weights" to be used in the fitting process. Should be NULL or a numeric vector.}
 
-  \item{method}{the method to be used in fitting the model. The default method "implicit" uses implicit-SGD. Other possible methodes include "asgd" and "sgd". The alternative method "model.frame" returns the model frame and does no fitting.}
+    \item{offset}{this can be used to specify an a priori known component to be included in the linear predictor during fitting. This should be NULL or a numeric vector of length equal to the number of cases. One or more offset terms can be included in the formula instead or as well, and if more than one is specified their sum is used. See \code{\link[stats]{offset}}}
+  }
 
-  \item{x, y}{For \code{sgd}: logical values indicating whether the response vector and model matrix used in the fitting process should be returned as components of the returned value.}
+  \item{...}{arguments to be used to form the default \code{sgd.control} arguments if it is not supplied directly.}
 
-  For \code{sgd.fit}: x is a design matrix of dimension n * p, and y is a vector of observations of length n.
+  For \code{sgd.function}: x is a function to minimize, and fn.control is a list of controls for x.
 
-  \item{contrasts}{an optional list. See the \code{contrasts.arg} of \code{model.matrix.default}.}
-
-  \item{intercept}{logical. Should an intercept be included in the \emph{null} model?}
-
-  \item{lr.type}{the type of learning rate to be used for fitting the model. The default method "un-dim" uses the one-dimensional learning rate. The method "px-dim" uses the p-dimensional learning rate. The method "adagrad" is more aggressive than "px-dim"}
-
-  \item{...}{arguments to be used to form the default control argument if it is not supplied directly.}
+  For \code{sgd.matrix}: x is a design matrix of dimension N * d, and y is a vector of observations of length N.
 }
 
 \details{
@@ -69,9 +73,11 @@
 
   \code{sgd.fit} is the workhorse function: it is not normally called directly but can be more efficient where the response vector and design matrix have already been calculated.
 
-  All of \code{weights}, \code{subset}, and \code{offset} are evaluated in the same way as variables in \code{formula}, that is first in \code{data} and then in the environment of \code{formula}.
+  All of \code{weights} and \code{offset} are evaluated in the same way as variables in \code{formula}, that is first in \code{data} and then in the environment of \code{formula}.
 
   For the background to warning messages about "fitted probabilities numerically 0 or 1 occurred" for binomial GLMs, see Venables & Ripley (2002, pp. 197-8).
+
+  Learning rates: "un-dim" uses the one-dimensional learning rate. The method "px-dim" uses the p-dimensional learning rate. The method "adagrad" is more aggressive than "px-dim"
 }
 
 \value{
@@ -175,22 +181,24 @@
 }
 
 \references{
-  Toulis, Panos, et al. Statistical analysis of stochastic gradient
-methods for generalized linear models.
+  Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of
+  stochastic gradient methods for generalized linear models", In Proceedings of
+  the 31st International Conference on Machine Learning (ICML), 2014.
 }
 \examples{
   ## Dobson (1990) Page 93: Randomized Controlled Trial :
-  counts <- c(18,17,15,20,10,20,25,13,12)
-  outcome <- gl(3,1,9)
-  treatment <- gl(3,3)
+  counts <- c(18, 17, 15, 20, 10, 20, 25, 13, 12)
+  outcome <- gl(3, 1, 9)
+  treatment <- gl(3, 3)
   print(d.AD <- data.frame(treatment, outcome, counts))
-  sgd.D93 <- sgd(counts ~ outcome + treatment, family = poisson())
-  print(sgd.D93)
+  sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
+                 model.control=list(family = poisson()))
+  sgd.D93
 
   ## an example with offsets from Venables & Ripley (2002, p.189)
-  utils::data(anorexia, package = "MASS")
+  utils::data(anorexia, package="MASS")
 
   anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-                  family = gaussian, data = anorexia)
+                  family=gaussian, data=anorexia)
 }
 \author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}

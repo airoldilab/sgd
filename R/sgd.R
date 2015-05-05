@@ -17,7 +17,7 @@ sgd.default <- function(x, ...) {
   stop("class of x is not a formula, function, or matrix")
 }
 
-sgd.formula <- function(formula, model, data,
+sgd.formula <- function(formula, data, model,
                         model.control=list(),
                         sgd.control=list(...),
                         ...) {
@@ -330,7 +330,20 @@ sgd.fit.glm <- function(x, y,
 
 sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
                                  convergence=FALSE, ...) {
-  # Set the control according to user input.
+  # Maintain control parameters for running implicit SGD.
+  #
+  # Args:
+  #   epsilon:     positive convergence tolerance; the iterations
+  #                converge when |dev - dev_{old}|/(|dev| + 0.1) < epsilon
+  #   trace:       logical indicating if output should be produced for each
+  #                iteration
+  #   deviance:    logical indicating if the validity of deviance should be
+  #                checked in each iteration
+  #   convergence: logical indicating if the convergence of the algorithm should
+  #                be checked
+  #
+  # Returns:
+  #   A list of parameters according to user input, default otherwise.
   if (!is.numeric(epsilon) || epsilon <= 0) {
     stop("value of 'epsilon' must be > 0")
   }
