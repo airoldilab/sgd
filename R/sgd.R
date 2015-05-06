@@ -252,17 +252,17 @@ sgd.matrix <- function(x, y, model,
   if (!is.list(model.control))  {
     stop("'model.control' is not a list")
   } else {
-    model.control <- do.call("sgd.model.control.valid", c(model.control,
+    model.control <- do.call("valid_model_control", c(model.control,
                              model=model))
   }
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
-  sgd.control <- do.call("sgd.sgd.control.valid", sgd.control)
+  sgd.control <- do.call("valid_sgd_control", sgd.control)
 
   # 2. Fit!
   if (model %in% c("lm", "glm")) {
-    fit <- sgd.fit.glm
+    fit <- fit_glm
   } else {
     print(model)
     stop("'model' not recognized")
@@ -305,9 +305,9 @@ sgd.matrix <- function(x, y, model,
 # Auxiliary functions: model fitting
 ################################################################################
 
-sgd.fit.glm <- function(x, y,
-                        model.control,
-                        sgd.control) {
+fit_glm <- function(x, y,
+                    model.control,
+                    sgd.control) {
   xnames <- dimnames(x)[[2L]]
   ynames <- ifelse(is.matrix(y), rownames(y), names(y))
   N <- NROW(y) # number of observations
@@ -330,7 +330,7 @@ sgd.fit.glm <- function(x, y,
   } else {
     offset <- sgd.control$offset
   }
-  implicit.control <- do.call("sgd.implicit.control", sgd.control)
+  implicit.control <- do.call("valid_implicit_control", sgd.control)
 
   variance <- family$variance
   linkinv <- family$linkinv
@@ -384,7 +384,7 @@ sgd.fit.glm <- function(x, y,
     experiment <- list()
     experiment$name <- family$family
     experiment$model.attrs <- list()
-    experiment$model.attrs$transfer.name <- sgd.transfer.name(family$link)
+    experiment$model.attrs$transfer.name <- transfer_name(family$link)
     experiment$niters <- length(dataset$Y)
     experiment$lr.type <- lr.type
     experiment$p <- dim(dataset$X)[2]
@@ -444,31 +444,6 @@ sgd.fit.glm <- function(x, y,
   # TODO write start value
 }
 
-sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
-                                 convergence=FALSE, ...) {
-  # Maintain control parameters for running implicit SGD.
-  #
-  # Args:
-  #   epsilon:     positive convergence tolerance; the iterations
-  #                converge when |dev - dev_{old}|/(|dev| + 0.1) < epsilon
-  #   trace:       logical indicating if output should be produced for each
-  #                iteration
-  #   deviance:    logical indicating if the validity of deviance should be
-  #                checked in each iteration
-  #   convergence: logical indicating if the convergence of the algorithm should
-  #                be checked
-  #
-  # Returns:
-  #   A list of parameters according to user input, default otherwise.
-  if (!is.numeric(epsilon) || epsilon <= 0) {
-    stop("value of 'epsilon' must be > 0")
-  }
-  return(list(epsilon=epsilon,
-              trace=trace,
-              deviance=deviance,
-              convergence=convergence))
-}
-
 ################################################################################
 # Auxiliary functions: plots
 ################################################################################
@@ -484,7 +459,7 @@ sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 # Auxiliary functions: validity checks
 ################################################################################
 
-sgd.model.control.valid <- function(model, model.control=list(...), ...) {
+valid_model_control <- function(model, model.control=list(...), ...) {
   # Run validity check of arguments passed to model.control given model. It
   # passes defaults to those unspecified and converts to the correct type if
   # possible; otherwise it errors.
@@ -523,8 +498,8 @@ sgd.model.control.valid <- function(model, model.control=list(...), ...) {
   }
 }
 
-sgd.sgd.control.valid <- function(method="implicit", lr.type="uni-dim",
-                                  start=NULL, ...) {
+valid_sgd_control <- function(method="implicit", lr.type="uni-dim",
+                              start=NULL, ...) {
   # TODO documentation
   # Check the validity of learning rate type.
   lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
@@ -559,11 +534,36 @@ sgd.sgd.control.valid <- function(method="implicit", lr.type="uni-dim",
               start=start))
 }
 
+valid_implicit_control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
+                                   convergence=FALSE, ...) {
+  # Maintain control parameters for running implicit SGD.
+  #
+  # Args:
+  #   epsilon:     positive convergence tolerance; the iterations
+  #                converge when |dev - dev_{old}|/(|dev| + 0.1) < epsilon
+  #   trace:       logical indicating if output should be produced for each
+  #                iteration
+  #   deviance:    logical indicating if the validity of deviance should be
+  #                checked in each iteration
+  #   convergence: logical indicating if the convergence of the algorithm should
+  #                be checked
+  #
+  # Returns:
+  #   A list of parameters according to user input, default otherwise.
+  if (!is.numeric(epsilon) || epsilon <= 0) {
+    stop("value of 'epsilon' must be > 0")
+  }
+  return(list(epsilon=epsilon,
+              trace=trace,
+              deviance=deviance,
+              convergence=convergence))
+}
+
 ################################################################################
 # Auxiliary functions: Miscellaneous
 ################################################################################
 
-sgd.transfer.name <- function(link.name) {
+transfer_name <- function(link.name) {
   if(!is.character(link.name)) {
     stop("link name must be a string")
   }
