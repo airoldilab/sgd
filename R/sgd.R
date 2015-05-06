@@ -483,7 +483,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     } else if (is.function(control.family)) {
       control.family <- family()
     } else if (is.null(control.family$family)) {
-      control.print(family)
+      print(control.family)
       stop("'family' not recognized")
     }
     # Check the validity of intercept.
