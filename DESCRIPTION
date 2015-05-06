@@ -1,15 +1,26 @@
 Package: sgd
 Type: Package
-Title: Stochastic gradient descent for parameter estimation of models
-Version: 1.0
-Date: 2014-12-09
-Author: Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi
-Maintainer: Panos Toulis <ptoulis@fas.harvard.edu>
-Description: This package provides a fast and flexible set of tools for
-  estimating parameters in a given model, or more generally a loss function, for
-  large scale inference. It includes several stochastic gradient methods, built-in
-  models, interval estimation, automated hyperparameter tuning, and convergence
-  diagnostics.
+Title: Stochastic gradient descent for scalable estimation
+Version: 0.1
+Authors@R: c(
+    person("Dustin", "Tran", email = "dtran@g.harvard.edu", role = c("aut", "cre")),
+    person("Tian", "Lian", role = "aut"),
+    person("Panos", "Toulis", role = "aut"),
+    person("Ye", "Kuang", role = "ctb"),
+    person("Edoardo", "Airoldi", role = "ctb")
+    )
+Description: This package provides a fast and flexible set of tools for large
+    scale inference in a given model, or more generally, a loss function. It
+    features many different stochastic gradient methods, built-in models,
+    visualization tools, automated hyperparameter tuning, model checking,
+    interval estimation, and convergence diagnostics.
+URL: https://github.com/airoldilab/sgd
+BugReports: https://github.com/airoldilab/sgd/issues
 License: GPL-2
-Imports: Rcpp (>= 0.11.3), MASS
-LinkingTo: Rcpp, RcppArmadillo, BH
+Imports:
+    Rcpp (>= 0.11.3),
+    MASS
+LinkingTo:
+    Rcpp,
+    RcppArmadillo,
+    BH

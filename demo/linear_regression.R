@@ -7,13 +7,13 @@
 #     θ = (5,...,5)
 #     ɛ ~ Normal(0,1)
 # Dimensions:
-#   N=1e4 observations
+#   N=1e5 observations
 #   d=1e2 parameters
 
 library(sgd)
 
 # Dimensions
-N <- 1e4
+N <- 1e5
 d <- 1e2
 
 # Generate data.
@@ -23,5 +23,5 @@ eps <- rnorm(N)
 y <- cbind(1, X) %*% theta + eps
 dat <- data.frame(y=y, x=X)
 
-sgd.est <- sgd(y ~ ., data=dat, model="glm")
-sgd.est$coefficients
+sgd.theta <- sgd(y ~ ., data=dat, model="glm")
+sgd.theta$coefficients

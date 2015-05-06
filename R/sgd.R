@@ -181,7 +181,29 @@ sgd.matrix <- function(x, y, model,
 # Generic methods
 ################################################################################
 
-print.sgd <- function() {}# TODO
+print.sgd <- function(x) {
+  # What goes to standard output.
+  #
+  # Args:
+  #   x:    sgd object
+}
+plot.sgd <- function(x, type="mse") {
+  # An all-encompassing visualization routine.
+  #
+  # Args:
+  #   x:    sgd object
+  #   type: character in c("")
+  #
+  # Returns:
+  #   A plot.
+  if (type == "mse") {
+    plot <- plot.sgd.mse
+  } else {
+    print(type)
+    stop("'type' not recognized")
+  }
+  return(plot(x))
+}
 
 ################################################################################
 # Auxiliary functions: model fitting
@@ -352,9 +374,18 @@ sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
               convergence=convergence))
 }
 
+################################################################################
+# Auxiliary functions: plots
+################################################################################
+
+plot.sgd.mse <- function(x) {
+  if (class(x) != "sgd") {
+    stop("'x' is not of type sgd")
+  }
+}
 
 ################################################################################
-# Auxiliary functions: safe checking
+# Auxiliary functions: validity checks
 ################################################################################
 
 sgd.model.control.valid <- function(model, model.control=list(...), ...) {

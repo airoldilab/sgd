@@ -3,13 +3,13 @@
 \alias{sgd.formula}
 \alias{sgd.function}
 \alias{sgd.matrix}
-\title{Stochastic gradient descent for parameter estimation of models}
+\title{Stochastic gradient descent for scalable estimation}
 \description{
-  This package provides a fast and flexible set of tools for
-  estimating parameters in a given model, or more generally a loss function, for
-  large scale inference. It includes several stochastic gradient methods, built-in
-  models, interval estimation, automated hyperparameter tuning, and convergence
-  diagnostics.
+  This package provides a fast and flexible set of tools for large scale
+  inference in a given model, or more generally, a loss function. It features
+  many different stochastic gradient methods, built-in models, visualization
+  tools, automated hyperparameter tuning, model checking, interval estimation,
+  and convergence diagnostics.
 }
 
 \usage{
@@ -38,7 +38,7 @@
   \itemize{
     \item{method: }{character specifying the method to be used: "sgd", "implicit", "asgd". Default is "implicit". See \code{Details}.}
 
-    \item{lr.type: }{character specifying the learning rate to be used: "un-dim", "px-dim", "adagrad". Default is "un-dim". See \code{Details}.}
+    \item{lr.type: }{character specifying the learning rate to be used: "uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad". Default is "uni-dim". See \code{Details}.}
 
     \item{start: }{starting values for the parameter estimates. Default is random initialization around the mean.}
 
@@ -118,7 +118,7 @@
   \code{estimates}
   TODO unknown.
 }
-\author{Tian Lan, Ye Kuang, Panos Toulis, Edoardo Airoldi}
+\author{Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi}
 \references{
   Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
   approximation by averaging. SIAM Journal on Control and Optimization,
