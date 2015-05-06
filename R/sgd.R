@@ -5,7 +5,7 @@
 #'
 #' @param formula an object of class \code{"\link{formula}"} (or one that can be
 #'   coerced to that class): a symbolic description of the model to be fitted.
-#'   The details of model specification are given under \sQuote{Details}.
+#'   The details can be found in \code{"\link{glm}"}.
 #' @param data an optional data frame, list or environment (or object coercible
 #'   by \code{\link[base]{as.data.frame}} to a data frame) containing the
 #'   variables in the model. If not found in data, the variables are taken from
@@ -52,34 +52,6 @@
 #' vector of observations of length N.
 #'
 #' @details
-#' A typical predictor has the form \code{response ~ terms} where response is
-#' the (numeric) response vector and \code{terms} is a series of terms which
-#' specifies a linear predictor for \code{response}.  For \code{binomial} and
-#' \code{quasibinomial} families the response can also be specified as a
-#' \code{\link[base]{factor}} (when the first level denotes failure and all
-#' others success) or as a two-column matrix with the columns giving the
-#' numbers of successes and failures.  A terms specification of the form
-#' \code{first + second} indicates all the terms in \code{first} together with
-#' all the terms in \code{second} with any duplicates removed.
-#'
-#' A specification of the form \code{first:second} indicates the the set of
-#' terms obtained by taking the interactions of all terms in \code{first} with
-#' all terms in \code{second}.  The specification \code{first*second} indicates
-#' the \emph{cross} of \code{first} and \code{second}.  This is the same as
-#' \code{first + second + first:second}.
-#'
-#' The terms in the formula will be re-ordered so that main effects come first,
-#' followed by the interactions, all second-order, all third-order and so on:
-#' to avoid this pass a \code{terms} object as the formula.
-#'
-#' \code{sgd.matrix} is the workhorse function: it is not normally called
-#' directly but can be more efficient where the response vector and design
-#' matrix have already been calculated.
-#'
-#' All of \code{weights} and \code{offset} are evaluated in the same way as
-#' variables in \code{formula}, that is first in \code{data} and then in the
-#' environment of \code{formula}.
-#'
 #' Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).
 #' "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).
 #' "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
@@ -139,9 +111,6 @@
 #' \code{converged}
 #' logical. Was the algorithm judged to have converged?
 #'
-#' \code{estimates}
-#' TODO unknown.
-#'
 #' @author Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
 #' @references
 #' John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for
@@ -167,7 +136,7 @@
 #' treatment <- gl(3, 3)
 #' print(d.AD <- data.frame(treatment, outcome, counts))
 #' sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
-#'          model.control=list(family = poisson()))
+#'                model.control=list(family = poisson()))
 #' sgd.D93
 #'
 #' ## Venables & Ripley (2002, p.189): an example with offsets
@@ -468,7 +437,6 @@ sgd.fit.glm <- function(x, y,
        weights=weights,
        df.residual=resdf,
        df.null=nulldf,
-       estimates=if(!EMPTY) out$estimates,
        converged=if(implicit.control$convergence) converged))
   # TODO in C: deal with offset
   # TODO compare all results with glm

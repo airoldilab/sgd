@@ -17,7 +17,7 @@ struct Sgd_Learn_Rate_Base
 
 #if DEBUG
   virtual ~Sgd_Learn_Rate_Base() {
-    Rcpp::Rcout << "learning rate object released" << std::endl;
+    Rcpp::Rcout << "Learning rate object released" << std::endl;
   }
 #endif
 

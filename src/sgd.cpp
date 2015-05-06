@@ -359,7 +359,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     //coef.rows(X_rank, coef.n_rows-1) = datum::nan;
   }
 
-  return Rcpp::List::create(Rcpp::Named("estimates") = out.estimates,
+  return Rcpp::List::create(
             Rcpp::Named("last") = out.last_estimate(),
 	    Rcpp::Named("mu") = mu, Rcpp::Named("eta") = eta,
 	    Rcpp::Named("coefficients") = coef, Rcpp::Named("rank") = X_rank,
