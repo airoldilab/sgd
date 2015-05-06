@@ -11,10 +11,6 @@
 	#include <armadillo>
 #endif
 
-#if __cplusplus == 199711L
-	#define nullptr NULL
-#endif
-
 #include <boost/function.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <math.h>
