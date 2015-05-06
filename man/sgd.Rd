@@ -18,6 +18,9 @@ sgd(x, ...)
   sgd.control = list(...), ...)
 }
 \arguments{
+\item{x}{for \code{sgd.function}, x is a function to minimize; for
+\code{sgd.matrix}, x is a design matrix.}
+
 \item{formula}{an object of class \code{"\link{formula}"} (or one that can be
 coerced to that class): a symbolic description of the model to be fitted.
 The details can be found in \code{"\link{glm}"}.}
@@ -62,14 +65,14 @@ model), \code{"glm"} (generalized linear model).}
     \code{\link[stats]{offset}}
 }}
 
+\item{fn.control}{for \code{sgd.function}, it is a list of controls for the
+function.}
+
+\item{y}{for {sgd.matrix}, y is a vector of observations, with length equal
+to the number of rows in x.}
+
 \item{\dots}{arguments to be used to form the default \code{sgd.control}
-  arguments if it is not supplied directly.
-
-For \code{sgd.function}: x is a function to minimize, and fn.control is a
-list of controls for x.
-
-For \code{sgd.matrix}: x is a design matrix of dimension N * d, and y is a
-vector of observations of length N.}
+arguments if it is not supplied directly.}
 }
 \value{
 An object of class \code{"sgd"}, which is a list containing at least the
