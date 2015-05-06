@@ -115,14 +115,14 @@
 #' @references
 #' John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for
 #' online learning and stochastic optimization. \emph{Journal of Machine
-#' Learning Research}, 12:2121–2159, 2011.
+#' Learning Research}, 12:2121-2159, 2011.
 #'
 #' Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 #' approximation by averaging. \emph{SIAM Journal on Control and Optimization},
-#' 30(4):838–855, 1992.
+#' 30(4):838-855, 1992.
 #'
 #' Herbert Robbins and Sutton Monro. A stochastic approximation method.
-#' \emph{The Annals of Mathematical Statistics}, pp. 400–407, 1951.
+#' \emph{The Annals of Mathematical Statistics}, pp. 400-407, 1951.
 #'
 #' Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of
 #' stochastic gradient methods for generalized linear models", In
