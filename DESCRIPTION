@@ -9,6 +9,7 @@ Authors@R: c(
     person("Ye", "Kuang", role = "ctb"),
     person("Edoardo", "Airoldi", role = "ctb")
     )
+Maintainer: Dustin Tran <dtran@g.harvard.edu>
 Description: This package provides a fast and flexible set of tools for large
     scale inference. It features many different stochastic gradient methods,
     built-in models, visualization tools, automated hyperparameter tuning, model
