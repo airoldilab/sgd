@@ -2,10 +2,10 @@
 # Demo usage of sgd for linear regression on simulated normal data.
 #
 # Data generating process:
-#   Y = X %*% θ + ɛ, where
+#   Y = X %*% theta + epsilon, where
 #     X ~ Normal(0, 1)
-#     θ = (5,...,5)
-#     ɛ ~ Normal(0,1)
+#     theta = (5,...,5)
+#     epsilon ~ Normal(0,1)
 # Dimensions:
 #   N=1e5 observations
 #   d=1e2 parameters
