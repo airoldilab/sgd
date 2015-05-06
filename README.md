@@ -1,10 +1,9 @@
 # sgd
 
 sgd is an R package which provides a fast and flexible set of tools for large
-scale inference in a given model, or more generally, a loss function. It
-features many different stochastic gradient methods, built-in models,
-visualization tools, automated hyperparameter tuning, model checking, interval
-estimation, and convergence diagnostics.
+scale inference. It features many different stochastic gradient methods,
+built-in models, visualization tools, automated hyperparameter tuning, model
+checking, interval estimation, and convergence diagnostics.
 
 ## Installation
 To install the latest version from CRAN (**under submission**):
