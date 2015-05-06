@@ -201,26 +201,6 @@ sgd.formula <- function(formula, data, model,
                         model.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # Run stochastic gradient descent for model parameters.
-  #
-  # Args:
-  #   formula:       formula specifying symbolic description of model
-  #   model:         character in c("glm")
-  #   data:          data frame for formula
-  #   model.control: list of model-specific controls
-  #     family:        "glm": string specifying which family in exponential
-  #                    family
-  #     intercept:     "glm": logical specifying whether to include intercept
-  #   sgd.control:   list of optimization-specific controls
-  #     method:        character in c("implicit", "sgd", "asgd")
-  #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
-  #                                   "p-dim-weighted", "adagrad")
-  #     start:         initial estimate
-  #     weights:       how to weight using each data point
-  #     offset:        how to offset the model
-  #
-  # Returns:
-  #   sgd object
   # TODO
   # subset: a subset of data points; can be a parameter in sgd.control
   # na.action: how to deal when data has NA; can be a parameter in sgd.control
@@ -273,24 +253,6 @@ sgd.function <- function(x,
                         fn.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # Run stochastic gradient descent for model parameters.
-  #
-  # Args:
-  #   x:             loss function
-  #   fn.control:    list of function-specific controls
-  #     gr:            gradient of loss function
-  #     lower:         lower domain of loss function
-  #     upper:         upper domain of loss function
-  #   sgd.control:   list of optimization-specific controls
-  #     method:        character in c("implicit", "sgd", "asgd")
-  #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
-  #                                   "p-dim-weighted", "adagrad")
-  #     start:         initial estimate
-  #     weights:       how to weight using each data point
-  #     offset:        how to offset the model
-  #
-  # Returns:
-  #   sgd object
   # TODO run_online_algorithm will not work on this as it relies on data
   # sgd.fn.control.valid
   gr <- NULL
@@ -304,26 +266,6 @@ sgd.matrix <- function(x, y, model,
                        model.control=list(),
                        sgd.control=list(...),
                        ...) {
-  # Run stochastic gradient descent for model parameters.
-  #
-  # Args:
-  #   formula:       formula specifying symbolic description of model
-  #   model:         character in c("glm")
-  #   data:          data frame for formula
-  #   model.control: list of model-specific controls
-  #     family:        "glm": string specifying which family in exponential
-  #                    family
-  #     intercept:     "glm": logical specifying whether to include intercept
-  #   sgd.control:   list of optimization-specific controls
-  #     method:        character in c("implicit", "sgd", "asgd")
-  #     lr.type:       character in c("uni-dim", "uni-dim-eigen", "p-dim",
-  #                                   "p-dim-weighted", "adagrad")
-  #     start:         initial estimate
-  #     weights:       how to weight using each data point
-  #     offset:        how to offset the model
-  #
-  # Returns:
-  #   sgd object
   # Call method when the first argument is a formula
   # the call parameter to return
   call <- match.call()
