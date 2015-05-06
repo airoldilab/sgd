@@ -143,7 +143,7 @@
 #' utils::data(anorexia, package="MASS")
 #'
 #' anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-#'                 family=gaussian, data=anorexia)
+#'                 data=anorexia, model="lm")
 #'
 #' @useDynLib sgd
 #' @import MASS
@@ -492,32 +492,32 @@ sgd.model.control.valid <- function(model, model.control=list(...), ...) {
     control.intercept <- model.control$intercept
     # Check the validity of intercept.
     if (is.null(control.intercept)) {
-      intercept <- TRUE
+      control.intercept <- TRUE
     } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
-    return(list(family=gaussian(), intercept=intercept))
+    return(list(family=gaussian(), intercept=control.intercept))
   } else if (model == "glm") {
     control.family <- model.control$family
     control.intercept <- model.control$intercept
     # Check the validity of family.
     if (is.null(control.family)) {
-      family <- gaussian()
+      control.family <- gaussian()
     } else if (is.character(control.family)) {
-      family <- get(family, mode="function", envir=parent.frame())()
+      control.family <- get(family, mode="function", envir=parent.frame())()
     } else if (is.function(control.family)) {
-      family <- family()
+      control.family <- family()
     } else if (is.null(control.family$family)) {
-      print(family)
+      control.print(family)
       stop("'family' not recognized")
     }
     # Check the validity of intercept.
     if (is.null(control.intercept)) {
-      intercept <- TRUE
+      control.intercept <- TRUE
     } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
-    return(list(family=family, intercept=intercept))
+    return(list(family=control.family, intercept=control.intercept))
   } else {
     stop("model not specified")
   }

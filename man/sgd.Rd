@@ -149,7 +149,7 @@ sgd.D93
 utils::data(anorexia, package="MASS")
 
 anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-                family=gaussian, data=anorexia)
+                data=anorexia, model="lm")
 }
 \author{
 Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
