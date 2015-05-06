@@ -44,12 +44,12 @@
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
-#'
-#' For \code{sgd.function}: x is a function to minimize, and fn.control is a
-#' list of controls for x.
-#'
-#' For \code{sgd.matrix}: x is a design matrix of dimension N * d, and y is a
-#' vector of observations of length N.
+#' @param x for \code{sgd.function}, x is a function to minimize; for
+#' \code{sgd.matrix}, x is a design matrix.
+#' @param y for {sgd.matrix}, y is a vector of observations, with length equal
+#' to the number of rows in x.
+#' @param fn.control for \code{sgd.function}, it is a list of controls for the
+#' function.
 #'
 #' @details
 #' Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).
