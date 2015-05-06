@@ -10,8 +10,8 @@
 #'   by \code{\link[base]{as.data.frame}} to a data frame) containing the
 #'   variables in the model. If not found in data, the variables are taken from
 #'   environment(formula), typically the environment from which glm is called.
-#' @param model character specifying the model to be used: \code{"glm"}
-#'   (generalized linear model).
+#' @param model character specifying the model to be used: \code{"lm"} (linear
+#'   model), \code{"glm"} (generalized linear model).
 #' @param model.control a list of parameters for controlling the model.
 #'   \itemize{
 #'     \item family (\code{"glm"}): a description of the error distribution and
@@ -19,8 +19,8 @@
 #'       naming a family function, a family function or the result of a call to
 #'       a family function.  (See \code{\link[stats]{family}} for details of
 #'       family functions.)
-#'     \item intercept (\code{"glm"}): logical. Should an intercept be included
-#'       in the \emph{null} model?
+#'     \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
+#'       be included in the \emph{null} model?
 #'   }
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
@@ -261,7 +261,7 @@ sgd.matrix <- function(x, y, model,
   sgd.control <- do.call("sgd.sgd.control.valid", sgd.control)
 
   # 2. Fit!
-  if (model == "glm") {
+  if (model %in% c("lm", "glm")) {
     fit <- sgd.fit.glm
   } else {
     print(model)
@@ -485,8 +485,19 @@ sgd.implicit.control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
 ################################################################################
 
 sgd.model.control.valid <- function(model, model.control=list(...), ...) {
-  # TODO documentation
-  if (model == "glm") {
+  # Run validity check of arguments passed to model.control given model. It
+  # passes defaults to those unspecified and converts to the correct type if
+  # possible; otherwise it errors.
+  if (model == "lm") {
+    control.intercept <- model.control$intercept
+    # Check the validity of intercept.
+    if (is.null(control.intercept)) {
+      intercept <- TRUE
+    } else if (!is.logical(control.intercept)) {
+      stop("'intercept' not logical")
+    }
+    return(list(family=gaussian(), intercept=intercept))
+  } else if (model == "glm") {
     control.family <- model.control$family
     control.intercept <- model.control$intercept
     # Check the validity of family.

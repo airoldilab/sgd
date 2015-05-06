@@ -23,5 +23,5 @@ eps <- rnorm(N)
 y <- cbind(1, X) %*% theta + eps
 dat <- data.frame(y=y, x=X)
 
-sgd.theta <- sgd(y ~ ., data=dat, model="glm")
+sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 sgd.theta$coefficients

@@ -27,8 +27,8 @@ by \code{\link[base]{as.data.frame}} to a data frame) containing the
 variables in the model. If not found in data, the variables are taken from
 environment(formula), typically the environment from which glm is called.}
 
-\item{model}{character specifying the model to be used: \code{"glm"}
-(generalized linear model).}
+\item{model}{character specifying the model to be used: \code{"lm"} (linear
+model), \code{"glm"} (generalized linear model).}
 
 \item{model.control}{a list of parameters for controlling the model.
 \itemize{
@@ -37,8 +37,8 @@ environment(formula), typically the environment from which glm is called.}
     naming a family function, a family function or the result of a call to
     a family function.  (See \code{\link[stats]{family}} for details of
     family functions.)
-  \item intercept (\code{"glm"}): logical. Should an intercept be included
-    in the \emph{null} model?
+  \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
+    be included in the \emph{null} model?
 }}
 
 \item{sgd.control}{a list of parameters for controlling the estimation

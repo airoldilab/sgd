@@ -42,11 +42,12 @@ eps <- rnorm(N)
 y <- cbind(1, X) %*% theta + eps
 dat <- data.frame(y=y, x=X)
 
-sgd.theta <- sgd(y ~ ., data=dat, model="glm")
+sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 ```
 
 The following models are built-in:
-* Generalized linear models (GLMs)
+* Linear models
+* Generalized linear models
 
 The following stochastic gradient methods exist:
 * Standard stochastic gradient descent
