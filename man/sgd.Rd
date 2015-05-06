@@ -3,42 +3,42 @@
 \alias{sgd.formula}
 \alias{sgd.function}
 \alias{sgd.matrix}
-\title{Stochastic gradient descent for scalable estimation}
+\title{Stochastic gradient descent}
 \description{
-  This package provides a fast and flexible set of tools for large scale
-  inference in a given model, or more generally, a loss function. It features
-  many different stochastic gradient methods, built-in models, visualization
-  tools, automated hyperparameter tuning, model checking, interval estimation,
-  and convergence diagnostics.
+  Run stochastic gradient descent on the underlying loss function for a given
+  model and data, or a user-specified loss function.
 }
 
 \usage{
-  sgd(x, ...)
-  \method{sgd}{formula}(formula, data, model, model.control = list(), sgd.control = list(...), ...)
+  sgd(x, \dots)
+  \method{sgd}{formula}(formula, data, model, model.control = list(), sgd.control = list(\dots), \dots)
 
-  \method{sgd}{function}(x, fn.control = list(), sgd.control = list(...), ...)
+  \method{sgd}{function}(x, fn.control = list(), sgd.control = list(\dots), \dots)
 
-  \method{sgd}{matrix}(x, y, model, model.control = list(), sgd.control = list(...), ...)
+  \method{sgd}{matrix}(x, y, model, model.control = list(), sgd.control = list(\dots), \dots)
 }
 \arguments{
-  \item{formula}{an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted. The details of model specification are given under \code{Details}.}
+  \item{formula}{an object of class \code{"\link{formula}"} (or one that
+    can be coerced to that class): a symbolic description of the
+    model to be fitted.  The details of model specification are given
+    under \sQuote{Details}.}
 
   \item{data}{an optional data frame, list or environment (or object coercible by \code{\link[base]{as.data.frame}} to a data frame) containing the variables in the model. If not found in data, the variables are taken from environment(formula), typically the environment from which glm is called.}
 
-  \item{model}{character specifying the model to be used: "glm" (generalized linear model).}
+  \item{model}{character specifying the model to be used: \code{"glm"} (generalized linear model).}
 
   \item{model.control}{a list of parameters for controlling the model.}
   \itemize{
-    \item{family ("glm"): }{a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
+    \item{family (\code{"glm"}): }{a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link[stats]{family}} for details of family functions.)}
 
-    \item{intercept ("glm"): }{logical. Should an intercept be included in the \emph{null} model?}
+    \item{intercept (\code{"glm"): }{logical. Should an intercept be included in the \emph{null} model?}
   }
 
   \item{sgd.control}{a list of parameters for controlling the estimation}
   \itemize{
-    \item{method: }{character specifying the method to be used: "sgd", "implicit", "asgd". Default is "implicit". See \code{Details}.}
+    \item{method: }{character specifying the method to be used: \code{"sgd"}, \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See \sQuote{Details}.}
 
-    \item{lr.type: }{character specifying the learning rate to be used: "uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad". Default is "uni-dim". See \code{Details}.}
+    \item{lr.type: }{character specifying the learning rate to be used: \code{"uni-dim"}, \code{"uni-dim-eigen"}, \code{"p-dim"}, \code{"p-dim-weighted"}, \code{"adagrad"}. Default is \code{"uni-dim"}. See \sQuote{Details}.}
 
     \item{start: }{starting values for the parameter estimates. Default is random initialization around the mean.}
 
@@ -47,7 +47,7 @@
     \item{offset: }{this can be used to specify an a priori known component to be included in the linear predictor during fitting. This should be NULL or a numeric vector of length equal to the number of cases. One or more offset terms can be included in the formula instead or as well, and if more than one is specified their sum is used. See \code{\link[stats]{offset}}}
   }
 
-  \item{...}{arguments to be used to form the default \code{sgd.control} arguments if it is not supplied directly.}
+  \item{\dots}{arguments to be used to form the default \code{sgd.control} arguments if it is not supplied directly.}
 
   For \code{sgd.function}: x is a function to minimize, and fn.control is a list of controls for x.
 
@@ -55,9 +55,9 @@
 }
 
 \details{
-  A typical predictor has the form \code{response ~ terms} where response is the (numeric) response vector and \code{terms} is a series of terms which specifies a linear predictor for \code{response}. For \code{binomial} and \code{quasibinomial} families the response can also be specified as a \code{\link[base]{factor}} (when the first level denotes failure and all others success) or as a two-column matrix with the columns giving the numbers of successes and failures. A terms specification of the form \code{first + second} indicates all the terms in \code{first} together with all the terms in \code{second} with any duplicates removed.
+  A typical predictor has the form \code{response ~ terms} where response is the (numeric) response vector and \code{terms} is a series of terms which specifies a linear predictor for \code{response}.  For \code{binomial} and \code{quasibinomial} families the response can also be specified as a \code{\link[base]{factor}} (when the first level denotes failure and all others success) or as a two-column matrix with the columns giving the numbers of successes and failures.  A terms specification of the form \code{first + second} indicates all the terms in \code{first} together with all the terms in \code{second} with any duplicates removed.
 
-  A specification of the form \code{first:second} indicates the the set of terms obtained by taking the interactions of all terms in \code{first} with all terms in \code{second}. The specification \code{first*second} indicates the \emph{cross} of \code{first} and \code{second}. This is the same as \code{first + second + first:second}.
+  A specification of the form \code{first:second} indicates the the set of terms obtained by taking the interactions of all terms in \code{first} with all terms in \code{second}.  The specification \code{first*second} indicates the \emph{cross} of \code{first} and \code{second}.  This is the same as \code{first + second + first:second}.
 
   The terms in the formula will be re-ordered so that main effects come first, followed by the interactions, all second-order, all third-order and so on: to avoid this pass a \code{terms} object as the formula.
 
@@ -65,9 +65,9 @@
 
   All of \code{weights} and \code{offset} are evaluated in the same way as variables in \code{formula}, that is first in \code{data} and then in the environment of \code{formula}.
 
-  Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951). "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014). "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
+  Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).  "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).  "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
 
-  Learning rates: "un-dim" uses the one-dimensional learning rate. The method "px-dim" uses the p-dimensional learning rate. The method "adagrad" is more aggressive than "px-dim"
+  Learning rates: "uni-dim" uses the one-dimensional learning rate.  The method "p-dim" uses the p-dimensional learning rate.  The method "adagrad" uses a diagonal scaling (Duchi et al., 2011).
 }
 
 \value{
@@ -120,16 +120,13 @@
 }
 \author{Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi}
 \references{
-  Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
-  approximation by averaging. SIAM Journal on Control and Optimization,
-  30(4):838–855, 1992.
+  John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for online learning and stochastic optimization. \emph{Journal of Machine Learning Research}, 12:2121–2159, 2011.
 
-  Herbert Robbins and Sutton Monro. A stochastic approximation method. The
-  Annals of Mathematical Statistics, pp. 400–407, 1951.
+  Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic approximation by averaging. \emph{SIAM Journal on Control and Optimization}, 30(4):838–855, 1992.
 
-  Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of
-  stochastic gradient methods for generalized linear models", In Proceedings of
-  the 31st International Conference on Machine Learning (ICML), 2014.
+  Herbert Robbins and Sutton Monro. A stochastic approximation method. \emph{The Annals of Mathematical Statistics}, pp. 400–407, 1951.
+
+  Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of stochastic gradient methods for generalized linear models", In \emph{Proceedings of the 31st International Conference on Machine Learning}, 2014.
 }
 \examples{
   ## Dobson (1990, p.93): Randomized Controlled Trial
