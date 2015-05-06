@@ -59,7 +59,7 @@ For more documentation, see `?sgd`.
 ## Authors
 sgd is written by [Dustin Tran](dtran@g.harvard.edu), [Tian
 Lan](tianlan@g.harvard.edu), [Panos Toulis](ptoulis@fas.harvard.edu), and [Ye
-Kuang](yekuang@g.harvard.edu), and is in active development. Please feel free
+Kuang](yekuang@g.harvard.edu), and is under active development. Please feel free
 to contribute by submitting any issues or requests—or by solving any current
 issues!
 
