@@ -309,7 +309,11 @@ fit_glm <- function(x, y,
                     model.control,
                     sgd.control) {
   xnames <- dimnames(x)[[2L]]
-  ynames <- ifelse(is.matrix(y), rownames(y), names(y))
+  if (is.matrix(y)) {
+    ynames <- rownames(y)
+  } else {
+    ynames <- names(y)
+  }
   N <- NROW(y) # number of observations
   d <- ncol(x) # number of features
   EMPTY <- d == 0
@@ -341,7 +345,13 @@ fit_glm <- function(x, y,
   dev.resids <- family$dev.resids
   mu.eta <- family$mu.eta
 
-  unless.null <- function(x, if.null) ifelse(is.null(x), if.null, x)
+  unless.null <- function(x, if.null) {
+    if (is.null(x)) {
+      return(if.null)
+    } else {
+      return(x)
+    }
+  }
   valideta <- unless.null(family$valideta, function(eta) TRUE)
   validmu <- unless.null(family$validmu, function(mu) TRUE)
 
@@ -419,7 +429,11 @@ fit_glm <- function(x, y,
   names(eta) <- ynames
   names(weights) <- ynames
   names(y) <- ynames
-  wtdmu <- ifelse(intercept, sum(weights * y)/sum(weights), linkinv(offset))
+  if (intercept == TRUE) {
+    wtdmu <- sum(weights * y)/sum(weights)
+  } else {
+    wtdmu <- linkinv(offset)
+  }
   nulldev <- sum(dev.resids(y, wtdmu, weights))
   n.ok <- N - sum(weights == 0)
   nulldf <- n.ok - as.integer(intercept)
