@@ -6,7 +6,7 @@ built-in models, visualization tools, automated hyperparameter tuning, model
 checking, interval estimation, and convergence diagnostics.
 
 ## Installation
-To install the latest version from CRAN (**under submission**):
+To install the latest version from CRAN:
 ```{R}
 install.packages("sgd")
 ```
