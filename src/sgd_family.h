@@ -18,6 +18,7 @@ struct Sgd_Family_Base
     Rcpp::Rcout << "Family object released" << std::endl;
   }
 #endif
+  virtual ~Sgd_Family_Base() {}
 
   virtual double bfunc_for_score(double h) const = 0;
   virtual double variance(double u) const = 0;

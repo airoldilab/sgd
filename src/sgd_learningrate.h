@@ -20,7 +20,7 @@ struct Sgd_Learn_Rate_Base
     Rcpp::Rcout << "Learning rate object released" << std::endl;
   }
 #endif
-
+  virtual ~Sgd_Learn_Rate_Base() {}
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) = 0;
 };
@@ -38,6 +38,7 @@ struct Sgd_Unidim_Learn_Rate : public Sgd_Learn_Rate_Base
     mat lr_mat = mat(p, p, fill::eye) * lr;
     return lr_mat;
   }
+  
 private:
   double gamma;
   double alpha;
@@ -84,7 +85,6 @@ struct Sgd_Pdim_Learn_Rate : public Sgd_Learn_Rate_Base
         Idiag_inv.at(i, i) = 1. / Idiag.at(i, i);
       }
     }
-
     return Idiag_inv;
   }
 
@@ -110,9 +110,9 @@ struct Sgd_Pdim_Weighted_Learn_Rate : public Sgd_Learn_Rate_Base
         Idiag_inv.at(i, i) = 1. / Idiag.at(i, i) / t;
       }
     }
-
     return Idiag_inv;
   }
+
 
 private:
   mat Idiag;
@@ -140,6 +140,7 @@ struct Sgd_AdaGrad_Learn_Rate : public Sgd_Learn_Rate_Base
 
     return Idiag_inv;
   }
+
 
 private:
   mat Idiag;
