@@ -495,7 +495,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     } else if (is.character(control.family)) {
       control.family <- get(family, mode="function", envir=parent.frame())()
     } else if (is.function(control.family)) {
-      control.family <- family()
+      control.family <- control.family()
     } else if (is.null(control.family$family)) {
       print(control.family)
       stop("'family' not recognized")
