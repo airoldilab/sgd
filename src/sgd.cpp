@@ -60,7 +60,7 @@ mat Sgd_sgd_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
   mat score_t = experiment.score_function(theta_old, datapoint, experiment.offset[t-1]);
   if (!is_finite(score_t))
     good_gradient = false;
-#if 0
+#if DEBUG
   static int count = 0;
   if (count < 10) {
     Rcpp::Rcout << "learning rate: \n" << at;
