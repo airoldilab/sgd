@@ -249,6 +249,7 @@ sgd.matrix <- function(x, y, model,
   }
   if (!is.list(model.control))  {
     stop("'model.control' is not a list")
+  }
   model.control <- do.call("valid_model_control", c(model.control, model=model))
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
