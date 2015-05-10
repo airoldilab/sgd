@@ -6,6 +6,7 @@
 #     X ~ Normal(0, 1)
 #     theta = (5,...,5)
 #     epsilon ~ Normal(0,1)
+#
 # Dimensions:
 #   N=1e5 observations
 #   d=1e2 parameters

@@ -176,8 +176,7 @@ sgd.formula <- function(formula, data, model,
   # model: logical value determining whether to output the X data frame
   # x,y: logical value determining whether to output the x and/or y
   # contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
-  # Call method when the first argument is a formula
-  # the call parameter to return
+  # Set call function to match on arguments
   call <- match.call()
 
   # 1. Validity check.
@@ -222,8 +221,8 @@ sgd.function <- function(x,
                         fn.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # TODO run_online_algorithm will not work on this as it relies on data
-  # sgd.fn.control.valid
+  # TODO run_online_algorithm will not work as it relies on data
+  # default args for fn.control
   gr <- NULL
   lower <- -Inf
   upper <- Inf
@@ -235,8 +234,7 @@ sgd.matrix <- function(x, y, model,
                        model.control=list(),
                        sgd.control=list(...),
                        ...) {
-  # Call method when the first argument is a formula
-  # the call parameter to return
+  # Set call function to match on arguments
   call <- match.call()
 
   # 1. Validity check.
@@ -251,10 +249,7 @@ sgd.matrix <- function(x, y, model,
   }
   if (!is.list(model.control))  {
     stop("'model.control' is not a list")
-  } else {
-    model.control <- do.call("valid_model_control", c(model.control,
-                             model=model))
-  }
+  model.control <- do.call("valid_model_control", c(model.control, model=model))
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
@@ -514,7 +509,9 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 
 valid_sgd_control <- function(method="implicit", lr.type="uni-dim",
                               start=NULL, ...) {
-  # TODO documentation
+  # Run validity check of arguments passed to sgd.control. It passes defaults to
+  # those unspecified and converts to the correct type if possible; otherwise it
+  # errors.
   # Check the validity of learning rate type.
   lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
   if (is.numeric(lr.type)) {
