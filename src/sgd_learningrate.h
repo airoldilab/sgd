@@ -72,8 +72,8 @@ private:
 };
 
 // d-dimensional learning rate with parameter weight alpha and exponent c
-// AdaGrad: special case where alpha=0, c=1/2
-// d-dim: special case where alpha=1, c=1
+// AdaGrad: alpha=1, c=1/2
+// d-dim: special case where alpha=0, c=1
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
   Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const score_func_type& sf) :
@@ -82,9 +82,9 @@ struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt,
                             double offset, unsigned t, unsigned d) {
     mat Gi = score_func(theta_old, data_pt, offset);
-    //Idiag = (1.-alpha) * Idiag + alpha * diagmat(Gi * Gi.t()); // vectorized version
+    //Idiag = alpha * Idiag + diagmat(Gi * Gi.t()); // vectorized version
     for (unsigned i = 0; i < d; ++i) {
-      Idiag.at(i, i) = (1.-alpha) * Idiag.at(i, i) + alpha * pow(Gi.at(i, 0), 2);
+      Idiag.at(i, i) = alpha * Idiag.at(i, i) + pow(Gi.at(i, 0), 2);
     }
 
     mat Idiag_inv(Idiag);

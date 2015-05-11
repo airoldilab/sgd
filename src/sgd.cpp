@@ -245,11 +245,16 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     exprm.init_one_dim_eigen_learning_rate();
   }
   else if (lr == "d-dim") {
-    exprm.init_ddim_learning_rate(1., 1.);
+    exprm.init_ddim_learning_rate(0., 1.);
   }
   else if (lr == "adagrad") {
-    exprm.init_ddim_learning_rate(0., .5);
+    exprm.init_ddim_learning_rate(1., .5);
   }
+  //else if (lr == "d-dim-custom") {
+  //  double alpha = Rcpp::as<double>(Experiment["alpha"]);
+  //  double c = Rcpp::as<double>(Experiment["c"]);
+  //  exprm.init_ddim_learning_rate(1., 1.);
+  //}
 
   Sgd_OnlineOutput out(data, exprm.start);
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
