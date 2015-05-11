@@ -16,8 +16,9 @@ struct Sgd_Transfer_Base {
   virtual ~Sgd_Transfer_Base() {
     Rcpp::Rcout << "Transfer object released! " << std::endl;
   }
-#endif
+#else
   virtual ~Sgd_Transfer_Base() {}
+#endif
 
   virtual double transfer(double u) const = 0;
 

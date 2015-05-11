@@ -17,8 +17,9 @@ struct Sgd_Family_Base
   virtual ~Sgd_Family_Base() {
     Rcpp::Rcout << "Family object released" << std::endl;
   }
-#endif
+#else
   virtual ~Sgd_Family_Base() {}
+#endif
 
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;

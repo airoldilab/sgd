@@ -17,8 +17,9 @@ struct Sgd_Learn_Rate_Base
   virtual ~Sgd_Learn_Rate_Base() {
     Rcpp::Rcout << "Learning rate object released" << std::endl;
   }
-#endif
+#else
   virtual ~Sgd_Learn_Rate_Base() {}
+#endif
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt,
                             double offset, unsigned t, unsigned d) = 0;
 };
