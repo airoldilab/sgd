@@ -1,8 +1,8 @@
-#ifndef SGD_DATA_H
-#define SGD_DATA_H
+#ifndef DATA_H
+#define DATA_H
 
 #include <iostream>
-#include "sgd_basedef.h"
+#include "basedef.h"
 
 using namespace arma;
 

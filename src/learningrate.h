@@ -1,8 +1,8 @@
-#ifndef SGD_LEARNINGRATE_H
-#define SGD_LEARNINGRATE_H
+#ifndef LEARNINGRATE_H
+#define LEARNINGRATE_H
 
-#include "sgd_basedef.h"
-#include "sgd_data.h"
+#include "basedef.h"
+#include "data.h"
 
 using namespace arma;
 

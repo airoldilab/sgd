@@ -1,5 +1,5 @@
-#ifndef SGD_BASEDEF_H
-#define SGD_BASEDEF_H
+#ifndef BASEDEF_H
+#define BASEDEF_H
 
 // In unittest, switch this to 0
 #define __R__ 1

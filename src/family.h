@@ -1,7 +1,7 @@
-#ifndef SGD_FAMILY_H
-#define SGD_FAMILY_H
+#ifndef FAMILY_H
+#define FAMILY_H
 
-#include "sgd_basedef.h"
+#include "basedef.h"
 
 using namespace arma;
 

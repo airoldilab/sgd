@@ -1,13 +1,13 @@
-#ifndef SGD_EXPERIMENT_H
-#define SGD_EXPERIMENT_H
+#ifndef EXPERIMENT_H
+#define EXPERIMENT_H
 #define BOOST_DISABLE_ASSERTS true
 
 
-#include "sgd_basedef.h"
-#include "sgd_data.h"
-#include "sgd_family.h"
-#include "sgd_learningrate.h"
-#include "sgd_transfer.h"
+#include "basedef.h"
+#include "data.h"
+#include "family.h"
+#include "learningrate.h"
+#include "transfer.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>

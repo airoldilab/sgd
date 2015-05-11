@@ -1,6 +1,11 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
-#include "sgd.h"
+#include "basedef.h"
+#include "data.h"
+#include "experiment.h"
+#include "family.h"
+#include "learningrate.h"
+#include "transfer.h"
 #include <stdlib.h>
 
 // Auxiliary function

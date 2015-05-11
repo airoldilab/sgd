@@ -1,7 +1,7 @@
-#ifndef SGD_TRANSFER_H
-#define SGD_TRANSFER_H
+#ifndef TRANSFER_H
+#define TRANSFER_H
 
-#include "sgd_basedef.h"
+#include "basedef.h"
 
 using namespace arma;
 
