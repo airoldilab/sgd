@@ -10,7 +10,6 @@ struct Sgd_Learn_Rate_Base;
 struct Sgd_Onedim_Learn_Rate;
 struct Sgd_Onedim_Eigen_Learn_Rate;
 struct Sgd_Ddim_Learn_Rate;
-struct Sgd_Ddim_Weighted_Learn_Rate;
 
 struct Sgd_Learn_Rate_Base
 {
@@ -25,7 +24,7 @@ struct Sgd_Learn_Rate_Base
                           unsigned t, unsigned d) = 0;
 };
 
-/* 1 dimension (scalar) learning rate, suggested in Xu's paper
+/* one-dimensional (scalar) learning rate, suggested in Xu's paper
  */
 struct Sgd_Onedim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
@@ -46,7 +45,7 @@ private:
   double scale;
 };
 
-// d dimension learning rate
+// one-dimensional learning rate to parameterize a diagonal matrix
 struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
 {
   Sgd_Onedim_Eigen_Learn_Rate(const score_func_type& sf) : score_func(sf) { }
@@ -68,36 +67,13 @@ private:
   score_func_type score_func;
 };
 
-// p dimension learning rate
+// d-dimensional learning rate with parameter weight alpha and exponent c
+// AdaGrad: special case where alpha=0, c=1/2
+// d-dim: special case where alpha=1, c=1
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Ddim_Learn_Rate(unsigned d, const score_func_type& sf) :
-    Idiag(mat(d, d, fill::eye)), score_func(sf) { }
-
-  virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
-                          unsigned t, unsigned d) {
-    mat Gi = score_func(theta_old, data_pt, offset);
-    Idiag = diagmat(Gi * Gi.t());
-    mat Idiag_inv(Idiag);
-
-    for (unsigned i = 0; i < d; ++i) {
-      if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i);
-      }
-    }
-    return Idiag_inv;
-  }
-
-private:
-  mat Idiag;
-  score_func_type score_func;
-};
-
-// p dimension learning rate weighted by alpha
-struct Sgd_Ddim_Weighted_Learn_Rate : public Sgd_Learn_Rate_Base
-{
-  Sgd_Ddim_Weighted_Learn_Rate(unsigned d, double a, const score_func_type& sf) :
-    Idiag(mat(d, d, fill::eye)), alpha(a), score_func(sf) { }
+  Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const score_func_type& sf) :
+    Idiag(mat(d, d, fill::eye)), alpha(a), c(c_), score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
                           unsigned t, unsigned d) {
@@ -107,7 +83,7 @@ struct Sgd_Ddim_Weighted_Learn_Rate : public Sgd_Learn_Rate_Base
 
     for (unsigned i = 0; i < d; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / Idiag.at(i, i) / t;
+        Idiag_inv.at(i, i) = 1. / pow(Idiag.at(i, i), c);
       }
     }
     return Idiag_inv;
@@ -117,33 +93,6 @@ struct Sgd_Ddim_Weighted_Learn_Rate : public Sgd_Learn_Rate_Base
 private:
   mat Idiag;
   double alpha;
-  score_func_type score_func;
-};
-
-// p dimension learning rate
-struct Sgd_AdaGrad_Learn_Rate : public Sgd_Learn_Rate_Base
-{
-  Sgd_AdaGrad_Learn_Rate(unsigned d, double c_, const score_func_type& sf) :
-    Idiag(mat(d, d, fill::eye)), c(c_), score_func(sf) { }
-
-  virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
-                          unsigned t, unsigned d) {
-    mat Gi = score_func(theta_old, data_pt, offset);
-    Idiag = Idiag + diagmat(Gi * Gi.t());
-    mat Idiag_inv(Idiag);
-
-    for (unsigned i = 0; i < d; ++i) {
-      if (std::abs(Idiag.at(i, i)) > 1e-8) {
-        Idiag_inv.at(i, i) = 1. / pow(Idiag.at(i, i), c);
-      }
-    }
-
-    return Idiag_inv;
-  }
-
-
-private:
-  mat Idiag;
   double c;
   score_func_type score_func;
 };

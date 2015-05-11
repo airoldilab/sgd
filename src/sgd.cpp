@@ -224,7 +224,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   algo =  Rcpp::as<std::string>(algorithm);
 
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
-  exprm.p = Rcpp::as<unsigned>(Experiment["p"]);
+  exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
   exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
   exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
   exprm.start = Rcpp::as<mat>(Experiment["start"]);
@@ -245,13 +245,13 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     exprm.init_one_dim_eigen_learning_rate();
   }
   else if (lr == "d-dim") {
-    exprm.init_ddim_learning_rate();
+    exprm.init_ddim_learning_rate(1., 1.);
   }
   else if (lr == "d-dim-weighted") {
-    exprm.init_ddim_weighted_learning_rate(1.);
+    exprm.init_ddim_learning_rate(1., 1.);
   }
   else if (lr == "adagrad") {
-    exprm.init_adagrad_learning_rate(.5);
+    exprm.init_ddim_learning_rate(0., .5);
   }
 
   Sgd_OnlineOutput out(data, exprm.start);

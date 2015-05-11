@@ -393,7 +393,7 @@ fit_glm <- function(x, y,
     experiment$model.attrs$transfer.name <- transfer_name(family$link)
     experiment$niters <- length(dataset$Y)
     experiment$lr <- lr
-    experiment$p <- dim(dataset$X)[2]
+    experiment$d <- dim(dataset$X)[2]
     experiment$weights <- as.matrix(weights[good])
     experiment$start <- as.matrix(start)
     experiment$deviance <- implicit.control$deviance

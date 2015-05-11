@@ -24,7 +24,7 @@ struct Sgd_Experiment;
 // Base experiment class for arbitrary model
 struct Sgd_Experiment {
 //@members
-  unsigned p;
+  unsigned d;
   unsigned n_iters;
   std::string model_name;
   Rcpp::List model_attrs;
@@ -44,9 +44,7 @@ struct Sgd_Experiment {
 
   void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale);
   void init_one_dim_eigen_learning_rate();
-  void init_ddim_learning_rate();
-  void init_ddim_weighted_learning_rate(double alpha = .5);
-  void init_adagrad_learning_rate(double c = 0.67);
+  void init_ddim_learning_rate(double alpha, double c);
   mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const;
   mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
 };
@@ -103,7 +101,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     learnrate_ptr_type lp(new Sgd_Onedim_Learn_Rate(gamma, alpha, c, scale));
     lr_obj_ = lp;
 
-    lr_type = "One-dimension learning rate";
+    lr_type = "One-dimensional learning rate";
   }
 
   void init_one_dim_eigen_learning_rate() {
@@ -112,40 +110,21 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     learnrate_ptr_type lp(new Sgd_Onedim_Eigen_Learn_Rate(score_func));
     lr_obj_ = lp;
 
-    lr_type = "One-dimension eigenvalue learning rate";
+    lr_type = "One-dimensional eigenvalue learning rate";
   }
 
-  void init_ddim_learning_rate() {
-    // remember to init @p before call this!
+  void init_ddim_learning_rate(double alpha, double c) {
     score_func_type score_func = create_score_func_instance();
 
-    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(p, score_func));
-    lr_obj_ = lp;
-    lr_type = "d-dimension learning rate";
-  }
-
-  void init_ddim_weighted_learning_rate(double alpha = .5) {
-    // remember to init @p before call this!
-    score_func_type score_func = create_score_func_instance();
-
-    learnrate_ptr_type lp(new Sgd_Ddim_Weighted_Learn_Rate(p, alpha, score_func));
+    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, alpha, c, score_func));
     lr_obj_ = lp;
 
-    lr_type = "d-dimension weighted learning rate";
-  }
-
-  void init_adagrad_learning_rate(double c = 0.67) {
-    score_func_type score_func = create_score_func_instance();
-
-    learnrate_ptr_type lp(new Sgd_AdaGrad_Learn_Rate(p, c, score_func));
-    lr_obj_ = lp;
-
-    lr_type = "d-dimension AdaGrad learning rate";
+    lr_type = "d-dimensional learning rate";
   }
 
   mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
-    //return lr_(theta_old, data_pt, offset, t, p);
-    return lr_obj_->learning_rate(theta_old, data_pt, offset, t, p);
+    //return lr_(theta_old, data_pt, offset, t, d);
+    return lr_obj_->learning_rate(theta_old, data_pt, offset, t, d);
   }
 
   mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
