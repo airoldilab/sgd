@@ -11,7 +11,6 @@
 #   N=1e5 observations
 #   d=2 parameters
 
-
 library(sgd)
 
 # Dimensions
@@ -29,4 +28,4 @@ dat <- data.frame(y=y, x=X)
 
 sgd.theta <- sgd(y ~ .-1, data=dat, model="glm",
                  model.control=list(family=poisson()))
-sgd.theta$coefficients
+mean((sgd.theta$coefficients - theta)^2) # MSE

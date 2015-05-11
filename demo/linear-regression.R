@@ -25,4 +25,4 @@ y <- cbind(1, X) %*% theta + eps
 dat <- data.frame(y=y, x=X)
 
 sgd.theta <- sgd(y ~ ., data=dat, model="lm")
-sgd.theta$coefficients
+mean((sgd.theta$coefficients - theta)^2) # MSE
