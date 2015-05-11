@@ -13,7 +13,6 @@ struct Sgd_Ddim_Learn_Rate;
 
 struct Sgd_Learn_Rate_Base
 {
-
 #if DEBUG
   virtual ~Sgd_Learn_Rate_Base() {
     Rcpp::Rcout << "Learning rate object released" << std::endl;

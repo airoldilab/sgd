@@ -20,17 +20,12 @@ struct Sgd_Family_Base
 #endif
   virtual ~Sgd_Family_Base() {}
 
-  virtual double bfunc_for_score(double h) const = 0;
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
 };
 
 // gaussian model family
 struct Sgd_Gaussian : public Sgd_Family_Base {
-  virtual double bfunc_for_score(double h) const {
-    return 1.;
-  }
-
   virtual double variance(double u) const {
     return 1.;
   }
@@ -42,14 +37,6 @@ struct Sgd_Gaussian : public Sgd_Family_Base {
 
 // poisson model family
 struct Sgd_Poisson : public Sgd_Family_Base {
-  virtual double bfunc_for_score(double h) const {
-    if (h) {
-      return 1. / h;
-    }
-    Rcpp::Rcout << "Out of valid range in b func for Poisson." << std::endl;
-    return 1.;
-  }
-
   virtual double variance(double u) const {
     return u;
   }
@@ -68,14 +55,6 @@ struct Sgd_Poisson : public Sgd_Family_Base {
 // binomial model family
 struct Sgd_Binomial : public Sgd_Family_Base
 {
-  virtual double bfunc_for_score(double h) const {
-    if (h > 0. && h < 1.) {
-      return (1./h + 1./(1.-h));
-    }
-    Rcpp::Rcout << "Out of valid range in b func for Binomial." << std::endl;
-    return 1.;
-  }
-
   virtual double variance(double u) const {
     return u * (1. - u);
   }
@@ -98,14 +77,6 @@ private:
 
 struct Sgd_Gamma : public Sgd_Family_Base
 {
-  virtual double bfunc_for_score(double h) const {
-    if (h) {
-      return 1. / (h * h);
-    }
-    Rcpp::Rcout << "Out of valid range in b func for Gamma." << std::endl;
-    return 1.;
-  }
-
   virtual double variance(double u) const {
     return pow(u, 2);
   }

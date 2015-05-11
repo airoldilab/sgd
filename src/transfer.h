@@ -104,7 +104,6 @@ struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
     if (u > 0.) {
       return log(u);
     }
-
     return 0.;
   }
 

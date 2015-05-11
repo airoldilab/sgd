@@ -28,7 +28,7 @@ struct Sgd_Experiment {
   unsigned n_iters;
   std::string model_name;
   Rcpp::List model_attrs;
-  std::string lr_type;
+  std::string lr;
   mat offset;
   mat weights;
   mat start;
@@ -101,7 +101,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     learnrate_ptr_type lp(new Sgd_Onedim_Learn_Rate(gamma, alpha, c, scale));
     lr_obj_ = lp;
 
-    lr_type = "One-dimensional learning rate";
+    lr = "One-dimensional learning rate";
   }
 
   void init_one_dim_eigen_learning_rate() {
@@ -110,7 +110,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     learnrate_ptr_type lp(new Sgd_Onedim_Eigen_Learn_Rate(score_func));
     lr_obj_ = lp;
 
-    lr_type = "One-dimensional eigenvalue learning rate";
+    lr = "One-dimensional eigenvalue learning rate";
   }
 
   void init_ddim_learning_rate(double alpha, double c) {
@@ -119,7 +119,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, alpha, c, score_func));
     lr_obj_ = lp;
 
-    lr_type = "d-dimensional learning rate";
+    lr = "d-dimensional learning rate";
   }
 
   mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
@@ -128,11 +128,8 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
   }
 
   mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
-    //return ((datapoint.y - h_transfer(as_scalar(datapoint.x*theta_old)+offset)) * datapoint.x).t();
-    double theta_xn = dot(datapoint.x, theta_old) + offset;
-    double h_val = h_transfer(theta_xn);
-    double temp = (datapoint.y - h_val)*bfunc_for_score(h_val)*h_first_derivative(theta_xn);
-    return (temp * datapoint.x).t();
+    return ((datapoint.y - h_transfer(dot(datapoint.x, theta_old) + offset)) *
+      datapoint.x).t();
   }
 
   // TODO not all models have these methods
@@ -162,10 +159,6 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     return transfer_obj_->valideta(eta);
   }
 
-  double bfunc_for_score(double u) const {
-    return family_obj_->bfunc_for_score(u);
-  }
-
   double variance(double u) const {
     return family_obj_->variance(u);
   }
@@ -177,7 +170,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
   friend std::ostream& operator<<(std::ostream& os, const Sgd_Experiment& exprm) {
     os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
           //"    Transfer function: " << exprm.transfer_name <<  "\n" <<
-          "    Learning rate: " << exprm.lr_type << "\n\n" <<
+          "    Learning rate: " << exprm.lr << "\n\n" <<
           "    Trace: " << (exprm.trace ? "On" : "Off") << "\n" <<
           "    Deviance: " << (exprm.dev ? "On" : "Off") << "\n" <<
           "    Convergence: " << (exprm.convergence ? "On" : "Off") << "\n" <<
