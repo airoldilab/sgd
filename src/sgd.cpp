@@ -239,7 +239,14 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     cx_mat eigvec;
     eig_gen(eigval, eigvec, data.covariance());
     double lr_alpha = min(eigval).real();
-    exprm.init_one_dim_learning_rate(1., lr_alpha, 2./3., 1.);
+    double c;
+    if (algo == "asgd" || algo == "a-implicit") {
+      c = 2./3.;
+    }
+    else {
+      c = 1.;
+    }
+    exprm.init_one_dim_learning_rate(1., lr_alpha, 2./3., c);
   }
   else if (lr == "one-dim-eigen") {
     exprm.init_one_dim_eigen_learning_rate();

@@ -145,7 +145,8 @@ Learning rates:
     \code{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
     where the defaults are \code{scale=1}, \code{gamma=1}, \code{alpha} the
     minimum eigenvalue of the covariance of the data's design matrix, and
-    \code{c=2/3}
+    \code{c} is \code{1} if implemented without averaging, \code{2/3} if with
+    averaging
   \item \code{one-dim-eigen}: diagonal matrix
     \code{}
   \item \code{d-dim}: diagonal matrix
