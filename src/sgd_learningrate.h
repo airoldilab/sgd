@@ -7,10 +7,10 @@
 using namespace arma;
 
 struct Sgd_Learn_Rate_Base;
-struct Sgd_Unidim_Learn_Rate;
-struct Sgd_Unidim_Eigen_Learn_Rate;
-struct Sgd_Pdim_Learn_Rate;
-struct Sgd_Pdim_Weighted_Learn_Rate;
+struct Sgd_Onedim_Learn_Rate;
+struct Sgd_Onedim_Eigen_Learn_Rate;
+struct Sgd_Ddim_Learn_Rate;
+struct Sgd_Ddim_Weighted_Learn_Rate;
 
 struct Sgd_Learn_Rate_Base
 {
@@ -27,9 +27,9 @@ struct Sgd_Learn_Rate_Base
 
 /* 1 dimension (scalar) learning rate, suggested in Xu's paper
  */
-struct Sgd_Unidim_Learn_Rate : public Sgd_Learn_Rate_Base
+struct Sgd_Onedim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Unidim_Learn_Rate(double g, double a, double c_, double s) :
+  Sgd_Onedim_Learn_Rate(double g, double a, double c_, double s) :
   gamma(g), alpha(a), c(c_), scale(s) { }
 
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
@@ -47,9 +47,9 @@ private:
 };
 
 // p dimension learning rate
-struct Sgd_Unidim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
+struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Unidim_Eigen_Learn_Rate(const score_func_type& sf) : score_func(sf) { }
+  Sgd_Onedim_Eigen_Learn_Rate(const score_func_type& sf) : score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
                           unsigned t, unsigned p) {
@@ -69,9 +69,9 @@ private:
 };
 
 // p dimension learning rate
-struct Sgd_Pdim_Learn_Rate : public Sgd_Learn_Rate_Base
+struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Pdim_Learn_Rate(unsigned p, const score_func_type& sf) :
+  Sgd_Ddim_Learn_Rate(unsigned p, const score_func_type& sf) :
     Idiag(mat(p, p, fill::eye)), score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,
@@ -94,9 +94,9 @@ private:
 };
 
 // p dimension learning rate weighted by alpha
-struct Sgd_Pdim_Weighted_Learn_Rate : public Sgd_Learn_Rate_Base
+struct Sgd_Ddim_Weighted_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Pdim_Weighted_Learn_Rate(unsigned p, double a, const score_func_type& sf) :
+  Sgd_Ddim_Weighted_Learn_Rate(unsigned p, double a, const score_func_type& sf) :
     Idiag(mat(p, p, fill::eye)), alpha(a), score_func(sf) { }
 
   virtual mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset,

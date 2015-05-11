@@ -49,9 +49,9 @@ model), \code{"glm"} (generalized linear model).}
   \item method: character specifying the method to be used: \code{"sgd"},
     \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See
     \sQuote{Details}.
-  \item lr.type: character specifying the learning rate to be used:
-    \code{"uni-dim"}, \code{"uni-dim-eigen"}, \code{"p-dim"},
-    \code{"p-dim-weighted"}, \code{"adagrad"}. Default is \code{"uni-dim"}.
+  \item lr: character specifying the learning rate to be used:
+    \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
+    \code{"d-dim-weighted"}, \code{"adagrad"}. Default is \code{"one-dim"}.
     See \sQuote{Details}.
   \item start: starting values for the parameter estimates. Default is
     random initialization around the mean.
@@ -134,8 +134,8 @@ Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).
 "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).
 "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
 
-Learning rates: "uni-dim" uses the one-dimensional learning rate.  The
-method "p-dim" uses the p-dimensional learning rate.  The method "adagrad"
+Learning rates: "one-dim" uses the one-dimensional learning rate.  The
+method "d-dim" uses the d-dimensional learning rate.  The method "adagrad"
 uses a diagonal scaling (Duchi et al., 2011).
 }
 \examples{

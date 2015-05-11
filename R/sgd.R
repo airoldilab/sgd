@@ -27,9 +27,9 @@
 #'     \item method: character specifying the method to be used: \code{"sgd"},
 #'       \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See
 #'       \sQuote{Details}.
-#'     \item lr.type: character specifying the learning rate to be used:
-#'       \code{"uni-dim"}, \code{"uni-dim-eigen"}, \code{"p-dim"},
-#'       \code{"p-dim-weighted"}, \code{"adagrad"}. Default is \code{"uni-dim"}.
+#'     \item lr: character specifying the learning rate to be used:
+#'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
+#'       \code{"d-dim-weighted"}, \code{"adagrad"}. Default is \code{"one-dim"}.
 #'       See \sQuote{Details}.
 #'     \item start: starting values for the parameter estimates. Default is
 #'       random initialization around the mean.
@@ -56,8 +56,8 @@
 #' "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).
 #' "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
 #'
-#' Learning rates: "uni-dim" uses the one-dimensional learning rate.  The
-#' method "p-dim" uses the p-dimensional learning rate.  The method "adagrad"
+#' Learning rates: "one-dim" uses the one-dimensional learning rate.  The
+#' method "d-dim" uses the d-dimensional learning rate.  The method "adagrad"
 #' uses a diagonal scaling (Duchi et al., 2011).
 #'
 #' @return
@@ -319,7 +319,7 @@ fit_glm <- function(x, y,
 
   start <- sgd.control$start
   method <- sgd.control$method
-  lr.type <- sgd.control$lr.type
+  lr <- sgd.control$lr
   if (is.null(sgd.control$weights)) {
     weights <- rep.int(1, N)
   } else {
@@ -392,7 +392,7 @@ fit_glm <- function(x, y,
     experiment$model.attrs <- list()
     experiment$model.attrs$transfer.name <- transfer_name(family$link)
     experiment$niters <- length(dataset$Y)
-    experiment$lr.type <- lr.type
+    experiment$lr <- lr
     experiment$p <- dim(dataset$X)[2]
     experiment$weights <- as.matrix(weights[good])
     experiment$start <- as.matrix(start)
@@ -508,25 +508,25 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   }
 }
 
-valid_sgd_control <- function(method="implicit", lr.type="uni-dim",
+valid_sgd_control <- function(method="implicit", lr="one-dim",
                               start=NULL, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
   # Check the validity of learning rate type.
-  lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
-  if (is.numeric(lr.type)) {
-    if (lr.type < 1 | lr.type > length(lr.types)) {
-      stop("'lr.type' out of range")
+  lrs <- c("one-dim", "one-dim-eigen", "d-dim", "d-dim-weighted", "adagrad")
+  if (is.numeric(lr)) {
+    if (lr < 1 | lr > length(lrs)) {
+      stop("'lr' out of range")
     }
-    lr.type <- lr.types[lr.type]
-  } else if (is.character(lr.type)) {
-    lr.type <- tolower(lr.type)
-    if (!(lr.type %in% lr.types)) {
-      stop("'lr.type' not recognized")
+    lr <- lrs[lr]
+  } else if (is.character(lr)) {
+    lr <- tolower(lr)
+    if (!(lr %in% lrs)) {
+      stop("'lr' not recognized")
     }
   } else {
-    stop("invalid 'lr.type'")
+    stop("invalid 'lr'")
   }
 
   #Check the validity of start.
@@ -542,7 +542,7 @@ valid_sgd_control <- function(method="implicit", lr.type="uni-dim",
     stop("'method' not recognized")
   }
   return(list(method=method,
-              lr.type=lr.type,
+              lr=lr,
               start=start))
 }
 

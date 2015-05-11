@@ -232,25 +232,25 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
   exprm.epsilon = Rcpp::as<double>(Experiment["epsilon"]);
-  std::string lr_type = Rcpp::as<std::string>(Experiment["lr.type"]);
-  if (lr_type == "uni-dim") {
+  std::string lr = Rcpp::as<std::string>(Experiment["lr"]);
+  if (lr == "one-dim") {
     // use the min eigenvalue of the covariance of data as alpha in LR
     cx_vec eigval;
     cx_mat eigvec;
     eig_gen(eigval, eigvec, data.covariance());
     double lr_alpha = min(eigval).real();
-    exprm.init_uni_dim_learning_rate(1., lr_alpha, 2./3., 1.);
+    exprm.init_one_dim_learning_rate(1., lr_alpha, 2./3., 1.);
   }
-  else if (lr_type == "uni-dim-eigen") {
-    exprm.init_uni_dim_eigen_learning_rate();
+  else if (lr == "one-dim-eigen") {
+    exprm.init_one_dim_eigen_learning_rate();
   }
-  else if (lr_type == "p-dim") {
-    exprm.init_pdim_learning_rate();
+  else if (lr == "d-dim") {
+    exprm.init_ddim_learning_rate();
   }
-  else if (lr_type == "p-dim-weighted") {
-    exprm.init_pdim_weighted_learning_rate(1.);
+  else if (lr == "d-dim-weighted") {
+    exprm.init_ddim_weighted_learning_rate(1.);
   }
-  else if (lr_type == "adagrad") {
+  else if (lr == "adagrad") {
     exprm.init_adagrad_learning_rate(.5);
   }
 
