@@ -62,10 +62,10 @@ mat Sgd_sgd_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
 #if DEBUG
   static int count = 0;
   if (count < 10) {
-    Rcpp::Rcout << "learning rate: \n" << at;
+    Rcpp::Rcout << "learning rate: \n" << at << std::endl;
     Rcpp::Rcout << "Score function: \n" << score_t << std::endl;
-    ++count;
   }
+    ++count;
 #endif
   mat theta_new = theta_old + mat(at * score_t);
   online_out.estimates.col(t-1) = theta_new;
@@ -227,10 +227,14 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   std::string lr = Rcpp::as<std::string>(Experiment["lr"]);
   if (lr == "one-dim") {
     // use the min eigenvalue of the covariance of data as alpha in LR
+    // TODO this can be arbitrarily small
     cx_vec eigval;
     cx_mat eigvec;
     eig_gen(eigval, eigvec, data.covariance());
     double lr_alpha = min(eigval).real();
+    if (lr_alpha < 1e-8) {
+      lr_alpha = 1; // temp hack
+    }
     double c;
     if (algo == "asgd" || algo == "ai-sgd") {
       c = 2./3.;
@@ -238,7 +242,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     else {
       c = 1.;
     }
-    exprm.init_one_dim_learning_rate(1., lr_alpha, 2./3., c);
+    exprm.init_one_dim_learning_rate(1., lr_alpha, c, 1.);
   }
   else if (lr == "one-dim-eigen") {
     exprm.init_one_dim_eigen_learning_rate();
