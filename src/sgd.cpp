@@ -247,9 +247,6 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   else if (lr == "d-dim") {
     exprm.init_ddim_learning_rate(1., 1.);
   }
-  else if (lr == "d-dim-weighted") {
-    exprm.init_ddim_learning_rate(1., 1.);
-  }
   else if (lr == "adagrad") {
     exprm.init_ddim_learning_rate(0., .5);
   }

@@ -51,7 +51,7 @@ model), \code{"glm"} (generalized linear model).}
     \sQuote{Details}.
   \item lr: character specifying the learning rate to be used:
     \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
-    \code{"d-dim-weighted"}, \code{"adagrad"}. Default is \code{"one-dim"}.
+    \code{"adagrad"}. Default is \code{"one-dim"}.
     See \sQuote{Details}.
   \item start: starting values for the parameter estimates. Default is
     random initialization around the mean.
