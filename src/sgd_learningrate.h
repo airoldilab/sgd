@@ -73,7 +73,7 @@ private:
 
 // d-dimensional learning rate with parameter weight alpha and exponent c
 // AdaGrad: alpha=1, c=1/2
-// d-dim: special case where alpha=0, c=1
+// d-dim: alpha=0, c=1
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
   Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const score_func_type& sf) :

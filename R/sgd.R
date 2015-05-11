@@ -52,13 +52,29 @@
 #' function.
 #'
 #' @details
-#' Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).
-#' "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).
-#' "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
+#' Methods:
+#' \itemize{
+#'   \item \code{sgd}: stochastic gradient descent (Robbins and Monro, 1951)
+#'   \item \code{implicit}: implicit stochastic gradient descent (Toulis et al.,
+#'     2014)
+#'   \item \code{asgd} stochastic gradient with averaging (Polyak and Juditsky,
+#'     1992)
+#' }
 #'
-#' Learning rates: "one-dim" uses the one-dimensional learning rate.  The
-#' method "d-dim" uses the d-dimensional learning rate.  The method "adagrad"
-#' uses a diagonal scaling (Duchi et al., 2011).
+#' Learning rates:
+#' \itemize{
+#'   \item \code{one-dim}: scalar value prescribed in Xu (2011) as
+#'     \code{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
+#'     where the defaults are \code{scale=1}, \code{gamma=1}, \code{alpha} the
+#'     minimum eigenvalue of the covariance of the data's design matrix, and
+#'     \code{c=2/3}
+#'   \item \code{one-dim-eigen}: diagonal matrix
+#'     \code{}
+#'   \item \code{d-dim}: diagonal matrix
+#'     \code{}
+#'   \item \code{adagrad}: diagonal matrix prescribed in Duchi et al. (2011) as
+#'     \code{}
+#' }
 #'
 #' @return
 #' An object of class \code{"sgd"}, which is a list containing at least the
@@ -128,6 +144,9 @@
 #' stochastic gradient methods for generalized linear models", In
 #' \emph{Proceedings of the 31st International Conference on Machine Learning},
 #' 2014.
+#'
+#' Wei Xu. Towards optimal one pass large scale learning with averaged
+#' stochastic gradient descent. arXiv preprint arXiv:1107.2490, 2011.
 #'
 #' @examples
 #' ## Dobson (1990, p.93): Randomized Controlled Trial
