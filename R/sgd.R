@@ -59,6 +59,8 @@
 #'     2014)
 #'   \item \code{asgd} stochastic gradient with averaging (Polyak and Juditsky,
 #'     1992)
+#'   \item \code{ai-sgd} implicit stochastic gradient with averaging (Toulis et
+#'     al., 2015)
 #' }
 #'
 #' Learning rates:
@@ -145,6 +147,9 @@
 #' stochastic gradient methods for generalized linear models", In
 #' \emph{Proceedings of the 31st International Conference on Machine Learning},
 #' 2014.
+#'
+#' Panos Toulis, Dustin Tran, and Edoardo M. Airoldi, "Stability and optimality
+#' in stochastic gradient descent", arXiv preprint arXiv:1505.02417, 2015.
 #'
 #' Wei Xu. Towards optimal one pass large scale learning with averaged
 #' stochastic gradient descent. arXiv preprint arXiv:1107.2490, 2011.
@@ -558,7 +563,7 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
   # Check the validity of method.
   if (!is.character(method)) {
     stop("'method' must be a string")
-  } else if (!(method %in% c("implicit", "asgd", "sgd"))) {
+  } else if (!(method %in% c("sgd", "implicit", "asgd", "ai-sgd"))) {
     stop("'method' not recognized")
   }
   return(list(method=method,
