@@ -107,7 +107,7 @@ private:
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
   Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const score_func_type& sf) :
-    Idiag(mat(d, d, fill::eye)), alpha(a), c(c_), score_func(sf), v(0, 1) { }
+    Idiag(mat(d, d, fill::eye)), alpha(a), c(c_), score_func(sf), v(1, d) { }
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt,
                             double offset, unsigned t, unsigned d) {
@@ -123,6 +123,7 @@ struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
     //     Idiag_inv.at(i, i) = 1. / pow(Idiag.at(i, i), c);
     //   }
     // }
+    // v.lr_mat = Idiag_inv;
     for (unsigned i = 0; i < d; ++i) {
       if (std::abs(Idiag.at(i, i)) > 1e-8) {
         v.lr_mat.at(i, i) = 1. / pow(Idiag.at(i, i), c);
