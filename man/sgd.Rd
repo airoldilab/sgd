@@ -42,6 +42,7 @@ model), \code{"glm"} (generalized linear model).}
     family functions.)
   \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
     be included in the \emph{null} model?
+  \item rank logical. Should the rank of the design matrix be checked?
 }}
 
 \item{sgd.control}{a list of parameters for controlling the estimation

@@ -2,7 +2,6 @@
 #define EXPERIMENT_H
 #define BOOST_DISABLE_ASSERTS true
 
-
 #include "basedef.h"
 #include "data.h"
 #include "family.h"
@@ -48,7 +47,6 @@ struct Sgd_Experiment {
   const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const;
   mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
 };
-
 
 // Experiment class for arbitrary model
 struct Sgd_Experiment_Glm : public Sgd_Experiment {

@@ -67,7 +67,7 @@ mat Sgd_sgd_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
   }
     ++count;
 #endif
-  mat theta_new = theta_old + mat(at * score_t);
+  mat theta_new = theta_old + (at * score_t);
   online_out.estimates.col(t-1) = theta_new;
   return theta_new;
 }
@@ -272,9 +272,8 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
         return Rcpp::List();
       }
     }
-    
+
   }
-  
 
   // print out info
   //Rcpp::Rcout << data;
