@@ -45,7 +45,7 @@ struct Sgd_Experiment {
   void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale);
   void init_one_dim_eigen_learning_rate();
   void init_ddim_learning_rate(double alpha, double c);
-  mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const;
+  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const;
   mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
 };
 
@@ -122,7 +122,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     lr = "d-dimensional learning rate";
   }
 
-  mat learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
+  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr_(theta_old, data_pt, offset, t, d);
     return lr_obj_->learning_rate(theta_old, data_pt, offset, t, d);
   }

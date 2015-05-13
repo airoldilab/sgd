@@ -55,7 +55,7 @@ mat Sgd_sgd_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
 
   Sgd_DataPoint datapoint = Sgd_get_dataset_point(data_history, t);
   mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
-  mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
+  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   mat score_t = experiment.score_function(theta_old, datapoint, experiment.offset[t-1]);
   if (!is_finite(score_t))
     good_gradient = false;
@@ -80,13 +80,16 @@ mat Sgd_implicit_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
   mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
 
   mat theta_new;
-  mat at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
-  vec diag_lr = at.diag();
-  double average_lr = 0.;
-  for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
-    average_lr += diag_lr[i];
+  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
+  double average_lr = 0;
+  if (at.type == 0) average_lr = at.lr_scalar;
+  else{
+    vec diag_lr = at.lr_mat.diag();
+    for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
+      average_lr += diag_lr[i];
+    }
+    average_lr /= diag_lr.n_elem;
   }
-  average_lr /= diag_lr.n_elem;
 
   double normx = dot(datapoint.x, datapoint.x);
 
@@ -230,11 +233,12 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     // TODO this can be arbitrarily small
     cx_vec eigval;
     cx_mat eigvec;
-    eig_gen(eigval, eigvec, data.covariance());
-    double lr_alpha = min(eigval).real();
-    if (lr_alpha < 1e-8) {
-      lr_alpha = 1; // temp hack
-    }
+    // eig_gen(eigval, eigvec, data.covariance());
+    // double lr_alpha = min(eigval).real();
+    // if (lr_alpha < 1e-8) {
+      // lr_alpha = 1; // temp hack
+    // }
+    double lr_alpha = 1;
     double c;
     if (algo == "asgd" || algo == "ai-sgd") {
       c = 2./3.;
@@ -258,12 +262,13 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
 
   //check if the number of observations is greater than the rank of X
-  unsigned X_rank = rank(data.X);
-  if (X_rank > nsamples) {
-    Rcpp::Rcout<<"X matrix has rank "<<X_rank<<", but only "
-        <<nsamples<<" observation"<<std::endl;
-    return Rcpp::List();
-  }
+  // unsigned X_rank = rank(data.X);
+  // if (X_rank > nsamples) {
+  //   Rcpp::Rcout<<"X matrix has rank "<<X_rank<<", but only "
+  //       <<nsamples<<" observation"<<std::endl;
+  //   return Rcpp::List();
+  // }
+  unsigned X_rank = nsamples;
 
   // print out info
   //Rcpp::Rcout << data;
