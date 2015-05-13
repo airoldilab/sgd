@@ -76,6 +76,8 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
 
     if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
+      rank = Rcpp::as<bool>(model_attrs["rank"]);
+
       if (transfer_name == "identity") {
         transfer_ptr_type tp(new Sgd_Identity_Transfer());
         transfer_obj_ = tp;
@@ -178,6 +180,8 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     return os;
   }
 
+  bool rank;
+
 private:
   score_func_type create_score_func_instance() {
     score_func_type score_func = boost::bind(&Sgd_Experiment_Glm::score_function, this, _1, _2, _3);
@@ -192,6 +196,7 @@ private:
 
   typedef boost::shared_ptr<Sgd_Learn_Rate_Base> learnrate_ptr_type;
   learnrate_ptr_type lr_obj_;
+
 };
 
 // Compute score function coeff and its derivative for Implicit-SGD update

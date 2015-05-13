@@ -261,14 +261,20 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   Sgd_OnlineOutput out(data, exprm.start);
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
 
-  //check if the number of observations is greater than the rank of X
-  // unsigned X_rank = rank(data.X);
-  // if (X_rank > nsamples) {
-  //   Rcpp::Rcout<<"X matrix has rank "<<X_rank<<", but only "
-  //       <<nsamples<<" observation"<<std::endl;
-  //   return Rcpp::List();
-  // }
+  // check if the number of observations is greater than the rank of X
   unsigned X_rank = nsamples;
+  if (exprm.model_name == "gaussian" || exprm.model_name == "poisson" || exprm.model_name == "binomial" || exprm.model_name == "gamma"){
+    if (exprm.rank){
+      X_rank = rank(data.X);
+      if (X_rank > nsamples) {
+        Rcpp::Rcout<<"X matrix has rank "<<X_rank<<", but only "
+            <<nsamples<<" observation"<<std::endl;
+        return Rcpp::List();
+      }
+    }
+    
+  }
+  
 
   // print out info
   //Rcpp::Rcout << data;
@@ -350,7 +356,6 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     for (int i = X_rank; i < coef.n_rows; i++) {
       coef.row(i) = datum::nan;
     }
-    //coef.rows(X_rank, coef.n_rows-1) = datum::nan;
   }
 
   return Rcpp::List::create(

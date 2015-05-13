@@ -21,6 +21,7 @@
 #'       family functions.)
 #'     \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
 #'       be included in the \emph{null} model?
+#'     \item rank logical. Should the rank of the design matrix be checked?
 #'   }
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
@@ -426,6 +427,8 @@ fit_glm <- function(x, y,
     experiment$convergence <- implicit.control$convergence
     experiment$epsilon <- implicit.control$epsilon
     experiment$offset <- as.matrix(offset[good])
+    experiment$model.attrs$rank <- model.control$rank
+    
     out <- run_online_algorithm(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
       stop("An error has occured, program stopped.")
@@ -500,16 +503,24 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   # possible; otherwise it errors.
   if (model == "lm") {
     control.intercept <- model.control$intercept
+    control.rank <- model.control$rank
     # Check the validity of intercept.
     if (is.null(control.intercept)) {
       control.intercept <- TRUE
     } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
-    return(list(family=gaussian(), intercept=control.intercept))
+    # Check the validity of rank.
+    if (is.null(control.rank)){
+      control.rank <- FALSE
+    } else if (!is.logical(control.intercept)) {
+      stop ("'rank' not logical")
+    }
+    return(list(family=gaussian(), intercept=control.intercept, rank=control.rank))
   } else if (model == "glm") {
     control.family <- model.control$family
     control.intercept <- model.control$intercept
+    control.rank <- model.control$rank
     # Check the validity of family.
     if (is.null(control.family)) {
       control.family <- gaussian()
@@ -527,7 +538,13 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
-    return(list(family=control.family, intercept=control.intercept))
+    # Check the validity of rank.
+    if (is.null(control.rank)){
+      control.rank <- FALSE
+    } else if (!is.logical(control.intercept)) {
+      stop ("'rank' not logical")
+    }
+    return(list(family=control.family, intercept=control.intercept, rank=control.rank))
   } else {
     stop("model not specified")
   }
