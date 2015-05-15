@@ -1,2 +1,3 @@
-linear-regression   Benchmark linear regression on 1e5 observations, 1e2 parameters
-glm-poisson-regression   Benchmark generalized linear regression with a bivariate Poisson model
+bench-linear-regression   Benchmark linear regression on simulated normal data
+glm-poisson-regression   Demo generalized linear regression (Poisson) on simulated bivariate Poisson data
+linear-regression   Demo linear regression on simulated normal data
