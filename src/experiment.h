@@ -4,9 +4,9 @@
 
 #include "basedef.h"
 #include "data.h"
-#include "family.h"
+#include "glm-family.h"
+#include "glm-transfer.h"
 #include "learningrate.h"
-#include "transfer.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>

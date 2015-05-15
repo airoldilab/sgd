@@ -3,9 +3,9 @@
 #include "basedef.h"
 #include "data.h"
 #include "experiment.h"
-#include "family.h"
+#include "glm-family.h"
+#include "glm-transfer.h"
 #include "learningrate.h"
-#include "transfer.h"
 #include <stdlib.h>
 
 // Auxiliary function
