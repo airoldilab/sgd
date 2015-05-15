@@ -187,6 +187,48 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta, unsigned t, const
   return true;
 }
 
+template<typename EXPERIMENT>
+Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data, 
+  const EXPERIMENT& exprm, mat& coef, unsigned X_rank){
+  //check the validity of eta for all observations
+  mat eta;
+  eta = data.X * out.last_estimate() + exprm.offset;
+  mat mu;
+  mu = exprm.h_transfer(eta);
+  for(int i=0; i<eta.n_rows; ++i) {
+      if (!is_finite(eta[i])) {
+        Rcpp::Rcout<<"warning: NaN or non-finite eta"<<std::endl;
+        break;
+      }
+      if (!exprm.valideta(eta[i])) {
+        Rcpp::Rcout<<"warning: eta is not in the support"<<std::endl;
+        break;
+      }
+  }
+
+  //check the validity of mu for Poisson and Binomial family
+  double eps = 10. * datum::eps;
+  if(exprm.model_name=="poisson")
+    if (any(vectorise(mu) < eps))
+      Rcpp::Rcout<<"warning: sgd.fit: fitted rates numerically 0 occurred"<<std::endl;
+  if(exprm.model_name=="binomial")
+      if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
+        Rcpp::Rcout<<"warning: sgd.fit: fitted rates numerically 0 occurred"<<std::endl;
+
+  //calculate the deviance
+  double dev = exprm.deviance(data.Y, mu, exprm.weights);
+
+  //check the number of covariates
+  if (X_rank < Sgd_dataset_size(data).p) {
+    for (int i = X_rank; i < coef.n_rows; i++) {
+      coef.row(i) = datum::nan;
+    }
+  }
+  return Rcpp::List::create(
+      Rcpp::Named("mu") = mu, Rcpp::Named("eta") = eta,
+      Rcpp::Named("rank") = X_rank, Rcpp::Named("deviance") = dev);
+}
+
 // use the method specified by algorithm to estimate parameters
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset,SEXP experiment,SEXP algorithm,
@@ -307,60 +349,14 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     asgd_transform_output(out);
   }
 
-  //check the validity of eta for all observations
-  mat eta;
-  eta = data.X * out.last_estimate() + exprm.offset;
-  mat mu;
-  mu = exprm.h_transfer(eta);
-  for(int i=0; i<eta.n_rows; ++i) {
-      if (!is_finite(eta[i])) {
-        Rcpp::Rcout<<"warning: NaN or non-finite eta"<<std::endl;
-        break;
-      }
-      if (!exprm.valideta(eta[i])) {
-        Rcpp::Rcout<<"warning: eta is not in the support"<<std::endl;
-        break;
-      }
-  }
-
-  //check the validity of mu for Poisson and Binomial family
-  double eps = 10. * datum::eps;
-  if(exprm.model_name=="poisson")
-    if (any(vectorise(mu) < eps))
-      Rcpp::Rcout<<"warning: sgd.fit: fitted rates numerically 0 occurred"<<std::endl;
-  if(exprm.model_name=="binomial")
-      if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
-        Rcpp::Rcout<<"warning: sgd.fit: fitted rates numerically 0 occurred"<<std::endl;
-
-  //calculate the deviance
-  double dev = exprm.deviance(data.Y, mu, exprm.weights);
-
-  //check the convergence of the algorithm
-  bool converged = true;
-  if (exprm.convergence) {
-    mat old_eta;
-    mat old_mu;
-    old_eta = data.X * out.estimates.col(out.estimates.n_cols-2);
-    old_mu = exprm.h_transfer(old_eta);
-    double dev2 = exprm.deviance(data.Y, old_mu, exprm.weights);
-    if (std::abs(dev-dev2) > exprm.epsilon) {
-      Rcpp::Rcout<<"warning: sgd.fit: algorithm did not converge"<<std::endl;
-      converged = false;
-    }
-  }
-
   mat coef = out.last_estimate();
-  //check the number of covariates
-  if (X_rank < Sgd_dataset_size(data).p) {
-    for (int i = X_rank; i < coef.n_rows; i++) {
-      coef.row(i) = datum::nan;
-    }
+  Rcpp::List model_out;
+  if (exprm.model_name == "gaussian" || exprm.model_name == "poisson" || exprm.model_name == "binomial" || exprm.model_name == "gamma"){
+    model_out = post_process_glm(out, data, exprm, coef, X_rank);
   }
+  bool converged = true;
 
   return Rcpp::List::create(
-            Rcpp::Named("last") = out.last_estimate(),
-	    Rcpp::Named("mu") = mu, Rcpp::Named("eta") = eta,
-	    Rcpp::Named("coefficients") = coef, Rcpp::Named("rank") = X_rank,
-	    Rcpp::Named("deviance") = dev, Rcpp::Named("converged") = converged);
-  return Rcpp::List();
+	    Rcpp::Named("coefficients") = coef, Rcpp::Named("converged") = converged, 
+      Rcpp::Named("model.out") = model_out);
 }

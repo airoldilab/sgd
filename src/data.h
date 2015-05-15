@@ -52,7 +52,7 @@ struct Sgd_OnlineOutput{
   mat estimates;
   mat initial;
 //@methods
-  mat last_estimate(){
+  mat last_estimate() const{
     return estimates.col(estimates.n_cols-1);
   }
 };

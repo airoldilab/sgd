@@ -433,19 +433,19 @@ fit_glm <- function(x, y,
     if (length(out) == 0) {
       stop("An error has occured, program stopped.")
     }
-    temp.mu <- as.numeric(out$mu)
+    temp.mu <- as.numeric(out$model.out$mu)
     mu <- rep(0, length(good))
     mu[good] <- temp.mu
     mu[!good] <- NA
-    temp.eta <- as.numeric(out$eta)
+    temp.eta <- as.numeric(out$model.out$eta)
     eta <- rep(0, length(good))
     eta[good] <- temp.eta
     eta[!good] <- NA
     coef <- as.numeric(out$coefficients)
-    dev <- out$deviance
+    dev <- out$model.out$deviance
     residuals <- as.numeric((y - mu)/mu.eta(eta))
     iter <- experiment$p
-    rank <- out$rank
+    rank <- out$model.out$rank
     converged <- out$converged
   }
   names(residuals) <- ynames
