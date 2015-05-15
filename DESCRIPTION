@@ -17,6 +17,8 @@ Description: A fast and flexible set of tools for large scale inference. It
 URL: https://github.com/airoldilab/sgd
 BugReports: https://github.com/airoldilab/sgd/issues
 License: GPL-2
+Suggests:
+    testthat
 Imports:
     Rcpp (>= 0.11.3),
     MASS
