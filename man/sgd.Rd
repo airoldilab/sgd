@@ -82,49 +82,10 @@ following components:
 \code{coefficients}
 a named vector of coefficients
 
-\code{residuals}
-the \emph{working} residuals, that is the residuals in the final iteration of
-the fit. Since cases with zero weights are omitted, their working residuals
-are NA.
-
-\code{fitted.values}
-the fitted mean values, obtained by transforming the linear predictors by the
-inverse of the link function.
-
-\code{rank}
-the numeric rank of the fitted linear model.
-
-\code{family}
-the \code{\link[stats]{family}} object used.
-
-\code{linear.predictors}
-the linear fit on link scale.
-
-\code{deviance}
-up to a constant, minus twice the maximized log-likelihood. Where sensible,
-the constant is chosen so that a saturated model has deviance zero.
-
-\code{null.deviance}
-The deviance for the null model, comparable with \code{deviance}. The null
-model will include the offset, and an intercept if there is one in the model.
-Note that this will be incorrect if the link function depends on the data
-other than through the fitted mean: specify a zero offset to force a correct
-calculation.
-
-\code{iter}
-the number of iterations of the algorithm used.
-
-\code{weights}
-the weights initially supplied, a vector of 1s if none were.
-
-\code{df.residual}
-the residual degrees of freedom.
-
-\code{df.null}
-the residual degrees of freedom for the null model.
-
 \code{converged}
 logical. Was the algorithm judged to have converged?
+\code{model.out}
+a list of model-specific output attributes
 }
 \description{
 Run stochastic gradient descent on the underlying loss function for a given
