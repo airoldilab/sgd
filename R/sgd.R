@@ -26,8 +26,8 @@
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
 #'     \item method: character specifying the method to be used: \code{"sgd"},
-#'       \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See
-#'       \sQuote{Details}.
+#'     \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}. Default is
+#'     \code{"implicit"}.  See \sQuote{Details}.
 #'     \item lr: character specifying the learning rate to be used:
 #'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
 #'       \code{"adagrad"}. Default is \code{"one-dim"}.
@@ -428,7 +428,7 @@ fit_glm <- function(x, y,
     experiment$epsilon <- implicit.control$epsilon
     experiment$offset <- as.matrix(offset[good])
     experiment$model.attrs$rank <- model.control$rank
-    
+
     out <- run_online_algorithm(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
       stop("An error has occured, program stopped.")

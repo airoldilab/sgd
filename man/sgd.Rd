@@ -48,8 +48,8 @@ model), \code{"glm"} (generalized linear model).}
 \item{sgd.control}{a list of parameters for controlling the estimation
 \itemize{
   \item method: character specifying the method to be used: \code{"sgd"},
-    \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See
-    \sQuote{Details}.
+  \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}. Default is
+  \code{"implicit"}.  See \sQuote{Details}.
   \item lr: character specifying the learning rate to be used:
     \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
     \code{"adagrad"}. Default is \code{"one-dim"}.
