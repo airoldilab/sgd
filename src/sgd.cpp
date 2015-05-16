@@ -29,17 +29,6 @@ Sgd_Size Sgd_dataset_size(const Sgd_Dataset& dataset) {
   return size;
 }
 
-// return the @t th estimated parameter in @online_out
-// Here, t=1 is the first estimate, which in matrix will be its 0-th col
-mat Sgd_onlineOutput_estimate(const Sgd_OnlineOutput& online_out, unsigned t) {
-  if (t==0) {
-    return online_out.initial;
-  }
-  t = t-1;
-  mat column = mat(online_out.estimates.col(t));
-  return column;
-}
-
 // return the @t th data point in @dataset
 Sgd_DataPoint Sgd_get_dataset_point(const Sgd_Dataset& dataset, unsigned t) {
   t = t - 1;
@@ -50,11 +39,11 @@ Sgd_DataPoint Sgd_get_dataset_point(const Sgd_Dataset& dataset, unsigned t) {
 
 // return the new estimate of parameters, using SGD
 template<typename EXPERIMENT>
-mat Sgd_sgd_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
+mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
 	const Sgd_Dataset& data_history, const EXPERIMENT& experiment, bool& good_gradient) {
 
   Sgd_DataPoint datapoint = Sgd_get_dataset_point(data_history, t);
-  mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
+  // mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
   Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   mat score_t = experiment.score_function(theta_old, datapoint, experiment.offset[t-1]);
   if (!is_finite(score_t))
@@ -68,17 +57,15 @@ mat Sgd_sgd_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
     ++count;
 #endif
   mat theta_new = theta_old + (at * score_t);
-  online_out.estimates.col(t-1) = theta_new;
   return theta_new;
 }
 
 // return the new estimate of parameters, using implicit SGD
 // TODO add per model
-mat Sgd_implicit_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
-	const Sgd_Dataset& data_history, const Sgd_Experiment_Glm& experiment) {
+mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
+	const Sgd_Dataset& data_history, const Sgd_Experiment_Glm& experiment, bool& good_gradient) {
   Sgd_DataPoint datapoint= Sgd_get_dataset_point(data_history, t);
-  mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
-
+  // mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
   mat theta_new;
   Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   double average_lr = 0;
@@ -116,22 +103,7 @@ mat Sgd_implicit_online_algorithm(unsigned t, Sgd_OnlineOutput& online_out,
   else
     result = lower;
   theta_new = theta_old + result * datapoint.x.t();
-  online_out.estimates.col(t-1) = theta_new;
-
   return theta_new;
-}
-
-// transform the output of averaged SGD
-void asgd_transform_output(Sgd_OnlineOutput& sgd_onlineOutput) {
-	mat avg_estimates(sgd_onlineOutput.estimates.n_rows, 1);
-	avg_estimates = Sgd_onlineOutput_estimate(sgd_onlineOutput, 1);
-	for (unsigned t = 1; t < sgd_onlineOutput.estimates.n_cols; ++t) {
-		avg_estimates = (1. - 1./(double)t) * avg_estimates
-						+ 1./((double)t) * Sgd_onlineOutput_estimate(sgd_onlineOutput, t+1);
-		// t+1-th data has been averaged in @sgd_onlineOutput.estimate,
-		// hence can be used to store instantly
-		sgd_onlineOutput.estimates.col(t) = avg_estimates;
-	}
 }
 
 // TODO add per model
@@ -318,35 +290,75 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   }
 
   // print out info
-  //Rcpp::Rcout << data;
-  //Rcpp::Rcout << exprm;
-  //Rcpp::Rcout << "    Method: " << algo << std::endl;
+  #if DEBUG
+  Rcpp::Rcout << data;
+  Rcpp::Rcout << exprm;
+  Rcpp::Rcout << "    Method: " << algo << std::endl;
+  #endif
 
   bool good_gradient = true;
   bool good_validity = true;
+
+  mat theta_new;
+  mat theta_old = out.last_estimate();
+  mat theta_new_ave;
+  mat theta_old_ave;
+  bool flag_ave;
+
+
+  if (algo == "asgd" || algo == "ai-sgd") 
+    flag_ave = true;
+
   for(int t=1; t<=nsamples; ++t) {
     if (algo == "sgd" || algo == "asgd") {
-      mat theta = Sgd_sgd_online_algorithm(t, out, data, exprm, good_gradient);
+      theta_new = Sgd_sgd_online_algorithm(t, theta_old, data, exprm, good_gradient);
+      
+      if (flag_ave) {
+        if (t != 1)
+          theta_new_ave = (1. - 1./(double)t) * theta_old_ave
+              + 1./((double)t) * theta_new;
+        else
+          theta_new_ave = theta_new;
+        out = theta_new_ave;
+        theta_old_ave = theta_new_ave;
+      }
+      else 
+        out = theta_new;
+      theta_old = theta_new;
+
       if (!good_gradient) {
         Rcpp::Rcout<<"NA or infinite gradient"<<std::endl;
         return Rcpp::List();
       }
-      good_validity = validity_check(data,theta, t, exprm);
+      good_validity = validity_check(data, theta_old, t, exprm);
       if (!good_validity)
         return Rcpp::List();
     }
     else if (algo == "implicit" || algo == "ai-sgd") {
-      mat theta = Sgd_implicit_online_algorithm(t, out, data, exprm);
-      if (!is_finite(theta)) {
+      // Rcpp::Rcout<<t<<std::endl;
+
+      theta_new = Sgd_implicit_online_algorithm(t, theta_old, data, exprm, good_gradient);
+      
+      if (flag_ave) {
+        if (t != 1)
+          theta_new_ave = (1. - 1./(double)t) * theta_old_ave
+              + 1./((double)t) * theta_new;
+        else
+          theta_new_ave = theta_new;
+        out = theta_new_ave;
+        theta_old_ave = theta_new_ave;
+      }
+      else 
+        out = theta_new;
+      theta_old = theta_new;
+
+      if (!is_finite(theta_old)) {
         Rcpp::Rcout<<"warning: non-finite coefficients at iteration "<<t<<std::endl;
       }
-      good_validity = validity_check(data,theta, t, exprm);
+      good_validity = validity_check(data, theta_old, t, exprm);
       if (!good_validity)
         return Rcpp::List();
     }
-  }
-  if (algo == "asgd" || algo == "ai-sgd") {
-    asgd_transform_output(out);
   }
 
   mat coef = out.last_estimate();
@@ -357,6 +369,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
   bool converged = true;
 
   return Rcpp::List::create(
-	    Rcpp::Named("coefficients") = coef, Rcpp::Named("converged") = converged, 
+	    Rcpp::Named("coefficients") = coef, Rcpp::Named("converged") = converged,
+      Rcpp::Named("estimates") = out.estimates, Rcpp::Named("pos") = out.pos,
       Rcpp::Named("model.out") = model_out);
 }
