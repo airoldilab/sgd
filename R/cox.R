@@ -1,39 +1,66 @@
 ## Model: Cox proportional hazards.
 #
-#  Example usage:
-#     d  = generate.data(1e3, 10)
-#     fit.cox(d)  # uses R package to find MLE.
-#     cox.sgd(d, niters=1e4, implicit=T, average=T)
+# TODO(ptoulis): Integrate to main SGD code.
 rm(list=ls())
 library(survival)
 library(glmnet)
 
 
-generate.data <- function(n, p) {
-  X = matrix(rbinom(n * p, size=2, prob = 0.1), nrow=n, ncol=p)
-  # X[, 1] <- 1
-  beta = exp(-(1/sqrt(p)) * seq(1, p))
-  pred = apply(X, 1, function(r) exp(sum(r * beta)))
-  Y = rexp(n, rate = pred)
+## Taken from Jerry Friedman.
+gen.times = function(x, snr=10){
+  # generate data according to Friedman's setup
+  n=nrow(x)
+  p=ncol(x)
+  b=((-1)^(1:p))*exp(-2*((1:p)-1)/20)
+  # b=sample(c(-0.8, -0.45, 0.45, 0.9, 1.4), size=p, replace=T)
+  # ((-1)^(1:p))*(1:p)^{-0.65}#exp(-2*((1:p)-1)/20)
+  f = x%*%b
+  z = rnorm(n)
+  k = sqrt(var(f)/(snr*var(z)))
   
-  q3 = quantile(Y, prob=c(0.8))  # Q3 of Y
-  epsilon = 0.001 # probability of censoring smallest Y
-  k = log(1/epsilon - 1) / (q3 - min(Y))
-  censor.prob = (1 + exp(-k * (Y-q3)))**(-1)
-  # plot(censor.prob, main="Censoring probabilities", type="l")
-  C = rbinom(n, size=1, prob= censor.prob)
-  M = matrix(0, nrow=n, ncol=2)
-  colnames(M) <- c("time", "status")
-  M[, 1] <- Y
-  M[, 2] <- C
-  return(list(x=X, y=Y, censor=C, M=M, beta=beta))
+  true.Y = exp(f + k*z)
+  censor.times = exp(k * z)
+  
+  censor.ind = as.numeric(censor.times < true.Y)
+  ytime = sapply(1:length(true.Y), function(i) min(true.Y[i], censor.times[i]))
+  
+  return(list(true.beta=b, y=cbind(time=ytime, 
+                                   censor=censor.ind)))
+}
+genx = function(n,p,rho){
+  #    generate x's multivariate normal with equal corr rho
+  # Xi = b Z + Wi, and Z, Wi are independent normal.
+  # Then Var(Xi) = b^2 + 1
+  #  Cov(Xi, Xj) = b^2  and so cor(Xi, Xj) = b^2 / (1+b^2) = rho
+  z=rnorm(n)
+  if(abs(rho)<1){
+    beta=sqrt(rho/(1-rho))
+    x0=matrix(rnorm(n*p),ncol=p)
+    A = matrix(z, nrow=n, ncol=p, byrow=F)
+    x= beta * A + x0
+  }
+  if(abs(rho)==1){ x=matrix(z,nrow=n,ncol=p,byrow=F)}
+  
+  return(x)
+}
+dist <- function(x, y)  {
+  sqrt(mean((x-y)**2))  
 }
 
-dist <- function(x, y)  {
- sqrt(mean((x-y)**2))  
+gen.data <- function(N, p, rho=0.2) {
+  ## Generate data (X=covariates, Yt=obs. times, censor ={0,1} indicators, beta.star=true.pars)
+  X = genx(N, p, rho)
+  times = gen.times(X)
+  return(list(X=X, 
+              Yt=times$y[,1], 
+              censor=times$y[,2],
+              true.beta=times$true.beta))
 }
+
 
 fit.cox <- function(data, verbose=T) {
+  # Uses coxph function from survival packae
+  # Not of interest because it does not scale.
   fit <- coxph(Surv(y, censor) ~ x, data)
   if(verbose) {
     print(names(fit))
@@ -47,15 +74,19 @@ fit.cox <- function(data, verbose=T) {
 }
 
 cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
+  # Cox proportional hazards through SGD.
+  # Args:
+  #   data = list(X, Yt, censor, true.beta)
+  #
+  # TODO(ptoulis): Change code to do cross-validation.
+  mse.best = 0.5
   par(mfrow=c(1, 1))
-  # Fit the parameter through other method, then use as "best".
-  mse.best = dist(fit.cox(data), data$beta)
   if(implicit) {
     print("Running Implicit SGD for Cox PH model.")
   }
   # input
-  n = length(data$y)
-  p = ncol(data$x)
+  n = length(data$Yt)
+  p = ncol(data$X)
   beta = matrix(0, nrow=p, ncol=1)
   gammas = C / seq(1, niters)
   if(averaging) {
@@ -66,9 +97,9 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   mse = c()
   
   # order units based on event times.
-  ord = order(data$y)
+  ord = order(data$Yt)
   d = data$censor[ord]  # censor
-  x = matrix(data$x[ord, ], ncol=p)  # ordered covariates.
+  x = matrix(data$X[ord, ], ncol=p)  # ordered covariates.
   
   # plotting params.
   plot.points = as.integer(seq(1, niters, length.out=20))
@@ -126,12 +157,13 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
       beta.bar = (1/i) * ((i-1) * beta.bar + beta)
       mse <- c(mse, dist(beta.bar, data$beta))
     } else {
-      mse <- c(mse, dist(beta, data$beta))
+      mse <- c(mse, dist(beta, data$true.beta))
     }
     
     if(i %in% plot.points) {
      print(sprintf("Last MSE = %.3f", tail(mse, 1)))
-      plot(mse, type="l", main=sprintf("dist=%.4f (implicit=%d)", tail(mse, 1), implicit), ylim=c(0, max(mse)))
+      plot(mse, type="l", main=sprintf("dist=%.4f (implicit=%d)", tail(mse, 1), implicit), 
+           ylim=c(mse.best/2, max(mse)))
      abline(h=mse.best, col="red", lty=3)
     }
     setTxtProgressBar(pb, value=i/niters)
@@ -139,62 +171,48 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   print("SGD params")
   print(as.numeric(beta))
   print("Distance of last sgd iterate")
-  print(dist(beta, data$beta))
+  print(dist(beta, data$true.beta))
   par(mfrow=c(1, 2))
   plot(mse, type="l", main=sprintf("dist=%.4f (implicit=%d)", tail(mse, 1), implicit), ylim=c(0, max(mse)))
   abline(h=mse.best, col="red", lty=3)
-  plot( data$beta, as.numeric(beta), pch="x")
-  lines(data$beta, data$beta, lty=3)
+  plot( data$true.beta, as.numeric(beta), pch="x")
+  lines(data$true.beta, data$true.beta, lty=3)
 }
 
-example.usage <- function() {
-  print("Running example for Cox proportional hazards model.")
-  # case 1: problematic.
-#   d = generate.data(1e4, 50)
-#   cox.sgd(d, niters = 1e4, C = 1, implicit = T, averaging=T)
-  d = generate.data(1e4, 20)
-   cox.sgd(d, niters = 5e4, C = 2, implicit = T, averaging=T)
-}
+sgd.vs.glmnet <- function(use.real.data=F) {
+  # Runs glmnet vs. SGD for fitting simulated or real-world dataset.
+  # 
+  # TODO(ptoulis): Simulated does not give reasonable fit (all params=0)
+  # TODO(ptoulis): In real-data, evaluate both based on cross-validation.
+  # TODO(ptoulis): Compute the CV plots for both methods and datasets.
+  #
+  data = gen.data(N=1e3, p=20, rho = 0.2)
 
-glmnet.example <- function() {
-  #Cox
-  set.seed(10101)
+  # unload
+  X = data$X
+  Yt = data$Yt
+  censor = data$censor
+  beta.star = data$true.beta
   
-  N=10000; p=100
-  nzc=p
-  x=matrix(rnorm(N*p),N,p)
-  beta=rnorm(nzc)
-  fx=x[,seq(nzc)]%*%beta
-  hx=exp(fx)
-  ty=rexp(N,hx)
-  tcens=rbinom(n=N,prob=.3,size=1)# censoring indicator
-  y=cbind(time=ty,status=1-tcens) # y=Surv(ty,1-tcens) with library(survival)
-
-  fit=glmnet(x,y,family="cox", nlambda = 5)
+  if(use.real.data) {
+    attach("LymphomaData.rda")
+    X = t(patient.data$x)
+    Yt = patient.data$time
+    status = patient.data$status
+    censor = 1-status
+  }
   
+  y.glmnet = cbind(time=Yt, status=1-censor)
+  print(head(y.glmnet))
+  # 1. glmnet
+  fit = glmnet(X, y.glmnet, family="cox")
   plot(fit)
-  mse = as.numeric(apply(fit$beta, 2, function(col) dist(col, beta)))
-  # print(length(mse))
-  # print(names(fit))
-  # print(dim(fit$beta))
-  beta.glmnet = as.numeric(fit$beta[, which.min(mse)])
-  # print("True beta")
-  # print(beta)
-  # print(beta.glmnet)
-  print(sprintf("Min MSE for coxnet = %.3f", min(mse)))
-  print(length(y[,1]))
-  print(dim(x))
-
-  d = list(x=x, M=y, y=as.numeric(y[,1]), 
-           censor=as.numeric(y[,2]), 
-           beta=beta)
-  rm(y)
- # d = generate.data(N,p)
- # fit.cox(d)
-  # coxph(Surv(y, censor) ~ x, data=d) 
- print("MSE of coxnet")
- print(summary(mse))
-  cox.sgd(d, niters=1e5, C = .06, implicit = F, averaging=T)
-   print("MSE of coxnet")
- print(summary(mse))
+  mse = as.numeric(apply(fit$beta, 2, function(b) sqrt(mean((b - beta.star)**2))))
+  mse.best = min(mse)
+  plot(fit$lambda, mse, type="l", lty=3)
+  
+  # data for SGD
+  cox.sgd(data, niters=1e4, C=0.1, implicit = T, averaging=F)
 }
+
+
