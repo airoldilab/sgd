@@ -17,38 +17,98 @@ using namespace arma;
 
 struct Sgd_Experiment;
 //TODO
-//struct Get_score_coeff;
+//struct Get_grad_coeff;
 //struct Implicit_fn;
 
 // Base experiment class for arbitrary model
 struct Sgd_Experiment {
 //@members
-  unsigned d;
-  unsigned n_iters;
   std::string model_name;
-  Rcpp::List model_attrs;
+  unsigned n_iters;
+  unsigned d;
   std::string lr;
-  mat offset;
-  mat weights;
   mat start;
+  mat weights;
+  mat offset;
   double epsilon;
   bool trace;
   bool dev;
   bool convergence;
+  Rcpp::List model_attrs;
 
 //@methods
   Sgd_Experiment(std::string m_name, Rcpp::List mp_attrs)
   : model_name(m_name), model_attrs(mp_attrs) {
   }
 
-  void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale);
-  void init_one_dim_eigen_learning_rate();
-  void init_ddim_learning_rate(double alpha, double c);
-  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const;
-  mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
+  // Gradient
+  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
+
+  /*
+   * Learning rates
+   */
+  void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale) {
+    learnrate_ptr_type lp(new Sgd_Onedim_Learn_Rate(gamma, alpha, c, scale));
+    lr_obj_ = lp;
+
+    lr = "One-dimensional learning rate";
+  }
+
+  void init_one_dim_eigen_learning_rate() {
+    grad_func_type grad_func = create_grad_func_instance();
+
+    learnrate_ptr_type lp(new Sgd_Onedim_Eigen_Learn_Rate(grad_func));
+    lr_obj_ = lp;
+
+    lr = "One-dimensional eigenvalue learning rate";
+  }
+
+  void init_ddim_learning_rate(double alpha, double c) {
+    grad_func_type grad_func = create_grad_func_instance();
+
+    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, alpha, c, grad_func));
+    lr_obj_ = lp;
+
+    lr = "d-dimensional learning rate";
+  }
+
+  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
+    //return lr_(theta_old, data_pt, offset, t, d);
+    return lr_obj_->learning_rate(theta_old, data_pt, offset, t, d);
+  }
+
+protected:
+  grad_func_type create_grad_func_instance() {
+    grad_func_type grad_func;
+    return grad_func;
+  }
+
+  typedef boost::shared_ptr<Sgd_Learn_Rate_Base> learnrate_ptr_type;
+  learnrate_ptr_type lr_obj_;
+
 };
 
-// Experiment class for arbitrary model
+// Experiment class for estimating equations
+struct Sgd_Experiment_Ee : public Sgd_Experiment {
+//@members
+
+//@methods
+  Sgd_Experiment_Ee(std::string m_name, Rcpp::List mp_attrs)
+  : Sgd_Experiment(m_name, mp_attrs) {
+  }
+
+  // Gradient
+  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
+
+private:
+  grad_func_type create_grad_func_instance() {
+    grad_func_type grad_func = boost::bind(&Sgd_Experiment_Ee::gradient, this, _1, _2, _3);
+    return grad_func;
+  }
+
+};
+
+// Experiment class for generalized linear models
 struct Sgd_Experiment_Glm : public Sgd_Experiment {
 //@members
 
@@ -97,37 +157,8 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     }
   }
 
-  void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale) {
-    learnrate_ptr_type lp(new Sgd_Onedim_Learn_Rate(gamma, alpha, c, scale));
-    lr_obj_ = lp;
-
-    lr = "One-dimensional learning rate";
-  }
-
-  void init_one_dim_eigen_learning_rate() {
-    score_func_type score_func = create_score_func_instance();
-
-    learnrate_ptr_type lp(new Sgd_Onedim_Eigen_Learn_Rate(score_func));
-    lr_obj_ = lp;
-
-    lr = "One-dimensional eigenvalue learning rate";
-  }
-
-  void init_ddim_learning_rate(double alpha, double c) {
-    score_func_type score_func = create_score_func_instance();
-
-    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, alpha, c, score_func));
-    lr_obj_ = lp;
-
-    lr = "d-dimensional learning rate";
-  }
-
-  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
-    //return lr_(theta_old, data_pt, offset, t, d);
-    return lr_obj_->learning_rate(theta_old, data_pt, offset, t, d);
-  }
-
-  mat score_function(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
+  // Gradient
+  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
     return ((datapoint.y - h_transfer(dot(datapoint.x, theta_old) + offset)) *
       datapoint.x).t();
   }
@@ -181,9 +212,9 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
   bool rank;
 
 private:
-  score_func_type create_score_func_instance() {
-    score_func_type score_func = boost::bind(&Sgd_Experiment_Glm::score_function, this, _1, _2, _3);
-    return score_func;
+  grad_func_type create_grad_func_instance() {
+    grad_func_type grad_func = boost::bind(&Sgd_Experiment_Glm::gradient, this, _1, _2, _3);
+    return grad_func;
   }
 
   typedef boost::shared_ptr<Sgd_Transfer_Base> transfer_ptr_type;
@@ -192,16 +223,13 @@ private:
   typedef boost::shared_ptr<Sgd_Family_Base> family_ptr_type;
   family_ptr_type family_obj_;
 
-  typedef boost::shared_ptr<Sgd_Learn_Rate_Base> learnrate_ptr_type;
-  learnrate_ptr_type lr_obj_;
-
 };
 
-// Compute score function coeff and its derivative for Implicit-SGD update
+// Compute gradient coeff and its derivative for Implicit-SGD update
 template<typename EXPERIMENT>
-struct Get_score_coeff {
+struct Get_grad_coeff {
 
-  Get_score_coeff(const EXPERIMENT& e, const Sgd_DataPoint& d,
+  Get_grad_coeff(const EXPERIMENT& e, const Sgd_DataPoint& d,
       const mat& t, double n, double off) : experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
 
   double operator() (double ksi) const{
@@ -231,7 +259,7 @@ template<typename EXPERIMENT>
 struct Implicit_fn {
   typedef boost::math::tuple<double, double, double> tuple_type;
 
-  Implicit_fn(double a, const Get_score_coeff<EXPERIMENT>& get_score): at(a), g(get_score){}
+  Implicit_fn(double a, const Get_grad_coeff<EXPERIMENT>& get_grad): at(a), g(get_grad) {}
   tuple_type operator() (double u) const{
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);
@@ -241,7 +269,7 @@ struct Implicit_fn {
   }
 
   double at;
-  const Get_score_coeff<EXPERIMENT>& g;
+  const Get_grad_coeff<EXPERIMENT>& g;
 };
 
 #endif

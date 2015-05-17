@@ -11,7 +11,8 @@
 #'   variables in the model. If not found in data, the variables are taken from
 #'   environment(formula), typically the environment from which glm is called.
 #' @param model character specifying the model to be used: \code{"lm"} (linear
-#'   model), \code{"glm"} (generalized linear model).
+#'   model), \code{"glm"} (generalized linear model), \code{"ee"} (estimating
+#'   equation).
 #' @param model.control a list of parameters for controlling the model.
 #'   \itemize{
 #'     \item family (\code{"glm"}): a description of the error distribution and
@@ -22,6 +23,10 @@
 #'     \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
 #'       be included in the \emph{null} model?
 #'     \item rank logical. Should the rank of the design matrix be checked?
+#'     \item fn (\code{"ee"}): moment function, which is a required argument if
+#'       \code{gr} not specified
+#'     \item gr (\code{"ee"}): gradient of the moment function, which if not
+#'       passed in defaults to taking the numerical gradient of \code{fn}
 #'   }
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
@@ -243,11 +248,14 @@ sgd.matrix <- function(x, y, model,
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
-  sgd.control <- do.call("valid_sgd_control", sgd.control)
+  sgd.control <- do.call("valid_sgd_control", c(sgd.control, N=NROW(y),
+    d=ncol(x)))
 
   # 2. Fit!
   if (model %in% c("lm", "glm")) {
     fit <- fit_glm
+  } else if (model == "ee") {
+    fit <- fit_ee
   } else {
     print(model)
     stop("'model' not recognized")
@@ -312,25 +320,17 @@ fit_glm <- function(x, y,
   }
   N <- NROW(y) # number of observations
   d <- ncol(x) # number of features
-  EMPTY <- d == 0
 
-  family <- model.control$family
-  intercept <- model.control$intercept
-
-  start <- sgd.control$start
+  # sgd.control arguments
   method <- sgd.control$method
   lr <- sgd.control$lr
-  if (is.null(sgd.control$weights)) {
-    weights <- rep.int(1, N)
-  } else {
-    weights <- sgd.control$weights
-  }
-  if (is.null(sgd.control$offset)) {
-    offset <- rep.int(0, N)
-  } else {
-    offset <- sgd.control$offset
-  }
-  implicit.control <- do.call("valid_implicit_control", sgd.control)
+  start <- sgd.control$start
+  weights <- sgd.control$weight
+  offset <- sgd.control$offset
+
+  # model.control arguments
+  family <- model.control$family
+  intercept <- model.control$intercept
 
   variance <- family$variance
   linkinv <- family$linkinv
@@ -351,6 +351,7 @@ fit_glm <- function(x, y,
   valideta <- unless.null(family$valideta, function(eta) TRUE)
   validmu <- unless.null(family$validmu, function(mu) TRUE)
 
+  EMPTY <- d == 0
   if (EMPTY) {
     eta <- rep.int(0, N) + offset
     if (!valideta(eta)) {
@@ -371,13 +372,6 @@ fit_glm <- function(x, y,
     rank <- 0L
     converged <- FALSE
   } else {
-    # Set the initial value for theta.
-    if (!is.null(start) & length(start) != d) {
-      stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s",
-                    d, paste(deparse(xnames), collapse=", ")), domain=NA)
-    } else {
-      start <- rep(0, d)
-    }
     eta <- sum(x[1, ] * start)+offset[1]
     if (!valideta(eta)) {
       stop("cannot find valid starting values: please specify some", call.=FALSE)
@@ -389,23 +383,23 @@ fit_glm <- function(x, y,
     dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
     experiment <- list()
     experiment$name <- family$family
+    experiment$niters <- length(dataset$Y)
+    experiment$d <- dim(dataset$X)[2]
+    experiment$lr <- lr
+    experiment$start <- as.matrix(start)
+    experiment$weights <- as.matrix(weights[good])
+    experiment$offset <- as.matrix(offset[good]) # TODO not implemented
+    experiment$epsilon <- sgd.control$epsilon
+    experiment$trace <- sgd.control$trace
+    experiment$deviance <- sgd.control$deviance
+    experiment$convergence <- sgd.control$convergence
     experiment$model.attrs <- list()
     experiment$model.attrs$transfer.name <- transfer_name(family$link)
-    experiment$niters <- length(dataset$Y)
-    experiment$lr <- lr
-    experiment$d <- dim(dataset$X)[2]
-    experiment$weights <- as.matrix(weights[good])
-    experiment$start <- as.matrix(start)
-    experiment$deviance <- implicit.control$deviance
-    experiment$trace <- implicit.control$trace
-    experiment$convergence <- implicit.control$convergence
-    experiment$epsilon <- implicit.control$epsilon
-    experiment$offset <- as.matrix(offset[good])
     experiment$model.attrs$rank <- model.control$rank
 
     out <- run_online_algorithm(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
-      stop("An error has occured, program stopped.")
+      stop("An error has occured, program stopped")
     }
     temp.mu <- as.numeric(out$model.out$mu)
     mu <- rep(0, length(good))
@@ -437,17 +431,76 @@ fit_glm <- function(x, y,
   nulldf <- n.ok - as.integer(intercept)
   resdf <- n.ok - rank
   names(coef) <- xnames
-  result <- list(coefficients=coef, residuals=residuals, fitted.values=mu,
-                 rank=rank, family=family, linear.predictors=eta,
-                 deviance=dev, null.deviance=nulldev, iter=iter, weights=weights,
-                 df.residual=resdf, df.null=nulldf, converged=if(implicit.control$convergence) converged, 
-                 estimates=out$estimates, pos=out$pos, aic=0)
+  result <- list(
+    coefficients=coef,
+    residuals=residuals,
+    fitted.values=mu,
+    rank=rank,
+    family=family,
+    linear.predictors=eta,
+    deviance=dev,
+    null.deviance=nulldev,
+    iter=iter,
+    weights=weights,
+    df.residual=resdf,
+    df.null=nulldf,
+    converged=if(sgd.control$convergence) converged,
+    estimates=out$estimates,
+    pos=out$pos,
+    aic=0)
   class(result) <- c(class(result), "glm")
   return(result)
-  # TODO in C: deal with offset
-  # TODO compare all results with glm
-  # TODO unit test on all checks
-  # TODO write start value
+}
+
+fit_ee <- function(x, y,
+                   model.control,
+                   sgd.control) {
+  # TODO
+  if (sgd.control$method %in% c("implicit", "ai-sgd")) {
+    stop("implicit methods not implemented yet")
+  }
+
+  xnames <- dimnames(x)[[2L]]
+  if (is.matrix(y)) {
+    ynames <- rownames(y)
+  } else {
+    ynames <- names(y)
+  }
+  N <- NROW(y) # number of observations
+  d <- ncol(x) # number of features
+
+  EMPTY <- d == 0
+  if (EMPTY) {
+    # TODO
+  } else {
+    dataset <- list(X=x, Y=y)
+    experiment <- list()
+    experiment$name <- "ee"
+    experiment$niters <- N
+    experiment$d <- d
+    experiment$lr <- sgd.control$lr
+    experiment$start <- as.matrix(sgd.control$start)
+    experiment$weights <- sgd.control$weights # TODO not implemented
+    experiment$offset <- sgd.control$offset # TODO not implemented
+    experiment$epsilon <- sgd.control$epsilon
+    experiment$trace <- sgd.control$trace
+    experiment$deviance <- sgd.control$deviance
+    experiment$convergence <- sgd.control$convergence
+    experiment$model.attrs <- list()
+    experiment$model.attrs$fn <- model.control$fn
+    experiment$model.attrs$gr <- model.control$gr
+
+    out <- run_online_algorithm(dataset, experiment, sgd.control$method, verbose=F)
+    if (length(out) == 0) {
+      stop("An error has occured, program stopped")
+    }
+  }
+
+  return(list(
+    coefficients=out$coef,
+    converged=out$converged,
+    estimates=out$estimates
+    ))
 }
 
 ################################################################################
@@ -464,16 +517,16 @@ sgd.mse.glm <- function(x){
 plot.sgd.mse <- function(x){
   if (any(class(x) %in% "glm")){
     get.mse <- sgd.mse.glm
-  } 
+  }
   else{
     stop("Model not recognized! ")
   }
-  mse <- get.mse(x)  
+  mse <- get.mse(x)
   dat <- data.frame(mse=mse, pos=x$pos[1, ])
   dat <- dat[!duplicated(dat$pos), ]
   pos <- 0
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse)) + ggplot2::geom_line() + 
-    ggplot2::theme_bw() + ggplot2::theme(panel.border = ggplot2::element_blank(), panel.grid.major = ggplot2::element_blank(), 
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse)) + ggplot2::geom_line() +
+    ggplot2::theme_bw() + ggplot2::theme(panel.border = ggplot2::element_blank(), panel.grid.major = ggplot2::element_blank(),
                        panel.grid.minor = ggplot2::element_blank(), axis.line = ggplot2::element_line(colour = "black")) +
     ggplot2::labs(title = "Mean Squared Error", x = "Iteration", y = "MSE")
   return(p)
@@ -531,17 +584,54 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       stop ("'rank' not logical")
     }
     return(list(family=control.family, intercept=control.intercept, rank=control.rank))
+  } else if (model == "ee") {
+    # for now do iterative procedure
+    control.fn <- model.control$fn
+    control.gr <- model.control$gr
+    # Check the validify of moment function and its gradient.
+    if (is.null(control.fn)) {
+      if (is.null(control.gr)) {
+        stop("either 'fn' or 'gr' must be specified")
+      } else if (!is.function(control.gr)) {
+        stop("'gr' not a function")
+      }
+    } else if (!is.function(control.fn)) {
+      stop("'fn' not a function")
+    } else if (is.null(control.gr)) {
+      # Default to numerical gradient via central differences.
+      #library(numDeriv)
+      # TODO probably does not work
+      control.gr <- function(x, fn=control.fn) {
+        d <- length(x)
+        h <- 1e-5
+        out <- rep(0, d)
+        for (i in 1:d) {
+          ei <- c(rep(0, i-1), h, rep(0, d-i))
+          out[i] <- (fn(x + ei) - fn(x - ei)) / (2*h)
+        }
+        return(out)
+      }
+    }
+    return(list(fn=control.fn, gr=control.gr))
   } else {
     stop("model not specified")
   }
 }
 
 valid_sgd_control <- function(method="implicit", lr="one-dim",
-                              start=NULL, ...) {
+                              start=NULL, weights=NULL,
+                              offset=NULL, N, d, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
-  # Check the validity of learning rate type.
+  # Check validity of method.
+  if (!is.character(method)) {
+    stop("'method' must be a string")
+  } else if (!(method %in% c("sgd", "implicit", "asgd", "ai-sgd"))) {
+    stop("'method' not recognized")
+  }
+
+  # Check validity of learning rate.
   lrs <- c("one-dim", "one-dim-eigen", "d-dim", "adagrad")
   if (is.numeric(lr)) {
     if (lr < 1 | lr > length(lrs)) {
@@ -557,21 +647,45 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
     stop("invalid 'lr'")
   }
 
-  #Check the validity of start.
-  if (!is.null(start) & !is.numeric(start)) {
+  # Check validity of start.
+  if (is.null(start)) {
+    start <- rep(0, d)
+  } else if (!is.numeric(start)) {
     stop("'start' must be numeric")
+  } else if (length(start) != d) {
+    stop(gettextf("length of 'start' should equal %d", d), domain=NA)
   }
-  # TODO where should we check if the dim(start) == dim(parameters)?
 
-  # Check the validity of method.
-  if (!is.character(method)) {
-    stop("'method' must be a string")
-  } else if (!(method %in% c("sgd", "implicit", "asgd", "ai-sgd"))) {
-    stop("'method' not recognized")
+  # Check validity of weights.
+  if (is.null(weights)) {
+    weights <- rep.int(1, N)
+  } else if (!is.numeric(weights)) {
+    stop("'weights' must be numeric")
+  } else if (length(weights) != N) {
+    stop(gettextf("length of 'weights' should equal %d", N), domain=NA)
   }
-  return(list(method=method,
-              lr=lr,
-              start=start))
+
+  # Check validity of offset.
+  if (is.null(offset)) {
+    offset <- rep.int(0, N)
+  } else if (!is.numeric(offset)) {
+    stop("'offset' must be numeric")
+  } else if (length(offset) != N) {
+    stop(gettextf("length of 'offset' should equal %d", N), domain=NA)
+  }
+
+  # Check validity of additional arguments if the method is implicit.
+  if (method %in% c("implicit", "ai-sgd")) {
+    call <- match.call()
+    implicit.control <- do.call("valid_implicit_control", list(...))
+  }
+
+  return(c(list(method=method,
+                lr=lr,
+                start=start,
+                weights=weights,
+                offset=offset),
+           implicit.control))
 }
 
 valid_implicit_control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,

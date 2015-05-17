@@ -31,7 +31,8 @@ variables in the model. If not found in data, the variables are taken from
 environment(formula), typically the environment from which glm is called.}
 
 \item{model}{character specifying the model to be used: \code{"lm"} (linear
-model), \code{"glm"} (generalized linear model).}
+model), \code{"glm"} (generalized linear model), \code{"ee"} (estimating
+equation).}
 
 \item{model.control}{a list of parameters for controlling the model.
 \itemize{
@@ -43,6 +44,9 @@ model), \code{"glm"} (generalized linear model).}
   \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
     be included in the \emph{null} model?
   \item rank logical. Should the rank of the design matrix be checked?
+  \item fn (\code{"ee"}): moment function, which is a required argument.
+  \item gr (\code{"ee"}): gradient of the moment function, which if not
+    passed in defaults to taking the numerical gradient.
 }}
 
 \item{sgd.control}{a list of parameters for controlling the estimation

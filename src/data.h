@@ -11,7 +11,7 @@ struct Sgd_Dataset;
 struct Sgd_OnlineOutput;
 struct Sgd_Size;
 
-typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double)> score_func_type;
+typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double)> grad_func_type;
 typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double, unsigned, unsigned)> learning_rate_type;
 
 struct Sgd_DataPoint {
@@ -41,7 +41,8 @@ struct Sgd_Dataset
   }
 };
 
-struct Sgd_OnlineOutput{
+struct Sgd_OnlineOutput
+{
   //Construct Sgd_OnlineOutput compatible with
   //the shape of data
   Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100)
@@ -50,13 +51,13 @@ struct Sgd_OnlineOutput{
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
       }
-      if (pos(0, pos.n_cols-1) != n_iter) 
+      if (pos(0, pos.n_cols-1) != n_iter)
         pos(0, pos.n_cols-1) = n_iter;
       if (n_iter < size)
         Rcpp::Rcout << "Warning: Too few data points for plotting!" << std::endl;
     }
 
-  Sgd_OnlineOutput(){}
+  Sgd_OnlineOutput() {}
 
 //@members
   mat estimates;
@@ -73,27 +74,27 @@ struct Sgd_OnlineOutput{
     return crt_estimate;
   }
 
-  Sgd_OnlineOutput& operator=(const mat& theta_new){
+  Sgd_OnlineOutput& operator=(const mat& theta_new) {
     crt_estimate = theta_new;
     iter += 1;
-    if (iter == pos[n_recorded]){
+    if (iter == pos[n_recorded]) {
       estimates.col(n_recorded) = theta_new;
-      n_recorded += 1; 
-      while (n_recorded < size && pos[n_recorded-1] == pos[n_recorded]){
+      n_recorded += 1;
+      while (n_recorded < size && pos[n_recorded-1] == pos[n_recorded]) {
         estimates.col(n_recorded) = theta_new;
         n_recorded += 1;
       }
-        
+
     }
     return *this;
   }
 };
 
 struct Sgd_Size {
-  Sgd_Size():nsamples(0), p(0){}
-  Sgd_Size(unsigned nin, unsigned pin):nsamples(nin), p(pin) {}
+  Sgd_Size():nsamples(0), d(0) {}
+  Sgd_Size(unsigned nin, unsigned din):nsamples(nin), d(din) {}
   unsigned nsamples;
-  unsigned p;
+  unsigned d;
 };
 
 #endif

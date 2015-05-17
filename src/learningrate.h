@@ -34,28 +34,28 @@ struct Sgd_Learn_Rate_Value
   unsigned dim;
 };
 
-mat operator*(const Sgd_Learn_Rate_Value& lr, const mat& score){
+mat operator*(const Sgd_Learn_Rate_Value& lr, const mat& grad) {
   if (lr.type == 0) {
-    return lr.lr_scalar * score;
+    return lr.lr_scalar * grad;
   } else if (lr.type == 1) {
-    //int m = score.n_rows;
-    ////int n = score.n_cols;
+    //int m = grad.n_rows;
+    ////int n = grad.n_cols;
     //mat out = zeros<mat>(m, 1);
     //for (unsigned i = 0; i < m; ++i) {
     //  //for (unsigned j = 0; j < n; ++j) {
-    //    //out.at(i) += lr.lr_vec.at(i) * score.at(i, 0);
+    //    //out.at(i) += lr.lr_vec.at(i) * grad.at(i, 0);
     //  //}
-    //  out.at(i, 0) = lr.lr_vec.at(i) * score.at(i, 0);
+    //  out.at(i, 0) = lr.lr_vec.at(i) * grad.at(i, 0);
     //}
     //return out;
-    //return diagmat(lr.lr_vec) * score;
-    return mat(lr.lr_vec) % score;
+    //return diagmat(lr.lr_vec) * grad;
+    return mat(lr.lr_vec) % grad;
   } else {
-    return lr.lr_mat * score;
+    return lr.lr_mat * grad;
   }
 }
 
-std::ostream& operator<<(std::ostream& os, const Sgd_Learn_Rate_Value& lr){
+std::ostream& operator<<(std::ostream& os, const Sgd_Learn_Rate_Value& lr) {
   if (lr.type == 0) {
     os << lr.lr_scalar;
   } else if (lr.type == 1) {
@@ -104,11 +104,11 @@ private:
 // one-dimensional learning rate to parameterize a diagonal matrix
 struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Onedim_Eigen_Learn_Rate(const score_func_type& sf) : score_func(sf), v(0, 1) { }
+  Sgd_Onedim_Eigen_Learn_Rate(const grad_func_type& gr) : grad_func(gr), v(0, 1) { }
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
-    mat Gi = score_func(theta_old, data_pt, offset);
+    mat Gi = grad_func(theta_old, data_pt, offset);
     // tr(Fisher_matrix) = sum of eigenvalues of Fisher_matrix
     //mat fisher_est = diagmat(Gi * Gi.t()); // vectorized version
     //double sum_eigen = trace(fisher_est);
@@ -123,7 +123,7 @@ struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
   }
 
 private:
-  score_func_type score_func;
+  grad_func_type grad_func;
   Sgd_Learn_Rate_Value v;
 };
 
@@ -132,12 +132,12 @@ private:
 // d-dim: alpha=0, c=1
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const score_func_type& sf) :
-    Idiag(ones<vec>(d)), alpha(a), c(c_), score_func(sf), v(2, d) { }
+  Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const grad_func_type& gr) :
+    Idiag(ones<vec>(d)), alpha(a), c(c_), grad_func(gr), v(2, d) { }
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
-    mat Gi = score_func(theta_old, data_pt, offset);
+    mat Gi = grad_func(theta_old, data_pt, offset);
     //Idiag = alpha * Idiag + diagvec(Gi * Gi.t()); // vectorized version
     for (unsigned i = 0; i < d; ++i) {
       Idiag.at(i) = alpha * Idiag.at(i) + pow(Gi.at(i, 0), 2);
@@ -158,7 +158,7 @@ private:
   vec Idiag;
   double alpha;
   double c;
-  score_func_type score_func;
+  grad_func_type grad_func;
   Sgd_Learn_Rate_Value v;
 };
 
