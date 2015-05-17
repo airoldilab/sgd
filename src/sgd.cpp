@@ -223,9 +223,9 @@ Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
     Sgd_Experiment_Glm exprm(model_name, model_attrs);
     return run_experiment(dataset, method, verbose, exprm, Experiment);
-  } else if (model_name == "ee") {
-    Sgd_Experiment_Ee exprm(model_name, model_attrs);
-    return run_experiment(dataset, method, verbose, exprm, Experiment);
+  //} else if (model_name == "ee") {
+  //  Sgd_Experiment_Ee exprm(model_name, model_attrs);
+  //  return run_experiment(dataset, method, verbose, exprm, Experiment);
   } else {
     return Rcpp::List();
   }

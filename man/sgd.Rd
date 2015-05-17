@@ -44,9 +44,13 @@ equation).}
   \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
     be included in the \emph{null} model?
   \item rank logical. Should the rank of the design matrix be checked?
-  \item fn (\code{"ee"}): moment function, which is a required argument.
+  \item fn (\code{"ee"}): moment function, which is a required argument if
+    \code{gr} not specified
   \item gr (\code{"ee"}): gradient of the moment function, which if not
-    passed in defaults to taking the numerical gradient.
+    passed in defaults to taking the numerical gradient of \code{fn}
+  \item type (\code{"ee"}): character specifying the generalized method of
+    moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
+    (Hansen et al., 1996). Defaults to \code{"iterative"}.
 }}
 
 \item{sgd.control}{a list of parameters for controlling the estimation

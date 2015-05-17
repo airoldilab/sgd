@@ -27,6 +27,9 @@
 #'       \code{gr} not specified
 #'     \item gr (\code{"ee"}): gradient of the moment function, which if not
 #'       passed in defaults to taking the numerical gradient of \code{fn}
+#'     \item type (\code{"ee"}): character specifying the generalized method of
+#'       moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
+#'       (Hansen et al., 1996). Defaults to \code{"iterative"}.
 #'   }
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
@@ -487,8 +490,8 @@ fit_ee <- function(x, y,
     experiment$deviance <- sgd.control$deviance
     experiment$convergence <- sgd.control$convergence
     experiment$model.attrs <- list()
-    experiment$model.attrs$fn <- model.control$fn
     experiment$model.attrs$gr <- model.control$gr
+    experiment$model.attrs$type <- model.control$type
 
     out <- run_online_algorithm(dataset, experiment, sgd.control$method, verbose=F)
     if (length(out) == 0) {
@@ -543,24 +546,27 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   if (model == "lm") {
     control.intercept <- model.control$intercept
     control.rank <- model.control$rank
-    # Check the validity of intercept.
+    # Check validity of intercept.
     if (is.null(control.intercept)) {
       control.intercept <- TRUE
     } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
-    # Check the validity of rank.
+    # Check validity of rank.
     if (is.null(control.rank)){
       control.rank <- FALSE
     } else if (!is.logical(control.intercept)) {
       stop ("'rank' not logical")
     }
-    return(list(family=gaussian(), intercept=control.intercept, rank=control.rank))
+    return(list(
+      family=gaussian(),
+      intercept=control.intercept,
+      rank=control.rank))
   } else if (model == "glm") {
     control.family <- model.control$family
     control.intercept <- model.control$intercept
     control.rank <- model.control$rank
-    # Check the validity of family.
+    # Check validity of family.
     if (is.null(control.family)) {
       control.family <- gaussian()
     } else if (is.character(control.family)) {
@@ -571,33 +577,34 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       print(control.family)
       stop("'family' not recognized")
     }
-    # Check the validity of intercept.
+    # Check validity of intercept.
     if (is.null(control.intercept)) {
       control.intercept <- TRUE
     } else if (!is.logical(control.intercept)) {
       stop("'intercept' not logical")
     }
-    # Check the validity of rank.
+    # Check validity of rank.
     if (is.null(control.rank)){
       control.rank <- FALSE
     } else if (!is.logical(control.intercept)) {
       stop ("'rank' not logical")
     }
-    return(list(family=control.family, intercept=control.intercept, rank=control.rank))
+    return(list(
+      family=control.family,
+      intercept=control.intercept,
+      rank=control.rank))
   } else if (model == "ee") {
-    # for now do iterative procedure
     control.fn <- model.control$fn
     control.gr <- model.control$gr
-    # Check the validify of moment function and its gradient.
-    if (is.null(control.fn)) {
-      if (is.null(control.gr)) {
-        stop("either 'fn' or 'gr' must be specified")
-      } else if (!is.function(control.gr)) {
-        stop("'gr' not a function")
-      }
-    } else if (!is.function(control.fn)) {
+    control.type <- model.control$type
+    # Check validify of moment function and its gradient.
+    if (is.null(control.fn) && is.null(control.gr)) {
+      stop("either 'fn' or 'gr' must be specified")
+    } else if (!is.null(control.fn) && !is.function(control.fn)) {
       stop("'fn' not a function")
-    } else if (is.null(control.gr)) {
+    } else if (!is.null(control.gr) && !is.function(control.gr)) {
+      stop("'gr' not a function")
+    } else if (!is.null(control.fn) && is.null(control.gr)) {
       # Default to numerical gradient via central differences.
       #library(numDeriv)
       # TODO probably does not work
@@ -612,7 +619,18 @@ valid_model_control <- function(model, model.control=list(...), ...) {
         return(out)
       }
     }
-    return(list(fn=control.fn, gr=control.gr))
+    # Check validity of GMM type.
+    # TODO add CUEE as a type
+    if (is.null(control.type)) {
+      control.type <- "iterative"
+    } else if (!is.character(control.type)) {
+      stop("'type' must be a string")
+    } else if (!(control.type %in% c("twostep", "iterative"))) {
+      stop("'type' not recognized")
+    }
+    return(list(
+      gr=control.gr,
+      type=control.type))
   } else {
     stop("model not specified")
   }
