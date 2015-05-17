@@ -84,6 +84,7 @@ a named vector of coefficients
 
 \code{converged}
 logical. Was the algorithm judged to have converged?
+
 \code{model.out}
 a list of model-specific output attributes
 }

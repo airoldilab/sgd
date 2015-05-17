@@ -367,6 +367,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP algorithm, SEXP verbose, EXPERIMENT
     model_out = post_process_glm(out, data, exprm, coef, X_rank);
   }
   bool converged = true;
+  //Rcpp::Rcout << out.estimates;
 
   return Rcpp::List::create(
 	    Rcpp::Named("coefficients") = coef, Rcpp::Named("converged") = converged,

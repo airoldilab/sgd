@@ -137,6 +137,7 @@
 #' @import MASS
 #' @importFrom Rcpp evalCpp
 #' @aliases sgd.formula sgd.function sgd.matrix
+
 ################################################################################
 # Classes
 ################################################################################
@@ -252,7 +253,17 @@ sgd.matrix <- function(x, y, model,
     stop("'model' not recognized")
   }
   out <- fit(x, y, model.control, sgd.control)
-  class(out) <- c(out$class, "sgd")
+  if (nrow(x) > 200){
+    samples = sample(nrow(x), 200,replace = F)
+  }
+  else {
+    samples = 1:nrow(x)
+  }
+  sample.x <- x[samples, ]
+  sample.y <- y[samples]
+  classes <- c(class(out), "sgd")
+  out <- c(out, list(sample.x=sample.x, sample.y=sample.y))
+  class(out) <- classes
   return(out)
 }
 
@@ -267,23 +278,24 @@ sgd.matrix <- function(x, y, model,
 #  # Args:
 #  #   x:    sgd object
 #}
-#plot.sgd <- function(x, type="mse") {
-#  # An all-encompassing visualization routine.
-#  #
-#  # Args:
-#  #   x:    sgd object
-#  #   type: character in c("")
-#  #
-#  # Returns:
-#  #   A plot.
-#  if (type == "mse") {
-#    plot <- plot.sgd.mse
-#  } else {
-#    print(type)
-#    stop("'type' not recognized")
-#  }
-#  return(plot(x))
-#}
+#' @export
+plot.sgd <- function(x, type="mse", ...) {
+ # An all-encompassing visualization routine.
+ #
+ # Args:
+ #   x:    sgd object
+ #   type: character in c("")
+ #
+ # Returns:
+ #   A plot.
+ if (type == "mse") {
+   plot <- plot.sgd.mse
+ } else {
+   print(type)
+   stop("'type' not recognized")
+ }
+ return(plot(x))
+}
 
 ################################################################################
 # Auxiliary functions: model fitting
@@ -425,19 +437,13 @@ fit_glm <- function(x, y,
   nulldf <- n.ok - as.integer(intercept)
   resdf <- n.ok - rank
   names(coef) <- xnames
-  return(list(coefficients=coef,
-       residuals=residuals,
-       fitted.values=mu,
-       rank=rank,
-       family=family,
-       linear.predictors=eta,
-       deviance=dev,
-       null.deviance=nulldev,
-       iter=iter,
-       weights=weights,
-       df.residual=resdf,
-       df.null=nulldf,
-       converged=if(implicit.control$convergence) converged))
+  result <- list(coefficients=coef, residuals=residuals, fitted.values=mu,
+                 rank=rank, family=family, linear.predictors=eta,
+                 deviance=dev, null.deviance=nulldev, iter=iter, weights=weights,
+                 df.residual=resdf, df.null=nulldf, converged=if(implicit.control$convergence) converged, 
+                 estimates=out$estimates, pos=out$pos, aic=0)
+  class(result) <- c(class(result), "glm")
+  return(result)
   # TODO in C: deal with offset
   # TODO compare all results with glm
   # TODO unit test on all checks
@@ -448,12 +454,30 @@ fit_glm <- function(x, y,
 # Auxiliary functions: plots
 ################################################################################
 
-# TODO
-#plot.sgd.mse <- function(x) {
-#  if (class(x) != "sgd") {
-#    stop("'x' is not of type sgd")
-#  }
-#}
+sgd.mse.glm <- function(x){
+  eta <- x$sample.x %*% x$estimates
+  mu <- x$family$linkinv(eta)
+  mse <- colMeans((mu - x$sample.y)^2)
+  return(mse)
+}
+
+plot.sgd.mse <- function(x){
+  if (any(class(x) %in% "glm")){
+    get.mse <- sgd.mse.glm
+  } 
+  else{
+    stop("Model not recognized! ")
+  }
+  mse <- get.mse(x)  
+  dat <- data.frame(mse=mse, pos=x$pos[1, ])
+  dat <- dat[!duplicated(dat$pos), ]
+  pos <- 0
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse)) + ggplot2::geom_line() + 
+    ggplot2::theme_bw() + ggplot2::theme(panel.border = ggplot2::element_blank(), panel.grid.major = ggplot2::element_blank(), 
+                       panel.grid.minor = ggplot2::element_blank(), axis.line = ggplot2::element_line(colour = "black")) +
+    ggplot2::labs(title = "Mean Squared Error", x = "Iteration", y = "MSE")
+  return(p)
+}
 
 ################################################################################
 # Auxiliary functions: validity checks

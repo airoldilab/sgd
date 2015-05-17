@@ -21,7 +21,8 @@ Suggests:
     testthat
 Imports:
     Rcpp (>= 0.11.3),
-    MASS
+    MASS,
+    ggplot2
 LinkingTo:
     Rcpp,
     RcppArmadillo,

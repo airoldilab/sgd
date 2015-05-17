@@ -50,7 +50,10 @@ struct Sgd_OnlineOutput{
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
       }
-      if (pos(0, pos.n_cols-1) != n_iter) pos(0, pos.n_cols-1) = n_iter;
+      if (pos(0, pos.n_cols-1) != n_iter) 
+        pos(0, pos.n_cols-1) = n_iter;
+      if (n_iter < size)
+        Rcpp::Rcout << "Warning: Too few data points for plotting!" << std::endl;
     }
 
   Sgd_OnlineOutput(){}
@@ -75,7 +78,12 @@ struct Sgd_OnlineOutput{
     iter += 1;
     if (iter == pos[n_recorded]){
       estimates.col(n_recorded) = theta_new;
-      n_recorded += 1;
+      n_recorded += 1; 
+      while (n_recorded < size && pos[n_recorded-1] == pos[n_recorded]){
+        estimates.col(n_recorded) = theta_new;
+        n_recorded += 1;
+      }
+        
     }
     return *this;
   }
