@@ -50,26 +50,18 @@ struct Sgd_Experiment {
   void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale) {
     learnrate_ptr_type lp(new Sgd_Onedim_Learn_Rate(gamma, alpha, c, scale));
     lr_obj_ = lp;
-
-    lr = "One-dimensional learning rate";
   }
 
   void init_one_dim_eigen_learning_rate() {
     grad_func_type grad_func = create_grad_func_instance();
-
     learnrate_ptr_type lp(new Sgd_Onedim_Eigen_Learn_Rate(grad_func));
     lr_obj_ = lp;
-
-    lr = "One-dimensional eigenvalue learning rate";
   }
 
   void init_ddim_learning_rate(double alpha, double c) {
     grad_func_type grad_func = create_grad_func_instance();
-
     learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, alpha, c, grad_func));
     lr_obj_ = lp;
-
-    lr = "d-dimensional learning rate";
   }
 
   const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
@@ -95,16 +87,23 @@ struct Sgd_Experiment_Ee : public Sgd_Experiment {
 //@methods
   Sgd_Experiment_Ee(std::string m_name, Rcpp::List mp_attrs)
   : Sgd_Experiment(m_name, mp_attrs) {
+    //Rcpp::Function gr = mp_attrs["gr"];
   }
 
   // Gradient
-  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
+  //mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
+  //  // TODO
+  //  mat out = gr();
+  //  return out;
+  //}
 
 private:
   grad_func_type create_grad_func_instance() {
     grad_func_type grad_func = boost::bind(&Sgd_Experiment_Ee::gradient, this, _1, _2, _3);
     return grad_func;
   }
+
+  //Rcpp::Function gr;
 
 };
 

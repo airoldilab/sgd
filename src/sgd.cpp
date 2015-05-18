@@ -10,7 +10,7 @@
 
 // Auxiliary function
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT exprm, Rcpp::List Experiment);
+Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method, bool verbose, Rcpp::List Experiment);
 
 // via the depends attribute we tell Rcpp to create hooks for
 // RcppArmadillo so that the build process will know what to do
@@ -21,7 +21,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT ex
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(BH)]]
 
-//return the nsamples and nfeatures of a dataset
+// return the nsamples and nfeatures of a dataset
 Sgd_Size Sgd_dataset_size(const Sgd_Dataset& dataset) {
   Sgd_Size size;
   size.nsamples = dataset.X.n_rows;
@@ -110,21 +110,33 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   return theta_new;
 }
 
-// TODO add per model
-bool validity_check(const Sgd_Dataset& data, const mat& theta, unsigned t, const Sgd_Experiment_Glm& exprm) {
-  //check if all estimates are finite
+template<typename EXPERIMENT>
+bool validity_check(const Sgd_Dataset& data, const mat& theta,
+  bool good_gradient, unsigned t, const EXPERIMENT& exprm) {
+  if (!good_gradient) {
+    Rcpp::Rcout << "NA or infinite gradient" << std::endl;
+    return false;
+  }
+
+  // Check if all estimates are finite.
   if (!is_finite(theta)) {
     Rcpp::Rcout << "warning: non-finite coefficients at iteration " << t << std::endl;
   }
 
-  //check if eta is in the support
+  return validity_check_model(data, theta, t, exprm);
+}
+
+// TODO add per model
+bool validity_check_model(const Sgd_Dataset& data, const mat& theta, unsigned t,
+  const Sgd_Experiment_Glm& exprm) {
+  // Check if eta is in the support.
   double eta = exprm.offset[t-1] + dot(Sgd_get_dataset_point(data, t).x, theta);
   if (!exprm.valideta(eta)) {
     Rcpp::Rcout << "no valid set of coefficients has been found: please supply starting values" << t << std::endl;
     return false;
   }
 
-  //check the variance of the expectation of Y
+  // Check the variance of the expectation of Y.
   double mu_var = exprm.variance(exprm.h_transfer(eta));
   if (!is_finite(mu_var)) {
     Rcpp::Rcout << "NA in V(mu) in iteration " << t << std::endl;
@@ -141,7 +153,8 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta, unsigned t, const
   double deviance = 0;
   mat mu;
   mat eta_mat;
-  //check the deviance
+
+  // Check the deviance.
   if (exprm.dev) {
     eta_mat = data.X * theta + exprm.offset;
     mu = exprm.h_transfer(eta_mat);
@@ -151,7 +164,8 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta, unsigned t, const
       return false;
     }
   }
-  //print if trace
+
+  // Print if trace.
   if (exprm.trace) {
     if (!exprm.dev) {
       eta_mat = data.X * theta + exprm.offset;
@@ -166,12 +180,12 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta, unsigned t, const
 template<typename EXPERIMENT>
 Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data,
   const EXPERIMENT& exprm, mat& coef, unsigned X_rank) {
-  //check the validity of eta for all observations
+  // Check the validity of eta for all observations.
   mat eta;
-  eta = data.X * out.last_estimate() + exprm.offset;
+  eta = data.X * out.get_last_estimate() + exprm.offset;
   mat mu;
   mu = exprm.h_transfer(eta);
-  for (int i=0; i<eta.n_rows; ++i) {
+  for (int i = 0; i < eta.n_rows; ++i) {
       if (!is_finite(eta[i])) {
         Rcpp::Rcout << "warning: NaN or non-finite eta" << std::endl;
         break;
@@ -182,7 +196,7 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
       }
   }
 
-  //check the validity of mu for Poisson and Binomial family
+  // Check the validity of mu for Poisson and Binomial family.
   double eps = 10. * datum::eps;
   if (exprm.model_name == "poisson")
     if (any(vectorise(mu) < eps))
@@ -191,10 +205,10 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
       if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
 
-  //calculate the deviance
+  // Calculate the deviance.
   double dev = exprm.deviance(data.Y, mu, exprm.weights);
 
-  //check the number of features
+  // Check the number of features.
   if (X_rank < Sgd_dataset_size(data).d) {
     for (int i = X_rank; i < coef.n_rows; i++) {
       coef.row(i) = datum::nan;
@@ -215,34 +229,37 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   SEXP verbose) {
-  Rcpp::List Experiment(experiment);
+  // Convert all arguments from R to C++ types.
+  Rcpp::List Dataset(dataset);
+  Sgd_Dataset data;
+  data.X = Rcpp::as<mat>(Dataset["X"]);
+  data.Y = Rcpp::as<mat>(Dataset["Y"]);
 
+  Rcpp::List Experiment(experiment);
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   Rcpp::List model_attrs = Experiment["model.attrs"];
 
+  std::string meth = Rcpp::as<std::string>(method);
+  bool verb = Rcpp::as<bool>(verbose);
+
   if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
     Sgd_Experiment_Glm exprm(model_name, model_attrs);
-    return run_experiment(dataset, method, verbose, exprm, Experiment);
+    return run_experiment(data, exprm, meth, verb, Experiment);
   //} else if (model_name == "ee") {
   //  Sgd_Experiment_Ee exprm(model_name, model_attrs);
-  //  return run_experiment(dataset, method, verbose, exprm, Experiment);
+  //  return run_experiment(data, exprm, meth, verb, Experiment);
   } else {
     return Rcpp::List();
   }
 }
 
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT
-  exprm, Rcpp::List Experiment) {
-  Rcpp::List Dataset(dataset);
-
-  Sgd_Dataset data;
-  data.X = Rcpp::as<mat>(Dataset["X"]);
-  data.Y = Rcpp::as<mat>(Dataset["Y"]);
-  std::string meth = Rcpp::as<std::string>(method);
-
+Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method,
+  bool verbose, Rcpp::List Experiment) {
+  // Put remaining attributes into experiment.
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
+  exprm.lr = Rcpp::as<std::string>(Experiment["lr"]);
   exprm.start = Rcpp::as<mat>(Experiment["start"]);
   exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
   exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
@@ -250,8 +267,9 @@ Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT
   exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);
-  std::string lr = Rcpp::as<std::string>(Experiment["lr"]);
-  if (lr == "one-dim") {
+
+  // Set learning rate in experiment.
+  if (exprm.lr == "one-dim") {
     // use the min eigenvalue of the covariance of data as alpha in LR
     // TODO this can be arbitrarily small
     cx_vec eigval;
@@ -263,7 +281,7 @@ Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT
     // }
     double lr_alpha = 1;
     double c;
-    if (meth == "asgd" || meth == "ai-sgd") {
+    if (method == "asgd" || method == "ai-sgd") {
       c = 2./3.;
     }
     else {
@@ -271,22 +289,24 @@ Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT
     }
     exprm.init_one_dim_learning_rate(1., lr_alpha, c, 1.);
   }
-  else if (lr == "one-dim-eigen") {
+  else if (exprm.lr == "one-dim-eigen") {
     exprm.init_one_dim_eigen_learning_rate();
   }
-  else if (lr == "d-dim") {
+  else if (exprm.lr == "d-dim") {
     exprm.init_ddim_learning_rate(0., 1.);
   }
-  else if (lr == "adagrad") {
+  else if (exprm.lr == "adagrad") {
     exprm.init_ddim_learning_rate(1., .5);
   }
 
-  Sgd_OnlineOutput out(data, exprm.start);
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
 
-  // check if the number of observations is greater than the rank of X
+  // Check if the number of observations is greater than the rank of X.
   unsigned X_rank = nsamples;
-  if (exprm.model_name == "gaussian" || exprm.model_name == "poisson" || exprm.model_name == "binomial" || exprm.model_name == "gamma") {
+  if (exprm.model_name == "gaussian" ||
+      exprm.model_name == "poisson" ||
+      exprm.model_name == "binomial" ||
+      exprm.model_name == "gamma") {
     if (exprm.rank) {
       X_rank = rank(data.X);
       if (X_rank > nsamples) {
@@ -295,86 +315,64 @@ Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT
         return Rcpp::List();
       }
     }
-
   }
 
-  // print out info
-  #if DEBUG
+#if DEBUG
   Rcpp::Rcout << data;
   Rcpp::Rcout << exprm;
-  Rcpp::Rcout << "    Method: " << meth << std::endl;
-  #endif
+  Rcpp::Rcout << "    Method: " << method << std::endl;
+#endif
 
+  // Initialize booleans.
   bool good_gradient = true;
   bool good_validity = true;
-
-  mat theta_new;
-  mat theta_old = out.last_estimate();
-  mat theta_new_ave;
-  mat theta_old_ave;
   bool flag_ave;
-
-  if (meth == "asgd" || meth == "ai-sgd") {
+  if (method == "asgd" || method == "ai-sgd") {
     flag_ave = true;
   }
 
+  // Initialize estimates.
+  Sgd_OnlineOutput out(data, exprm.start);
+  mat theta_new;
+  mat theta_old = out.get_last_estimate();
+  mat theta_new_ave;
+  mat theta_old_ave;
+
+  // Run SGD!
   for (int t = 1; t <= nsamples; ++t) {
-    if (meth == "sgd" || meth == "asgd") {
+    // SGD update
+    if (method == "sgd" || method == "asgd") {
       theta_new = Sgd_sgd_online_algorithm(t, theta_old, data, exprm, good_gradient);
-
-      if (flag_ave) {
-        if (t != 1) {
-          theta_new_ave = (1. - 1./(double)t) * theta_old_ave
-              + 1./((double)t) * theta_new;
-        } else {
-          theta_new_ave = theta_new;
-        }
-        out = theta_new_ave;
-        theta_old_ave = theta_new_ave;
-      }
-      else {
-        out = theta_new;
-      }
-      theta_old = theta_new;
-
-      if (!good_gradient) {
-        Rcpp::Rcout << "NA or infinite gradient" << std::endl;
-        return Rcpp::List();
-      }
     }
-    else if (meth == "implicit" || meth == "ai-sgd") {
-      // Rcpp::Rcout << t << std::endl;
-
+    else if (method == "implicit" || method == "ai-sgd") {
       theta_new = Sgd_implicit_online_algorithm(t, theta_old, data, exprm, good_gradient);
-
-      if (flag_ave) {
-        if (t != 1) {
-          theta_new_ave = (1. - 1./(double)t) * theta_old_ave
-              + 1./((double)t) * theta_new;
-        }
-        else {
-          theta_new_ave = theta_new;
-        }
-        out = theta_new_ave;
-        theta_old_ave = theta_new_ave;
-      }
-      else {
-        out = theta_new;
-      }
-      theta_old = theta_new;
-
-      if (!is_finite(theta_old)) {
-        Rcpp::Rcout << "warning: non-finite coefficients at iteration " << t <<
-          std::endl;
-      }
     }
-    good_validity = validity_check(data, theta_old, t, exprm);
+
+    // Whether to do averaging
+    if (flag_ave) {
+      if (t != 1) {
+        theta_new_ave = (1. - 1./(double)t) * theta_old_ave
+          + 1./((double)t) * theta_new;
+      } else {
+        theta_new_ave = theta_new;
+      }
+      out = theta_new_ave;
+      theta_old_ave = theta_new_ave;
+    }
+    else {
+      out = theta_new;
+    }
+    theta_old = theta_new;
+
+    // Validity check
+    good_validity = validity_check(data, theta_old, good_gradient, t, exprm);
     if (!good_validity) {
       return Rcpp::List();
     }
   }
 
-  mat coef = out.last_estimate();
+  // Collect model-specific output.
+  mat coef = out.get_last_estimate();
   Rcpp::List model_out;
   if (exprm.model_name == "gaussian" ||
       exprm.model_name == "poisson" ||
@@ -382,13 +380,11 @@ Rcpp::List run_experiment(SEXP dataset, SEXP method, SEXP verbose, EXPERIMENT
       exprm.model_name == "gamma") {
     model_out = post_process_glm(out, data, exprm, coef, X_rank);
   }
-  bool converged = true;
-  //Rcpp::Rcout << out.estimates;
 
   return Rcpp::List::create(
-      Rcpp::Named("coefficients") = coef,
-      Rcpp::Named("converged") = converged,
-      Rcpp::Named("estimates") = out.estimates,
-      Rcpp::Named("pos") = out.pos,
-      Rcpp::Named("model.out") = model_out);
+    Rcpp::Named("coefficients") = coef,
+    Rcpp::Named("converged") = true,
+    Rcpp::Named("estimates") = out.estimates,
+    Rcpp::Named("pos") = out.pos,
+    Rcpp::Named("model.out") = model_out);
 }

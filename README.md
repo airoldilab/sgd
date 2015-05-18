@@ -48,11 +48,13 @@ sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 The following models are built-in:
 * Linear models
 * Generalized linear models
+* Estimating equations
 
 The following stochastic gradient methods exist:
 * Standard stochastic gradient descent
 * Implicit stochastic gradient descent
 * Stochastic gradient descent with averaging
+* Implicit stochastic gradient descent with averaging
 
 For more documentation, see `?sgd`.
 

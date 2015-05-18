@@ -46,7 +46,7 @@ struct Sgd_OnlineOutput
   //Construct Sgd_OnlineOutput compatible with
   //the shape of data
   Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100)
-   :estimates(mat(data.X.n_cols, s)), initial(init), crt_estimate(init),
+   : estimates(mat(data.X.n_cols, s)), initial(init), last_estimate(init),
     n_iter(data.X.n_rows), iter(0), size(s), n_recorded(0), pos(Mat<unsigned>(1, s)) {
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
@@ -62,7 +62,7 @@ struct Sgd_OnlineOutput
 //@members
   mat estimates;
   mat initial;
-  mat crt_estimate;
+  mat last_estimate;
   unsigned n_iter; // Total number of iterations
   unsigned iter; // Current iteration
   unsigned size; // Number of coefs to be recorded
@@ -70,12 +70,12 @@ struct Sgd_OnlineOutput
   Mat<unsigned> pos; //The iteration of recorded coefficients
 
 //@methods
-  mat last_estimate() const{
-    return crt_estimate;
+  mat get_last_estimate() const {
+    return last_estimate;
   }
 
   Sgd_OnlineOutput& operator=(const mat& theta_new) {
-    crt_estimate = theta_new;
+    last_estimate = theta_new;
     iter += 1;
     if (iter == pos[n_recorded]) {
       estimates.col(n_recorded) = theta_new;
