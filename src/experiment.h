@@ -77,7 +77,6 @@ protected:
 
   typedef boost::shared_ptr<Sgd_Learn_Rate_Base> learnrate_ptr_type;
   learnrate_ptr_type lr_obj_;
-
 };
 
 // Experiment class for estimating equations
@@ -87,15 +86,28 @@ struct Sgd_Experiment_Ee : public Sgd_Experiment {
 //@methods
   Sgd_Experiment_Ee(std::string m_name, Rcpp::List mp_attrs)
   : Sgd_Experiment(m_name, mp_attrs) {
-    //Rcpp::Function gr = mp_attrs["gr"];
+    //gr = Rcpp::Function(mp_attrs["gr"]);
+    // TODO
+    // if model_attrs["wmatrix"] == NULL {
+      int k = 5;
+      wmatrix_ = eye<mat>(k, k);
+    // } else {
+    // wmatrix_ = model_attrs["wmatrix"];
+    // }
   }
 
   // Gradient
-  //mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
-  //  // TODO
-  //  mat out = gr();
-  //  return out;
-  //}
+  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
+    Rcpp::NumericVector r_theta_old = Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(theta_old));
+    Rcpp::NumericVector r_datapoint = Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(datapoint.x)); // TODO include both x and y (?)
+    //Rcpp::NumericMatrix r_out = gr(r_theta_old, r_datapoint);
+    //Rcpp::NumericMatrix r_out = mp_attrs["gr"](r_theta_old, r_datapoint);
+    // TODO don't know how to do this part
+    Rcpp::NumericMatrix r_out;
+    mat out = Rcpp::as<mat>(r_out);
+    // TODO include weighting matrix
+    return out;
+  }
 
 private:
   grad_func_type create_grad_func_instance() {
@@ -103,8 +115,8 @@ private:
     return grad_func;
   }
 
+  mat wmatrix_;
   //Rcpp::Function gr;
-
 };
 
 // Experiment class for generalized linear models
@@ -221,7 +233,6 @@ private:
 
   typedef boost::shared_ptr<Sgd_Family_Base> family_ptr_type;
   family_ptr_type family_obj_;
-
 };
 
 // Compute gradient coeff and its derivative for Implicit-SGD update

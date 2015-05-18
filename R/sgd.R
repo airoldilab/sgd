@@ -23,13 +23,16 @@
 #'     \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
 #'       be included in the \emph{null} model?
 #'     \item rank logical. Should the rank of the design matrix be checked?
-#'     \item fn (\code{"ee"}): moment function, which is a required argument if
-#'       \code{gr} not specified
+#'     \item fn (\code{"ee"}): function \eqn{g(\theta,x)} which returns a
+#'       \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
+#'       required argument if \code{gr} not specified
 #'     \item gr (\code{"ee"}): gradient of the moment function, which if not
 #'       passed in defaults to taking the numerical gradient of \code{fn}
 #'     \item type (\code{"ee"}): character specifying the generalized method of
 #'       moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
 #'       (Hansen et al., 1996). Defaults to \code{"iterative"}.
+#'     \item wmatrix (\code{"ee"}): weighting matrix to be used in the loss
+#'       function. Defaults to the identity matrix.
 #'   }
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
@@ -597,6 +600,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     control.fn <- model.control$fn
     control.gr <- model.control$gr
     control.type <- model.control$type
+    control.wmatrix <- model.control$wmatrix
     # Check validify of moment function and its gradient.
     if (is.null(control.fn) && is.null(control.gr)) {
       stop("either 'fn' or 'gr' must be specified")
@@ -620,13 +624,21 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       }
     }
     # Check validity of GMM type.
-    # TODO add CUEE as a type
     if (is.null(control.type)) {
       control.type <- "iterative"
     } else if (!is.character(control.type)) {
       stop("'type' must be a string")
-    } else if (!(control.type %in% c("twostep", "iterative"))) {
+    # TODO implement cuee
+    } else if (!(control.type %in% c("twostep", "iterative", "cuee"))) {
       stop("'type' not recognized")
+    }
+    # Check validity of weighting matrix.
+    if (is.null(control.wmatrix)) {
+      # do nothing, since will not store large matrix in R but in C++
+    } else if (!is.matrix(control.wmatrix)) {
+      stop("'wmatrix' not a matrix")
+    # TODO check if dimensions are same as moment conditions
+    #} else if (identical(dim(control.wmatrix), c(k,k))) {
     }
     return(list(
       gr=control.gr,

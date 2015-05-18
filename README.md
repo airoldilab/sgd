@@ -48,7 +48,7 @@ sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 The following models are built-in:
 * Linear models
 * Generalized linear models
-* Estimating equations
+* Estimating equations and the generalized method of moments
 
 The following stochastic gradient methods exist:
 * Standard stochastic gradient descent
