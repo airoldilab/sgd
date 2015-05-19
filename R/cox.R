@@ -34,6 +34,54 @@ dist <- function(x, y)  {
   sqrt(mean((x-y)**2))  
 }
 
+log.lik <- function(data, beta) {
+  X = data$X
+  ksi = as.numeric(exp(X %*% beta))
+  H = rev(cumsum(rev(ksi))) 
+  d = 1 - data$censor
+  sum(d * (log(ksi) - log(H)))
+}
+
+verify.mle.conditions <- function() {
+  p = 10
+  n = 1e3
+  data = generate.data(n, p)
+  beta.hat = coxbatch(data, verbose = F)
+  print("Calculating MLE.") 
+  beta.new = optim(par=rep(0, p), 
+                   fn=function(b) -log.lik(data, b), 
+                   method="L-BFGS")$par
+  print("MLE params.")
+  print(as.numeric(beta.new))
+  print("True params")
+  print(data$true.beta)
+  print("Log-likelihood = ")
+  print(log.lik(data, beta.new))
+  
+  ## 
+  print("Verifying MLE conditions.")
+  X = data$X
+  ksi = as.numeric(exp(X %*% beta.new))
+  Dh = diag(ksi)
+  H = rev(cumsum(rev(ksi))) # Hi = xi_i + xi_i+1 + ...xi_n
+  DH.inv = diag(1/H)
+  L = lower.tri(DH.inv, diag = T) + 0
+
+  I = diag(nrow(X))
+  
+  d = 1-data$censor
+  A = t(X) %*% (I - Dh %*% L %*% DH.inv) %*% d
+  if(sqrt(mean(A**2)) < 1e-1) {
+    print(sprintf("Success! MLE conditions seem to hold. Max |A| =%.3f/ Min |A|=%.3f (all should be zero)", 
+          max(abs(A)), min(abs(A))))
+  } else {
+    print("Failure. MLE conditions seem not to hold.")
+  }
+  # print(DH)
+  
+}
+
+
 generate.data <- function(n, p, rho=0.2) {
   ## Generate data
   #   #
@@ -75,7 +123,6 @@ generate.data <- function(n, p, rho=0.2) {
   M[, 2] <- 1-C
   return(list(X=X, Y=Y, censor=C, M=M, true.beta=beta))
 }
-
 
 coxbatch <- function(data, verbose=T) {
   # Uses coxph function from survival packae
