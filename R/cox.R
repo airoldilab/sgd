@@ -9,7 +9,10 @@
 rm(list=ls())
 library(survival)
 library(glmnet)
-
+library(logging)
+unlink("cox.log")
+logReset()
+# addHandler(writeToFile, file="cox.log")
 
 genx = function(n,p,rho){
   #    generate x's multivariate normal with equal corr rho
@@ -41,11 +44,17 @@ generate.data <- function(n, p, rho=0.2) {
   #   #     censor = Nx1 vector {0, 1} of censor indicators.
   #   #     true.beta = p-vector of true model parameters.
   #   #     M = (Y, censor) as matrix 
-  X = genx(n, p, rho=0.)
-  # X[, 1] <- 1
-  beta = ((-1)^(1:p))*exp(-2*((1:p)-1)/20)
-  pred = apply(X, 1, function(r) exp(sum(r * beta)))
-  Y = rexp(n, rate = pred)
+  
+  X = genx(n, p, rho=rho)
+  # rates.
+  # rates = runif(n, min=1e-2, max=10)
+  # Y = rexp(n, 
+  # beta = solve(t(X) %*% X) %*% t(X) %*% log(rates)
+  beta = 10  *((-1)^(1:p))*exp(-2*((1:p)-1)/20)
+  # beta = 10 * seq(1, p)**(-0.5)
+  # warning("Large coefficients")
+  pred = exp(X %*% beta)
+  Y = rexp(n, rate =pred)
   
   q3 = quantile(Y, prob=c(0.8))  # Q3 of Y
   epsilon = 0.001 # probability of censoring smallest Y
@@ -90,6 +99,7 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   #   data = list(X, Yt, censor, true.beta)
   #
   # TODO(ptoulis): Change code to do cross-validation.
+  if(file.exists("cox.log")) unlink("cox.log")
   mse.best = dist(data$true.beta, coxbatch(data, verbose=F))
   if(implicit) {
     print("Running Implicit SGD for Cox PH model.")
@@ -97,12 +107,16 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   #   input
   n = length(data$Y)
   p = ncol(data$X)
+  loginfo(sprintf("n=%d instances and p=%d variables", n, p))
   beta = matrix(0, nrow=p, ncol=1)
+  beta.new = beta
+  
   gammas = C / seq(1, niters)
   if(averaging) {
-    gammas = C / seq(1, niters)**(1/3)
+    gammas = C / seq(1, niters)**(1/2)
   }
- 
+  loginfo(sprintf("Learning rates = %s", paste(head(gammas), collapse=", ")))
+  
   betas = matrix(0, nrow=p, ncol=0)
   mse = c()
   
@@ -120,19 +134,29 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   # parameter for averaging
   beta.bar <- matrix(0, nrow=p, ncol=1)
   
-  units.sample = sample(1:n, size=niters, replace=T)
+  units.sample = sample(which(d==1), size=niters, replace=T)
   for(iter in 1:niters) {
     
+    # New iteration
     gamma_i = gammas[iter]
     ksi = exp(x %*% beta)
-   
+    ksi[is.infinite(ksi)] <- exp(100)
+    
     j = units.sample[iter] # sample unit
-   # print(sprintf("Changing unit %d", j))
+    loginfo("=================================================================")
+    loginfo(sprintf("Iteration = %d  gamma=%.3f --  j=%d, dj=%d  Yj=%.2f ", 
+                    iter, gamma_i, j, d[j], data$Y[j]))
+    loginfo(paste(round(beta, 2), collapse=", "))
+    loginfo("ksi=")
+    loginfo(paste(round(ksi, 2), collapse=","))
+    # print(sprintf("Changing unit %d", j))
     Xj = matrix(x[j, ], ncol=1) # get covariates
+    # using Adagrad rates.
+  
     
     # baseline hazards for units in risk set Rj.
     Hj = sum(head(d, j) / head(rev(cumsum(rev(ksi))), j))  
-  
+    loginfo(sprintf("Hj = %.3f", Hj))
     # Defined for the implicit
     # TODO(ptoulis): Numerical problem still exists. 
     #   beta params can still get very large, whereas Hj goes down. 
@@ -141,7 +165,15 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
     if(implicit) {
       Xj.norm = sum(Xj**2)
       fj = exp(sum(beta * Xj))
-      Aj = Hj * fj
+      Aj = NA
+      if(Hj==0) {
+        Aj = 0
+      } else {
+        Aj = Hj * fj
+      }
+      # if(Aj < 1e-100) Aj <- 1e-100
+      # if(Aj > 1e100) Aj <- 1e100
+      
       dj = d[j] # censor data.
       Bj = gamma_i * Xj.norm * (dj - Aj)
       if(Aj==0 || Bj==0 || dj==Aj) {
@@ -158,13 +190,136 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
                       lower=1e-10, upper=1)$root
       }
     }
-     
+    
     # Update. (lam=1 for explicit -- updated for implicit)
-    beta = beta + gamma_i * lam * (d[j] - Hj * ksi[j]) * Xj
+    ST_j = (d[j] - Hj * ksi[j])
+    loginfo(sprintf("ST_j = %.3f", ST_j))
+    loginfo(sprintf("Xj= %s", paste(round(Xj, 2), collapse=", ")))
+    loginfo(sprintf("Update = %s", paste(round(gamma_i * lam * ST_j * Xj, 3), collapse=", ")))
+    # Update
+   
+    beta.new = beta + gamma_i * lam * ST_j * Xj
+    loginfo(sprintf("NEW beta = %s", paste(round(beta.new, 2), collapse=", ")))
+    loginfo(sprintf("TRUE beta = %s", paste(round(data$true.beta, 2), collapse=", ")))
+    loginfo(sprintf("NEW MSE = %.3f", dist(data$true.beta, beta.new)))
     # beta = data$true.beta
-    if(dist(beta, rep(0, length(beta))) > 1e1) {
+    if(dist(beta, rep(0, length(beta))) > 1e5) {
+      print(as.numeric(beta))
+      print(ST_j)
+      print(as.numeric(beta.new))
       stop("Possible divergence")
     }
+    beta <- beta.new
+    
+    if(averaging) {
+      beta.bar = (1/iter) * ((iter-1) * beta.bar + beta)
+      mse <- c(mse, dist(beta.bar, data$true.beta))
+      if(tail(mse, 1) < mse.best) {
+        print("Best beta. Stop?")
+        print(as.numeric(beta.bar))
+      }
+    } else {
+      mse <- c(mse, dist(beta, data$true.beta))
+    }
+    
+    # Plotting.
+    if(iter %in% plot.points) {
+      print(sprintf("Last MSE = %.3f  (best=%.3f, gamma=%.2f, C*=%.3f)", 
+                    tail(mse, 1), mse.best, gamma_i, 1))
+      plot(mse, type="l", main=sprintf("dist=%.4f (implicit=%d)", tail(mse, 1), implicit), 
+           ylim=c(mse.best/2, max(mse)))
+      abline(h=mse.best, col="red", lty=3)
+    }
+    setTxtProgressBar(pb, value=iter/niters)
+  }
+  # Final printing/plotting
+  # TODO(ptoulis): Remove once the function is finalized.
+  print("SGD params")
+  print(as.numeric(beta))
+  print("TRUE params")
+  print(data$true.beta)
+  print("Distance of last sgd iterate")
+  print(dist(beta, data$true.beta))
+  par(mfrow=c(1, 2))
+  plot(mse, type="l", main=sprintf("dist=%.4f (implicit=%d)", tail(mse, 1), implicit), ylim=c(0, max(mse)))
+  abline(h=mse.best, col="red", lty=3)
+  plot(data$true.beta, data$true.beta, col="red", lty=3, type="l")
+  points(data$true.beta, as.numeric(beta), pch="x")
+}
+
+cox.sgd2 <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
+  # Cox proportional hazards through SGD.
+  # Args:
+  #   data = list(X, Yt, censor, true.beta)
+  #
+  # TODO(ptoulis): Change code to do cross-validation.
+  
+  mse.best = dist(data$true.beta, coxbatch(data, verbose=F))
+  if(implicit) {
+    print("Running Implicit SGD for Cox PH model.")
+  }
+  #   input
+  n = length(data$Y)
+  p = ncol(data$X)
+  loginfo(sprintf("n=%d instances and p=%d variables", n, p))
+  beta = matrix(0, nrow=p, ncol=1)
+  beta.new = beta
+  
+  # gammas = C  / seq(1, niters)
+  gammas = C / rep(1, niters)
+  warning("funky learning rates.")
+  if(averaging) {
+    gammas = C / seq(1, niters)**(1/3)
+  }
+  loginfo(sprintf("Learning rates = %s", paste(head(gammas), collapse=", ")))
+  
+  betas = matrix(0, nrow=p, ncol=0)
+  mse = c()
+  
+  d = 1-data$censor  # failure observed.
+  x = data$X  # ordered covariates.
+  
+  # plotting params.
+  plot.points = as.integer(seq(1, niters, length.out=20))
+  pb = txtProgressBar(style=3)
+  
+  # parameter for averaging
+  beta.bar <- matrix(0, nrow=p, ncol=1)
+  
+  units.sample = sample(1:n, size=niters, replace=T)
+  U = matrix(1, nrow=n, ncol=n)
+  Z = lower.tri(U, T) * U
+  z  = rep(0, n)
+  XX = t(x) %*% x
+  I = diag(p)
+  hessian.eta = rep(1, n)
+  
+  for(iter in 1:niters) {
+    
+    # New iteration
+    gamma_i = gammas[iter]
+    eta = x %*% beta
+    ksi = exp(eta)
+
+    H = rev(cumsum(rev(ksi))) # [xi_n +x_n-1+...xi_1,    xi_n + ..+xi_2, ..,  ..., xi_n]
+                             # Hi = sum_{j in Ri} exp(xj' b)
+    nabla.eta = matrix(d - ksi * (Z %*% (d/H)), ncol=1)
+    hessian.eta = hessian.eta + nabla.eta**2 # -ksi * (Z %*% (d/H)) + ksi**2 * (Z %*% (d/H**2))
+    W = matrix(0, nrow=n, ncol=n)
+    diag(W) <- 1/hessian.eta
+    # print(sum(hessian.eta**2))
+     eta.new = eta  + sqrt(W) %*% nabla.eta
+     # eta.new = eta + (1/iter) * nabla.eta
+   
+    beta.new = solve(I + gamma_i * XX) %*% (beta  + gamma_i * t(x) %*% eta.new)
+    
+    if(dist(beta, rep(0, length(beta))) > 1e5) {
+      print(as.numeric(beta))
+        print(as.numeric(beta.new))
+      stop("Possible divergence")
+    }
+    ## Update the old vector.
+    beta <- beta.new
     
     if(averaging) {
       beta.bar = (1/iter) * ((iter-1) * beta.bar + beta)
@@ -175,10 +330,11 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
     
     # Plotting.
     if(iter %in% plot.points) {
-     print(sprintf("Last MSE = %.3f", tail(mse, 1)))
+      print(sprintf("Last MSE = %.3f  (best=%.3f, gamma=%.2f, C*=%.3f)", 
+                    tail(mse, 1), mse.best, gamma_i, 1))
       plot(mse, type="l", main=sprintf("dist=%.4f (implicit=%d)", tail(mse, 1), implicit), 
            ylim=c(mse.best/2, max(mse)))
-     abline(h=mse.best, col="red", lty=3)
+      abline(h=mse.best, col="red", lty=3)
     }
     setTxtProgressBar(pb, value=iter/niters)
   }
@@ -186,6 +342,8 @@ cox.sgd <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   # TODO(ptoulis): Remove once the function is finalized.
   print("SGD params")
   print(as.numeric(beta))
+  print("TRUE params")
+  print(data$true.beta)
   print("Distance of last sgd iterate")
   print(dist(beta, data$true.beta))
   par(mfrow=c(1, 2))
@@ -212,41 +370,6 @@ coxnet <- function(data) {
   plot(fit$lambda, mse, type="l", main="MSE of coxnet")
   abline(h=mse.best, col="red", lty=3)
   print(sprintf("min MSE from coxnet = %.3f", min(mse)))
+  return(fit)
 }
-
-sgd.vs.glmnet <- function(use.real.data=F) {
-  # Runs glmnet vs. SGD for fitting simulated or real-world dataset.
-  # 
-  # TODO(ptoulis): In real-data, evaluate both based on cross-validation.
-  # TODO(ptoulis): Compute the CV plots for both methods and datasets.
-  #
-  data = gen.data(N=1e3, p=20, rho = 0.2)
-
-  # unload
-  X = data$X
-  Yt = data$Yt
-  censor = data$censor
-  beta.star = data$true.beta
-  
-  if(use.real.data) {
-    attach("LymphomaData.rda")
-    X = t(patient.data$x)
-    Yt = patient.data$time
-    status = patient.data$status
-    censor = 1-status
-  }
-  
-  y.glmnet = cbind(time=Yt, status=1-censor)
-  print(head(y.glmnet))
-  # 1. glmnet
-  fit = glmnet(X, y.glmnet, family="cox")
-  plot(fit)
-  mse = as.numeric(apply(fit$beta, 2, function(b) sqrt(mean((b - beta.star)**2))))
-  mse.best = min(mse)
-  plot(fit$lambda, mse, type="l", lty=3)
-  
-  # data for SGD
-  cox.sgd(data, niters=1e4, C=0.1, implicit = T, averaging=F)
-}
-
 
