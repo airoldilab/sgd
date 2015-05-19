@@ -45,7 +45,7 @@ log.lik <- function(data, beta) {
 verify.mle.conditions <- function() {
   p = 10
   n = 1e3
-  data = generate.data(n, p)
+  data = generate.data(n, p, rho = 0.5)
   beta.hat = coxbatch(data, verbose = F)
   print("Calculating MLE.") 
   beta.new = optim(par=rep(0, p), 
@@ -304,6 +304,7 @@ cox.sgd2 <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   mse.best = dist(data$true.beta, coxbatch(data, verbose=F))
   if(implicit) {
     print("Running Implicit SGD for Cox PH model.")
+    print("")
   }
   #   input
   n = length(data$Y)
@@ -312,61 +313,62 @@ cox.sgd2 <- function(data, niters=1e3, C=1, implicit=F, averaging=F) {
   beta = matrix(0, nrow=p, ncol=1)
   beta.new = beta
   
-  # gammas = C  / seq(1, niters)
-  gammas = C / rep(1, niters)
-  warning("funky learning rates.")
+  gammas = C  / seq(1, niters)
   if(averaging) {
-    gammas = C / seq(1, niters)**(1/3)
+    gammas = C / seq(1, niters)**(1/2)
   }
   loginfo(sprintf("Learning rates = %s", paste(head(gammas), collapse=", ")))
   
   betas = matrix(0, nrow=p, ncol=0)
   mse = c()
-  
-  d = 1-data$censor  # failure observed.
-  x = data$X  # ordered covariates.
-  
   # plotting params.
   plot.points = as.integer(seq(1, niters, length.out=20))
   pb = txtProgressBar(style=3)
-  
   # parameter for averaging
   beta.bar <- matrix(0, nrow=p, ncol=1)
   
-  units.sample = sample(1:n, size=niters, replace=T)
-  U = matrix(1, nrow=n, ncol=n)
-  Z = lower.tri(U, T) * U
-  z  = rep(0, n)
-  XX = t(x) %*% x
-  I = diag(p)
-  hessian.eta = rep(1, n)
+  ## Data/definitions.
+  d = 1-data$censor  # failure observed.
+  X = data$X  # ordered covariates.
+  L = lower.tri(diag(n), diag = T) + 0
+  U = upper.tri(diag(n), diag=T) + 0
+  I = diag(n)
   
   for(iter in 1:niters) {
     
     # New iteration
     gamma_i = gammas[iter]
-    eta = x %*% beta
-    ksi = exp(eta)
-
-    H = rev(cumsum(rev(ksi))) # [xi_n +x_n-1+...xi_1,    xi_n + ..+xi_2, ..,  ..., xi_n]
-                             # Hi = sum_{j in Ri} exp(xj' b)
-    nabla.eta = matrix(d - ksi * (Z %*% (d/H)), ncol=1)
-    hessian.eta = hessian.eta + nabla.eta**2 # -ksi * (Z %*% (d/H)) + ksi**2 * (Z %*% (d/H**2))
-    W = matrix(0, nrow=n, ncol=n)
-    diag(W) <- 1/hessian.eta
-    # print(sum(hessian.eta**2))
-     eta.new = eta  + sqrt(W) %*% nabla.eta
-     # eta.new = eta + (1/iter) * nabla.eta
-   
-    beta.new = solve(I + gamma_i * XX) %*% (beta  + gamma_i * t(x) %*% eta.new)
+    eta = X %*% beta
+    ksi = as.numeric(exp(eta))
+    D.ksi = diag(ksi)
+    H.ksi = U %*% matrix(ksi, ncol=1) # Hi = xi_i + xi_i+1 + ...xi_n
+    DH.inv = diag(as.numeric(1/H.ksi))
+    # residual
+    # r = (I - D.ksi %*% L %*% DH.inv) %*% d
+    r = d - ksi * (L %*% (d/H.ksi))
+    z = eta + r
     
+    # quick SGD step to solve LMS -- avoid matrix inversions.
+    j = sample(1:n, size=1)
+    xj = matrix(X[j,], ncol=1)
+    xj.norm = sum(xj**2)
+    fctr = gamma_i / (1 + gamma_i * xj.norm)
+    pred.j = sum(xj * beta)
+    beta.new = NA
+    if(implicit) {
+      beta.new = beta - fctr * pred.j * xj + gamma_i * z[j] * (1 - fctr * xj.norm) * xj 
+    } else {
+      beta.new= beta + gamma_i * (z[j] - pred.j) * xj
+    }
+    
+    beta <- beta.new
     if(dist(beta, rep(0, length(beta))) > 1e5) {
       print(as.numeric(beta))
         print(as.numeric(beta.new))
       stop("Possible divergence")
     }
     ## Update the old vector.
-    beta <- beta.new
+  
     
     if(averaging) {
       beta.bar = (1/iter) * ((iter-1) * beta.bar + beta)
