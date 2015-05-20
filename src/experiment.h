@@ -58,9 +58,9 @@ struct Sgd_Experiment {
     lr_obj_ = lp;
   }
 
-  void init_ddim_learning_rate(double alpha, double c) {
+  void init_ddim_learning_rate(double a, double b, double c, double eps) {
     grad_func_type grad_func = create_grad_func_instance();
-    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, alpha, c, grad_func));
+    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, a, b, c, eps, grad_func));
     lr_obj_ = lp;
   }
 
@@ -70,7 +70,7 @@ struct Sgd_Experiment {
   }
 
 protected:
-  grad_func_type create_grad_func_instance() {
+  virtual grad_func_type create_grad_func_instance() {
     grad_func_type grad_func;
     return grad_func;
   }
@@ -117,6 +117,7 @@ private:
 
   mat wmatrix_;
   //Rcpp::Function gr;
+  //TODO look into how optim calls its C function, maybe it stores it too
 };
 
 // Experiment class for generalized linear models

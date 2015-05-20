@@ -41,7 +41,7 @@
 #'     \code{"implicit"}.  See \sQuote{Details}.
 #'     \item lr: character specifying the learning rate to be used:
 #'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
-#'       \code{"adagrad"}. Default is \code{"one-dim"}.
+#'       \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
 #'       See \sQuote{Details}.
 #'     \item start: starting values for the parameter estimates. Default is
 #'       random initialization around the mean.
@@ -88,6 +88,9 @@
 #'   \item \code{d-dim}: diagonal matrix
 #'     \code{}
 #'   \item \code{adagrad}: diagonal matrix prescribed in Duchi et al. (2011) as
+#'     \code{}
+#'   \item \code{rmsprop}: diagonal matrix prescribed in Tieleman and Hinton
+#'     (2012) as
 #'     \code{}
 #' }
 #'
@@ -662,7 +665,7 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
   }
 
   # Check validity of learning rate.
-  lrs <- c("one-dim", "one-dim-eigen", "d-dim", "adagrad")
+  lrs <- c("one-dim", "one-dim-eigen", "d-dim", "adagrad", "rmsprop")
   if (is.numeric(lr)) {
     if (lr < 1 | lr > length(lrs)) {
       stop("'lr' out of range")

@@ -109,14 +109,11 @@ struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
     mat Gi = grad_func(theta_old, data_pt, offset);
-    // tr(Fisher_matrix) = sum of eigenvalues of Fisher_matrix
-    //mat fisher_est = diagmat(Gi * Gi.t()); // vectorized version
-    //double sum_eigen = trace(fisher_est);
     double sum_eigen = 0;
     for (unsigned i = 0; i < d; ++i) {
       sum_eigen += pow(Gi.at(i, 0), 2);
     }
-    // min_eigen <= d / trace(Fisher_matrix)
+    // based on the bound of min_eigen <= d / trace(Fisher_matrix)
     double min_eigen_upper = sum_eigen / d;
     v.lr_scalar = 1. / (min_eigen_upper * t);
     return v;
@@ -128,24 +125,25 @@ private:
 };
 
 // d-dimensional learning rate with parameter weight alpha and exponent c
-// AdaGrad: alpha=1, c=1/2
-// d-dim: alpha=0, c=1
+// adagrad: a=1, b=1, c=1/2, eps=1e-6
+// d-dim: a=0, b=1, c=1, eps=1e-6
+// rmsprop: a=gamma, b=1-gamma, c=1/2, eps=1e-6
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Ddim_Learn_Rate(unsigned d, double a, double c_, const grad_func_type& gr) :
-    Idiag(ones<vec>(d)), alpha(a), c(c_), grad_func(gr), v(2, d) { }
+  Sgd_Ddim_Learn_Rate(unsigned d, double a_, double b_, double c_, double eps_, const
+    grad_func_type& gr) :
+    Idiag(ones<vec>(d)), a(a_), b(b_), c(c_), eps(eps_), grad_func(gr), v(2, d) { }
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
     mat Gi = grad_func(theta_old, data_pt, offset);
-    //Idiag = alpha * Idiag + diagvec(Gi * Gi.t()); // vectorized version
     for (unsigned i = 0; i < d; ++i) {
-      Idiag.at(i) = alpha * Idiag.at(i) + pow(Gi.at(i, 0), 2);
+      Idiag.at(i) = a * Idiag.at(i) + b * pow(Gi.at(i, 0), 2);
     }
 
     for (unsigned i = 0; i < d; ++i) {
       if (std::abs(Idiag.at(i)) > 1e-8) {
-        v.lr_mat.at(i, i) = 1. / pow(Idiag.at(i), c);
+        v.lr_mat.at(i, i) = 1. / pow(Idiag.at(i) + eps, c);
       }
       else {
         v.lr_mat.at(i, i) = Idiag.at(i);
@@ -156,8 +154,10 @@ struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 
 private:
   vec Idiag;
-  double alpha;
+  double a;
+  double b;
   double c;
+  double eps;
   grad_func_type grad_func;
   Sgd_Learn_Rate_Value v;
 };

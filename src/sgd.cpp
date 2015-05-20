@@ -293,10 +293,14 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
     exprm.init_one_dim_eigen_learning_rate();
   }
   else if (exprm.lr == "d-dim") {
-    exprm.init_ddim_learning_rate(0., 1.);
+    exprm.init_ddim_learning_rate(0., 1., 1., 0.000001);
   }
   else if (exprm.lr == "adagrad") {
-    exprm.init_ddim_learning_rate(1., .5);
+    exprm.init_ddim_learning_rate(1., 1., .5, 0.000001);
+  }
+  else if (exprm.lr == "rmsprop") {
+    double gamma = 0.9;
+    exprm.init_ddim_learning_rate(gamma, 1-gamma, .5, 0.000001);
   }
 
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
