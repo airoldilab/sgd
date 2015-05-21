@@ -295,16 +295,15 @@ sgd.matrix <- function(x, y, model,
 #  # Args:
 #  #   x:    sgd object
 #}
+
+#' Generic function for plotting of \code{sgd} objects.
+#'
+#' @param x sgd object
+#' @param type character specifying the type of plot: \code{"mse"}
+#' @param \dots
+#'
 #' @export
 plot.sgd <- function(x, type="mse", ...) {
- # An all-encompassing visualization routine.
- #
- # Args:
- #   x:    sgd object
- #   type: character in c("")
- #
- # Returns:
- #   A plot.
  if (type == "mse") {
    plot <- plot.sgd.mse
  } else {
@@ -528,16 +527,28 @@ plot.sgd.mse <- function(x){
     get.mse <- sgd.mse.glm
   }
   else{
-    stop("Model not recognized! ")
+    stop("Model not recognized!")
   }
   mse <- get.mse(x)
   dat <- data.frame(mse=mse, pos=x$pos[1, ])
   dat <- dat[!duplicated(dat$pos), ]
   pos <- 0
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse)) + ggplot2::geom_line() +
-    ggplot2::theme_bw() + ggplot2::theme(panel.border = ggplot2::element_blank(), panel.grid.major = ggplot2::element_blank(),
-                       panel.grid.minor = ggplot2::element_blank(), axis.line = ggplot2::element_line(colour = "black")) +
-    ggplot2::labs(title = "Mean Squared Error", x = "Iteration", y = "MSE")
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse)) +
+    ggplot2::geom_line() +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      panel.border=ggplot2::element_blank(),
+      panel.grid.major=ggplot2::element_blank(),
+      panel.grid.minor=ggplot2::element_blank(),
+      axis.line=ggplot2::element_line(colour="black")
+      ) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_y_log10() +
+    ggplot2::labs(
+      title="Mean Squared Error",
+      x="log-Iteration",
+      y="log-MSE"
+    )
   return(p)
 }
 
