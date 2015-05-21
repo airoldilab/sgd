@@ -305,7 +305,7 @@ sgd.matrix <- function(x, y, model,
 #' @export
 plot.sgd <- function(x, type="mse", ...) {
  if (type == "mse") {
-   plot <- plot.sgd.mse
+   plot <- plot_mse
  } else {
    print(type)
    stop("'type' not recognized")
@@ -515,21 +515,21 @@ fit_ee <- function(x, y,
 # Auxiliary functions: plots
 ################################################################################
 
-sgd.mse.glm <- function(x){
+get_mse_glm <- function(x){
   eta <- x$sample.x %*% x$estimates
   mu <- x$family$linkinv(eta)
   mse <- colMeans((mu - x$sample.y)^2)
   return(mse)
 }
 
-plot.sgd.mse <- function(x){
+plot_mse <- function(x){
   if (any(class(x) %in% "glm")){
-    get.mse <- sgd.mse.glm
+    get_mse <- get_mse_glm
   }
   else{
     stop("Model not recognized!")
   }
-  mse <- get.mse(x)
+  mse <- get_mse(x)
   dat <- data.frame(mse=mse, pos=x$pos[1, ])
   dat <- dat[!duplicated(dat$pos), ]
   pos <- 0
