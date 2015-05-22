@@ -54,11 +54,11 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
   if (!(at < 1)){
-    Rcpp::Rcout << "learning rate: " << at << 
+    Rcpp::Rcout << "learning rate: " << at <<
       "at Iter: " << t << std::endl;
   }
   mat theta_test;
-  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson" 
+  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
     theta_test = theta_old + at * ((datapoint.y - experiment.h_transfer(
       dot(datapoint.x, theta_old) + experiment.offset[t-1]))*datapoint.x).t();
@@ -116,7 +116,7 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   }
   double result;
   if (lower != upper) {
-    result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, 14);
+    result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, experiment.delta);
   }
   else
     result = lower;
@@ -125,11 +125,11 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
   if (!(at < 1)){
-    Rcpp::Rcout << "learning rate: " << at << 
+    Rcpp::Rcout << "learning rate: " << at <<
       "at Iter: " << t << std::endl;
   }
   mat theta_test;
-  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson" 
+  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
     theta_test = theta_new - at * ((datapoint.y - experiment.h_transfer(
       dot(datapoint.x, theta_new) + experiment.offset[t-1]))*datapoint.x).t();
@@ -302,7 +302,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   exprm.start = Rcpp::as<mat>(Experiment["start"]);
   exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
   exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
-  exprm.epsilon = Rcpp::as<double>(Experiment["epsilon"]);
+  exprm.delta = Rcpp::as<double>(Experiment["delta"]);
   exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);

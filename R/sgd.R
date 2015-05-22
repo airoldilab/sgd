@@ -257,7 +257,7 @@ sgd.matrix <- function(x, y, model,
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
-  
+
   sgd.control <- do.call("valid_sgd_control", c(sgd.control, N=NROW(y),
     d=ncol(x)))
 
@@ -401,7 +401,7 @@ fit_glm <- function(x, y,
     experiment$start <- as.matrix(start)
     experiment$weights <- as.matrix(weights[good])
     experiment$offset <- as.matrix(offset[good]) # TODO not implemented
-    experiment$epsilon <- sgd.control$epsilon
+    experiment$delta <- sgd.control$delta
     experiment$trace <- sgd.control$trace
     experiment$deviance <- sgd.control$deviance
     experiment$convergence <- sgd.control$convergence
@@ -495,7 +495,7 @@ fit_ee <- function(x, y,
     experiment$start <- as.matrix(sgd.control$start)
     experiment$weights <- sgd.control$weights # TODO not implemented
     experiment$offset <- sgd.control$offset # TODO not implemented
-    experiment$epsilon <- sgd.control$epsilon
+    experiment$delta <- sgd.control$delta
     experiment$trace <- sgd.control$trace
     experiment$deviance <- sgd.control$deviance
     experiment$convergence <- sgd.control$convergence
@@ -712,6 +712,8 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
     call <- match.call()
     implicit.control <- do.call("valid_implicit_control", list(...))
   }
+  # TODO, since experment.h requires it for all stochastic gradient methods,
+  # even though it shouldn't.
   call <- match.call()
   implicit.control <- do.call("valid_implicit_control", list(...))
 
@@ -723,13 +725,12 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
            implicit.control))
 }
 
-valid_implicit_control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
+valid_implicit_control <- function(delta=14L, trace=FALSE, deviance=FALSE,
                                    convergence=FALSE, ...) {
   # Maintain control parameters for running implicit SGD.
   #
   # Args:
-  #   epsilon:     positive convergence tolerance; the iterations
-  #                converge when |dev - dev_{old}|/(|dev| + 0.1) < epsilon
+  #   delta:     convergence criterion for the one-dimensional optimization
   #   trace:       logical indicating if output should be produced for each
   #                iteration
   #   deviance:    logical indicating if the validity of deviance should be
@@ -739,10 +740,10 @@ valid_implicit_control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
   #
   # Returns:
   #   A list of parameters according to user input, default otherwise.
-  if (!is.numeric(epsilon) || epsilon <= 0) {
-    stop("value of 'epsilon' must be > 0")
+  if (!is.integer(delta) || delta <= 0) {
+    stop("value of 'delta' must be integer > 0")
   }
-  return(list(epsilon=epsilon,
+  return(list(delta=delta,
               trace=trace,
               deviance=deviance,
               convergence=convergence))

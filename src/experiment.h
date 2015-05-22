@@ -30,7 +30,7 @@ struct Sgd_Experiment {
   mat start;
   mat weights;
   mat offset;
-  double epsilon;
+  double delta;
   bool trace;
   bool dev;
   bool convergence;
