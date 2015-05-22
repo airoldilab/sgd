@@ -211,13 +211,8 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Sgd_Experiment& exprm) {
-    os << "  Experiment:\n" << "    Family: " << exprm.model_name << "\n" <<
-          //"    Transfer function: " << exprm.transfer_name <<  "\n" <<
-          "    Learning rate: " << exprm.lr << "\n\n" <<
-          "    Trace: " << (exprm.trace ? "On" : "Off") << "\n" <<
-          "    Deviance: " << (exprm.dev ? "On" : "Off") << "\n" <<
-          "    Convergence: " << (exprm.convergence ? "On" : "Off") << "\n" <<
-          "    Epsilon: " << exprm.epsilon << "\n" << std::endl;
+    os << "  Experiment:\n" << "    Model: " << exprm.model_name << "\n" <<
+          "    Learning rate: " << exprm.lr << std::endl;
     return os;
   }
 

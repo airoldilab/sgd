@@ -44,21 +44,36 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   bool& good_gradient) {
 
   Sgd_DataPoint datapoint = Sgd_get_dataset_point(data_history, t);
-  // mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
   Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   mat grad_t = experiment.gradient(theta_old, datapoint, experiment.offset[t-1]);
   if (!is_finite(grad_t)) {
     good_gradient = false;
   }
-#if DEBUG
-  static int count = 0;
-  if (count < 10) {
-    Rcpp::Rcout << "learning rate: \n" << at << std::endl;
-    Rcpp::Rcout << "gradient: \n" << grad_t << std::endl;
-  }
-    ++count;
-#endif
   mat theta_new = theta_old + (at * grad_t);
+
+  // check the correctness of SGD update in DEBUG mode
+#if DEBUG
+  if (!(at < 1)){
+    Rcpp::Rcout << "learning rate: " << at << 
+      "at Iter: " << t << std::endl;
+  }
+  mat theta_test;
+  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson" 
+    || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
+    theta_test = theta_old + at * ((datapoint.y - experiment.h_transfer(
+      dot(datapoint.x, theta_old) + experiment.offset[t-1]))*datapoint.x).t();
+  } else{
+    theta_test = theta_new;
+  }
+  double error = max(max(abs(theta_test - theta_new)));
+  double scale = max(max(abs(theta_test)));
+  if (error/scale > 1e-5) {
+    Rcpp::Rcout<< "Wrong SGD update at iter: " << t + 1 << std::endl;
+    Rcpp::Rcout<< "Relative Error = " <<  max(max(abs(theta_test - theta_new))) << std::endl;
+    Rcpp::Rcout<< "Correct = " << theta_test << std::endl;
+    Rcpp::Rcout<< "Output = " << theta_new << std::endl;
+  }
+#endif
   return theta_new;
 }
 
@@ -69,7 +84,6 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   bool& good_gradient) {
 
   Sgd_DataPoint datapoint= Sgd_get_dataset_point(data_history, t);
-  // mat theta_old = Sgd_onlineOutput_estimate(online_out, t-1);
   mat theta_new;
   Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
   double average_lr = 0;
@@ -107,6 +121,30 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   else
     result = lower;
   theta_new = theta_old + result * datapoint.x.t();
+
+  // check the correctness of SGD update in DEBUG mode
+#if DEBUG
+  if (!(at < 1)){
+    Rcpp::Rcout << "learning rate: " << at << 
+      "at Iter: " << t << std::endl;
+  }
+  mat theta_test;
+  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson" 
+    || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
+    theta_test = theta_new - at * ((datapoint.y - experiment.h_transfer(
+      dot(datapoint.x, theta_new) + experiment.offset[t-1]))*datapoint.x).t();
+  } else{
+    theta_test = theta_old;
+  }
+  double error = max(max(abs(theta_test - theta_old)));
+  double scale = max(max(abs(theta_test)));
+  if (error/scale > 1e-5) {
+    Rcpp::Rcout<< "Wrong SGD update at iter: " << t + 1 << std::endl;
+    Rcpp::Rcout<< "Relative Error = " <<  max(max(abs(theta_test - theta_new))) << std::endl;
+    Rcpp::Rcout<< "Correct = " << theta_test << std::endl;
+    Rcpp::Rcout<< "Output = " << theta_new << std::endl;
+  }
+#endif
   return theta_new;
 }
 
@@ -256,6 +294,7 @@ Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method,
   bool verbose, Rcpp::List Experiment) {
+
   // Put remaining attributes into experiment.
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
@@ -267,6 +306,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);
+
 
   // Set learning rate in experiment.
   if (exprm.lr == "one-dim") {
@@ -303,8 +343,10 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
     exprm.init_ddim_learning_rate(gamma, 1-gamma, .5, 0.000001);
   }
 
+
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
   unsigned ndim = Sgd_dataset_size(data).d;
+
 
   // Check if the number of observations is greater than the rank of X.
   unsigned X_rank = ndim;
@@ -344,6 +386,9 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   mat theta_old_ave;
 
   // Run SGD!
+  #if DEBUG
+  Rcpp::Rcout << "SGD Start! " <<std::endl;
+  #endif
   for (int t = 1; t <= nsamples; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {

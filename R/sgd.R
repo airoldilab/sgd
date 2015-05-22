@@ -712,6 +712,8 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
     call <- match.call()
     implicit.control <- do.call("valid_implicit_control", list(...))
   }
+  call <- match.call()
+  implicit.control <- do.call("valid_implicit_control", list(...))
 
   return(c(list(method=method,
                 lr=lr,

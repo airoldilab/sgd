@@ -55,6 +55,20 @@ mat operator*(const Sgd_Learn_Rate_Value& lr, const mat& grad) {
   }
 }
 
+bool operator<(const Sgd_Learn_Rate_Value& lr, const double thres){
+  if (lr.type == 0){
+    return lr.lr_scalar < thres;
+  } else if (lr.type == 1){
+    return all(lr.lr_vec < thres);
+  } else{
+    return all(diagvec(lr.lr_mat) < thres);
+  }
+}
+
+bool operator>(const Sgd_Learn_Rate_Value& lr, const double thres){
+  return !(lr < thres);
+}
+
 std::ostream& operator<<(std::ostream& os, const Sgd_Learn_Rate_Value& lr) {
   if (lr.type == 0) {
     os << lr.lr_scalar;
