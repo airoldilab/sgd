@@ -20,8 +20,6 @@
 #'       naming a family function, a family function or the result of a call to
 #'       a family function.  (See \code{\link[stats]{family}} for details of
 #'       family functions.)
-#'     \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
-#'       be included in the \emph{null} model?
 #'     \item rank logical. Should the rank of the design matrix be checked?
 #'     \item fn (\code{"ee"}): function \eqn{g(\theta,x)} which returns a
 #'       \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
@@ -215,7 +213,9 @@ sgd.formula <- function(formula, data, model,
   }
 
   # 3. Pass into sgd.matrix().
-  return(sgd.matrix(X, Y, model, model.control, sgd.control))
+  out <- sgd.matrix(X, Y, model, model.control, sgd.control)
+  out$call <- call
+  return(out)
 }
 
 #' @export
@@ -257,6 +257,7 @@ sgd.matrix <- function(x, y, model,
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
+  
   sgd.control <- do.call("valid_sgd_control", c(sgd.control, N=NROW(y),
     d=ncol(x)))
 
@@ -279,7 +280,7 @@ sgd.matrix <- function(x, y, model,
   sample.x <- x[samples, ]
   sample.y <- y[samples]
   classes <- c(class(out), "sgd")
-  out <- c(out, list(sample.x=sample.x, sample.y=sample.y))
+  out <- c(out, list(sample.x=sample.x, sample.y=sample.y, call=call))
   class(out) <- classes
   return(out)
 }
@@ -338,7 +339,10 @@ fit_glm <- function(x, y,
 
   # model.control arguments
   family <- model.control$family
-  intercept <- model.control$intercept
+  if ("(Intercept)" %in% xnames)
+    intercept <- TRUE
+  else
+    intercept <- FALSE
 
   variance <- family$variance
   linkinv <- family$linkinv
@@ -439,6 +443,7 @@ fit_glm <- function(x, y,
   nulldf <- n.ok - as.integer(intercept)
   resdf <- n.ok - rank
   names(coef) <- xnames
+  aic.model <- family$aic(y, 0, mu, weights, dev) + 2 * rank
   result <- list(
     coefficients=coef,
     residuals=residuals,
@@ -455,7 +460,7 @@ fit_glm <- function(x, y,
     converged=if(sgd.control$convergence) converged,
     estimates=out$estimates,
     pos=out$pos,
-    aic=0)
+    aic=aic.model)
   class(result) <- c(class(result), "glm")
   return(result)
 }
@@ -561,27 +566,18 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   # passes defaults to those unspecified and converts to the correct type if
   # possible; otherwise it errors.
   if (model == "lm") {
-    control.intercept <- model.control$intercept
     control.rank <- model.control$rank
-    # Check validity of intercept.
-    if (is.null(control.intercept)) {
-      control.intercept <- TRUE
-    } else if (!is.logical(control.intercept)) {
-      stop("'intercept' not logical")
-    }
     # Check validity of rank.
     if (is.null(control.rank)){
       control.rank <- FALSE
-    } else if (!is.logical(control.intercept)) {
+    } else if (!is.logical(control.rank)) {
       stop ("'rank' not logical")
     }
     return(list(
       family=gaussian(),
-      intercept=control.intercept,
       rank=control.rank))
   } else if (model == "glm") {
     control.family <- model.control$family
-    control.intercept <- model.control$intercept
     control.rank <- model.control$rank
     # Check validity of family.
     if (is.null(control.family)) {
@@ -594,21 +590,14 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       print(control.family)
       stop("'family' not recognized")
     }
-    # Check validity of intercept.
-    if (is.null(control.intercept)) {
-      control.intercept <- TRUE
-    } else if (!is.logical(control.intercept)) {
-      stop("'intercept' not logical")
-    }
     # Check validity of rank.
     if (is.null(control.rank)){
       control.rank <- FALSE
-    } else if (!is.logical(control.intercept)) {
+    } else if (!is.logical(control.rank)) {
       stop ("'rank' not logical")
     }
     return(list(
       family=control.family,
-      intercept=control.intercept,
       rank=control.rank))
   } else if (model == "ee") {
     control.fn <- model.control$fn

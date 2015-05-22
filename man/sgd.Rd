@@ -41,8 +41,6 @@ equation).}
     naming a family function, a family function or the result of a call to
     a family function.  (See \code{\link[stats]{family}} for details of
     family functions.)
-  \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
-    be included in the \emph{null} model?
   \item rank logical. Should the rank of the design matrix be checked?
   \item fn (\code{"ee"}): function \eqn{g(\theta,x)} which returns a
     \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a

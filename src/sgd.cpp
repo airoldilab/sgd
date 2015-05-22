@@ -304,9 +304,10 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   }
 
   unsigned nsamples = Sgd_dataset_size(data).nsamples;
+  unsigned ndim = Sgd_dataset_size(data).d;
 
   // Check if the number of observations is greater than the rank of X.
-  unsigned X_rank = nsamples;
+  unsigned X_rank = ndim;
   if (exprm.model_name == "gaussian" ||
       exprm.model_name == "poisson" ||
       exprm.model_name == "binomial" ||
