@@ -306,13 +306,19 @@ sgd.matrix <- function(x, y, model,
 #'
 #' @export
 plot.sgd <- function(x, type="mse", ...) {
- if (type == "mse") {
-   plot <- plot_mse
- } else {
-   print(type)
-   stop("'type' not recognized")
- }
- return(plot(x))
+  if ("sgd" %in% class(type)){
+    sgds <- list(x, type, ...)
+    type <- "mse"
+  } else{
+    sgds <- list(x, ...)
+  }
+  if (type == "mse") {
+    plot <- plot_mse
+  } else {
+    print(type)
+    stop("'type' not recognized")
+  }
+  return(do.call(plot, sgds))
 }
 
 ################################################################################
@@ -529,25 +535,40 @@ get_mse_glm <- function(x){
   return(mse)
 }
 
-plot_mse <- function(x){
+plot_mse <- function(x, ...){
   if (any(class(x) %in% "glm")){
     get_mse <- get_mse_glm
   }
   else{
     stop("Model not recognized!")
   }
-  mse <- get_mse(x)
-  dat <- data.frame(mse=mse, pos=x$pos[1, ])
-  dat <- dat[!duplicated(dat$pos), ]
+  sgds <- list(x, ...)
+  dat <- data.frame()
+  count <- 1
+  for (sgd in sgds){
+    mse <- get_mse(sgd)
+    temp_dat <- data.frame(mse=mse, pos=sgd$pos[1, ])
+    temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
+    temp_dat[["label"]] <- as.factor(count)
+    dat <- rbind(dat, temp_dat)
+    count <- count + 1
+  }
+  
   pos <- 0
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse)) +
-    ggplot2::geom_line() +
+  label <- 0
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       panel.border=ggplot2::element_blank(),
       panel.grid.major=ggplot2::element_blank(),
       panel.grid.minor=ggplot2::element_blank(),
-      axis.line=ggplot2::element_line(colour="black")
+      axis.line=ggplot2::element_line(color="black"),
+      legend.position=c(1, 1),
+      legend.justification = c(1, 1),
+      legend.title=ggplot2::element_blank(), 
+      legend.key=ggplot2::element_blank(),
+      legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
     ggplot2::scale_x_log10() +
     ggplot2::scale_y_log10() +
