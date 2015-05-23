@@ -73,6 +73,7 @@ equation).}
     offset terms can be included in the formula instead or as well, and if
     more than one is specified their sum is used. See
     \code{\link[stats]{offset}}
+  \item npasses: the number of passes for sgd
 }}
 
 \item{fn.control}{for \code{sgd.function}, it is a list of controls for the

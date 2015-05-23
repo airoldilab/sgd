@@ -2,6 +2,7 @@
 #define DATA_H
 
 #include <iostream>
+#include <vector>
 #include "basedef.h"
 
 using namespace arma;
@@ -29,7 +30,20 @@ struct Sgd_Dataset
 //@members
   mat X;
   mat Y;
+  std::vector<unsigned> idxmap;
+  unsigned n_samples;
 //@methods
+  void init(unsigned n_passes) {
+    n_samples = X.n_rows * n_passes;
+    idxmap = std::vector<unsigned>(n_samples);
+    std::srand(unsigned(std::time(0)));
+    for (unsigned i =0; i < n_passes; ++i) {
+        for (unsigned j =0; j < X.n_rows; ++j){
+            idxmap[i * X.n_rows + j] = j;
+        }
+        std::random_shuffle(idxmap.begin()+ i * X.n_rows, idxmap.begin() + (i + 1) * X.n_rows);
+    }
+  }
   mat covariance() const {
     return cov(X);
   }
@@ -47,7 +61,7 @@ struct Sgd_OnlineOutput
   //the shape of data
   Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100)
    : estimates(mat(data.X.n_cols, s)), initial(init), last_estimate(init),
-    n_iter(data.X.n_rows), iter(0), size(s), n_recorded(0), pos(Mat<unsigned>(1, s)) {
+    n_iter(data.n_samples), iter(0), size(s), n_recorded(0), pos(Mat<unsigned>(1, s)) {
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
       }

@@ -26,6 +26,7 @@ struct Sgd_Experiment {
   std::string model_name;
   unsigned n_iters;
   unsigned d;
+  unsigned n_passes;
   std::string lr;
   mat start;
   mat weights;

@@ -51,6 +51,7 @@
 #'       offset terms can be included in the formula instead or as well, and if
 #'       more than one is specified their sum is used. See
 #'       \code{\link[stats]{offset}}
+#'     \item npasses: the number of passes for sgd
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
@@ -405,6 +406,7 @@ fit_glm <- function(x, y,
     experiment$trace <- sgd.control$trace
     experiment$deviance <- sgd.control$deviance
     experiment$convergence <- sgd.control$convergence
+    experiment$npasses <- sgd.control$npasses
     experiment$model.attrs <- list()
     experiment$model.attrs$transfer.name <- transfer_name(family$link)
     experiment$model.attrs$rank <- model.control$rank
@@ -653,7 +655,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 
 valid_sgd_control <- function(method="implicit", lr="one-dim",
                               start=NULL, weights=NULL,
-                              offset=NULL, N, d, ...) {
+                              offset=NULL, N, d, npasses=NULL, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -706,6 +708,13 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
   } else if (length(offset) != N) {
     stop(gettextf("length of 'offset' should equal %d", N), domain=NA)
   }
+  
+  # Check validity of npasses
+  if (is.null(npasses)) {
+    npasses <- 1
+  } else if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
+    stop("'npasses' must be positive integer")
+  }
 
   # Check validity of additional arguments if the method is implicit.
   if (method %in% c("implicit", "ai-sgd")) {
@@ -721,7 +730,8 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
                 lr=lr,
                 start=start,
                 weights=weights,
-                offset=offset),
+                offset=offset,
+                npasses=npasses),
            implicit.control))
 }
 
@@ -740,7 +750,7 @@ valid_implicit_control <- function(delta=14L, trace=FALSE, deviance=FALSE,
   #
   # Returns:
   #   A list of parameters according to user input, default otherwise.
-  if (!is.integer(delta) || delta <= 0) {
+  if (!is.numeric(delta) || delta - as.integer(delta) != 0 || delta <= 0) {
     stop("value of 'delta' must be integer > 0")
   }
   return(list(delta=delta,

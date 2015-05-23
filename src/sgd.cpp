@@ -24,7 +24,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
 // return the nsamples and nfeatures of a dataset
 Sgd_Size Sgd_dataset_size(const Sgd_Dataset& dataset) {
   Sgd_Size size;
-  size.nsamples = dataset.X.n_rows;
+  size.nsamples = dataset.n_samples;
   size.d = dataset.X.n_cols;
   return size;
 }
@@ -32,8 +32,10 @@ Sgd_Size Sgd_dataset_size(const Sgd_Dataset& dataset) {
 // return the @t th data point in @dataset
 Sgd_DataPoint Sgd_get_dataset_point(const Sgd_Dataset& dataset, unsigned t) {
   t = t - 1;
-  mat xt = mat(dataset.X.row(t));
-  double yt = dataset.Y(t);
+  mat xt = mat(dataset.X.row(dataset.idxmap[t]));
+  
+  
+  double yt = dataset.Y(dataset.idxmap[t]);
   return Sgd_DataPoint(xt, yt);
 }
 
@@ -44,8 +46,9 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   bool& good_gradient) {
 
   Sgd_DataPoint datapoint = Sgd_get_dataset_point(data_history, t);
-  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
-  mat grad_t = experiment.gradient(theta_old, datapoint, experiment.offset[t-1]);
+  unsigned idx = data_history.idxmap[t-1];
+  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[idx], t);
+  mat grad_t = experiment.gradient(theta_old, datapoint, experiment.offset[idx]);
   if (!is_finite(grad_t)) {
     good_gradient = false;
   }
@@ -61,7 +64,7 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
     theta_test = theta_old + at * ((datapoint.y - experiment.h_transfer(
-      dot(datapoint.x, theta_old) + experiment.offset[t-1]))*datapoint.x).t();
+      dot(datapoint.x, theta_old) + experiment.offset[idx]))*datapoint.x).t();
   } else{
     theta_test = theta_new;
   }
@@ -82,10 +85,10 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
 mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   const Sgd_Dataset& data_history, const Sgd_Experiment_Glm& experiment,
   bool& good_gradient) {
-
   Sgd_DataPoint datapoint= Sgd_get_dataset_point(data_history, t);
   mat theta_new;
-  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[t-1], t);
+  unsigned idx = data_history.idxmap[t-1];
+  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[idx], t);
   double average_lr = 0;
   if (at.type == 0) average_lr = at.lr_scalar;
   else {
@@ -98,7 +101,7 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
 
   double normx = dot(datapoint.x, datapoint.x);
 
-  Get_grad_coeff<Sgd_Experiment_Glm> get_grad_coeff(experiment, datapoint, theta_old, normx, experiment.offset[t-1]);
+  Get_grad_coeff<Sgd_Experiment_Glm> get_grad_coeff(experiment, datapoint, theta_old, normx, experiment.offset[idx]);
   Implicit_fn<Sgd_Experiment_Glm> implicit_fn(average_lr, get_grad_coeff);
 
   double rt = average_lr * get_grad_coeff(0);
@@ -132,7 +135,7 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
     theta_test = theta_new - at * ((datapoint.y - experiment.h_transfer(
-      dot(datapoint.x, theta_new) + experiment.offset[t-1]))*datapoint.x).t();
+      dot(datapoint.x, theta_new) + experiment.offset[idx]))*datapoint.x).t();
   } else{
     theta_test = theta_old;
   }
@@ -168,7 +171,8 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta,
 bool validity_check_model(const Sgd_Dataset& data, const mat& theta, unsigned t,
   const Sgd_Experiment_Glm& exprm) {
   // Check if eta is in the support.
-  double eta = exprm.offset[t-1] + dot(Sgd_get_dataset_point(data, t).x, theta);
+  unsigned idx = data.idxmap[t-1];
+  double eta = exprm.offset[idx] + dot(Sgd_get_dataset_point(data, t).x, theta);
   if (!exprm.valideta(eta)) {
     Rcpp::Rcout << "no valid set of coefficients has been found: please supply starting values" << t << std::endl;
     return false;
@@ -268,14 +272,16 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
 Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   SEXP verbose) {
   // Convert all arguments from R to C++ types.
+  
+  Rcpp::List Experiment(experiment);
+  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
+  Rcpp::List model_attrs = Experiment["model.attrs"];
+
   Rcpp::List Dataset(dataset);
   Sgd_Dataset data;
   data.X = Rcpp::as<mat>(Dataset["X"]);
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
-
-  Rcpp::List Experiment(experiment);
-  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
-  Rcpp::List model_attrs = Experiment["model.attrs"];
+  data.init(Rcpp::as<unsigned>(Experiment["npasses"]));
 
   std::string meth = Rcpp::as<std::string>(method);
   bool verb = Rcpp::as<bool>(verbose);
@@ -298,6 +304,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   // Put remaining attributes into experiment.
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
+  exprm.n_passes = Rcpp::as<unsigned>(Experiment["npasses"]);
   exprm.lr = Rcpp::as<std::string>(Experiment["lr"]);
   exprm.start = Rcpp::as<mat>(Experiment["start"]);
   exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
