@@ -606,7 +606,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     if (is.null(control.family)) {
       control.family <- gaussian()
     } else if (is.character(control.family)) {
-      control.family <- get(family, mode="function", envir=parent.frame())()
+      control.family <- get(control.family, mode="function", envir=parent.frame())()
     } else if (is.function(control.family)) {
       control.family <- control.family()
     } else if (is.null(control.family$family)) {

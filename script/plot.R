@@ -1,0 +1,70 @@
+library(sgd)
+library(ggplot2)
+
+plot.sgd <- function(sgds, names, type="mse") {
+  # Plot multiple sgd objects
+  # Args:
+  #  sgds: a list of sgd objects
+  #  names: a list of names for sgds; the name will appear the legend
+  
+  if (type == "mse") {
+    plot <- plot_mse
+  } else {
+    print(type)
+    stop("'type' not recognized")
+  }
+  return(plot(sgds, names))
+}
+
+
+get_mse_glm <- function(x){
+  eta <- x$sample.x %*% x$estimates
+  mu <- x$family$linkinv(eta)
+  mse <- colMeans((mu - x$sample.y)^2)
+  return(mse)
+}
+
+plot_mse <- function(sgds, names){
+  if (any(class(sgds[[1]]) %in% "glm")){
+    get_mse <- get_mse_glm
+  }
+  else{
+    stop("Model not recognized!")
+  }
+  
+  dat <- data.frame()
+  count <- 1
+  for (sgd in sgds){
+    mse <- get_mse(sgd)
+    temp_dat <- data.frame(mse=mse, pos=sgd$pos[1, ])
+    temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
+    temp_dat[["label"]] <- as.factor(names[[count]])
+    dat <- rbind(dat, temp_dat)
+    count <- count + 1
+  }
+  
+  pos <- 0
+  label <- 0
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      panel.border=ggplot2::element_blank(),
+      panel.grid.major=ggplot2::element_blank(),
+      panel.grid.minor=ggplot2::element_blank(),
+      axis.line=ggplot2::element_line(color="black"),
+      legend.position=c(1, 1),
+      legend.justification = c(1, 1),
+      legend.title=ggplot2::element_blank(), 
+      legend.key=ggplot2::element_blank(),
+      legend.background=ggplot2::element_rect(linetype="solid", color="black")
+    ) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_y_log10() +
+    ggplot2::labs(
+      title="Mean Squared Error",
+      x="log-Iteration",
+      y="log-MSE"
+    )
+  return(p)
+}
