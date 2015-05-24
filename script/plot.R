@@ -25,6 +25,12 @@ get_mse_glm <- function(x){
 }
 
 plot_mse <- function(sgds, names){
+  
+  # Plot training MSE
+  # Args:
+  #   sgds: a list of sgd objects
+  #   names: a list of names that will be included in the legend
+  
   if (any(class(sgds[[1]]) %in% "glm")){
     get_mse <- get_mse_glm
   }
@@ -68,3 +74,55 @@ plot_mse <- function(sgds, names){
     )
   return(p)
 }
+
+
+plot.error <- function(preds, ys, names){
+  
+  # Plot test error for classification
+  # Args:
+  #   preds: a list of prediction objects. 
+  #     each prediction object is a list of pred and pos
+  #       pred: nsamples * niter
+  #       pos: ? * niter
+  #   ys: a list of true labels
+  #     each y: length(y) == nsamples
+  #   names: a list of names that will be included in the legend
+  
+  dat = data.frame()
+  count <- 1
+  for (pred in preds){
+    error <- 1 - colSums(pred$pred == ys[[count]]) / nrow(pred$pred)
+    pos <- colMeans(pred$pos)
+    temp_dat <- data.frame(error=error, pos=pos)
+    temp_dat[["label"]] <- as.factor(names[[count]])
+    dat <- rbind(dat, temp_dat)
+    count <- count + 1
+  }
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=error, group=label)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      panel.border=ggplot2::element_blank(),
+      panel.grid.major=ggplot2::element_blank(),
+      panel.grid.minor=ggplot2::element_blank(),
+      axis.line=ggplot2::element_line(color="black"),
+      legend.position=c(1, 1),
+      legend.justification = c(1, 1),
+      legend.title=ggplot2::element_blank(), 
+      legend.key=ggplot2::element_blank(),
+      legend.background=ggplot2::element_rect(linetype="solid", color="black")
+    ) +
+    ggplot2::scale_x_log10() +
+    ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
+    ggplot2::labs(
+      title="Error",
+      x="log-Iteration",
+      y="log-Error"
+    )
+  return(p)
+}
+
+
+
+
+

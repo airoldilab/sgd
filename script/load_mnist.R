@@ -24,8 +24,12 @@ show_digit <- function(arr784, col=gray(12:1/12), ...) {
   image(matrix(arr784, nrow=28)[,28:1], col=col, ...)
 }
 
-train <- load_image_file('mnist/train-images.idx3-ubyte')
-test <- load_image_file('mnist/t10k-images.idx3-ubyte')
+load_mnist <- function(){
+  train <- load_image_file('mnist/train-images.idx3-ubyte')
+  test <- load_image_file('mnist/t10k-images.idx3-ubyte')
 
-train$y <- load_label_file('mnist/train-labels.idx1-ubyte')
-test$y <- load_label_file('mnist/t10k-labels.idx1-ubyte')
+  train$y <- load_label_file('mnist/train-labels.idx1-ubyte')
+  test$y <- load_label_file('mnist/t10k-labels.idx1-ubyte')
+
+  return(list(train=train, test=test))
+}

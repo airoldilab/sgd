@@ -186,12 +186,12 @@ bool validity_check_model(const Sgd_Dataset& data, const mat& theta, unsigned t,
     Rcpp::Rcout << "current eta: " << eta << std::endl;
     return false;
   }
-  if (mu_var == 0) {
-    Rcpp::Rcout << "0 in V(mu) in iteration" << t << std::endl;
-    Rcpp::Rcout << "current theta: " << theta << std::endl;
-    Rcpp::Rcout << "current eta: " << eta << std::endl;
-    return false;
-  }
+  // if (mu_var == 0) {
+  //   Rcpp::Rcout << "0 in V(mu) in iteration" << t << std::endl;
+  //   Rcpp::Rcout << "current theta: " << theta << std::endl;
+  //   Rcpp::Rcout << "current eta: " << eta << std::endl;
+  //   return false;
+  // }
   double deviance = 0;
   mat mu;
   mat eta_mat;
