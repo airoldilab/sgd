@@ -34,6 +34,9 @@ methods = list("sgd", "ai-sgd", "implicit")
 lrs = list("adagrad", "one-dim", "one-dim")
 np = list(3, 3, 3)
 
+methods = list("ai-sgd")
+lrs = list("one-dim")
+np = list(10)
 run_exp(methods, lrs, np, X, y, X_test, y_test)
 
 

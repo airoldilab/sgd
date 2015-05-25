@@ -112,9 +112,11 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
     lower = rt;
   }
   else {
-    double u = 0;
-    u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
-    upper = std::min(rt, u);
+    // double u = 0;
+    // u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
+    // upper = std::min(rt, u);
+    // lower = 0;
+    upper = rt;
     lower = 0;
   }
   double result;
@@ -141,11 +143,11 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   }
   double error = max(max(abs(theta_test - theta_old)));
   double scale = max(max(abs(theta_test)));
-  if (error/scale > 1e-5) {
+  if (error/scale > 1e-5 && error > 1e-5) {
     Rcpp::Rcout<< "Wrong SGD update at iter: " << t + 1 << std::endl;
-    Rcpp::Rcout<< "Relative Error = " <<  max(max(abs(theta_test - theta_new))) << std::endl;
-    Rcpp::Rcout<< "Correct = " << theta_test << std::endl;
-    Rcpp::Rcout<< "Output = " << theta_new << std::endl;
+    Rcpp::Rcout<< "Max Error = " <<  max(max(abs(theta_test - theta_old))) << std::endl;
+    // Rcpp::Rcout<< "Correct = " << theta_test << std::endl;
+    // Rcpp::Rcout<< "Output = " << theta_new << std::endl;
   }
 #endif
   return theta_new;
