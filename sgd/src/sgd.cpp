@@ -57,7 +57,7 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
   if (!(at < 1)){
-    Rcpp::Rcout << "learning rate: " << at <<
+    Rcpp::Rcout << "learning rate larger than 1 " <<
       "at Iter: " << t << std::endl;
   }
   mat theta_test;
@@ -120,20 +120,8 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
     lower = 0;
   }
   double result;
-  struct Tol
-  {
-    bool operator()(double min, double max){
-      if (max - min < 1e-100)
-        return true;
-      return false;
-    }
-  };
-  Tol tol;
   if (lower != upper) {
-    // result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, experiment.delta);
-    std::pair<double, double> temp_result;
-    temp_result = boost::math::tools::bisect(implicit_fn, lower, upper, tol);
-    result = (std::get<0>(temp_result) + std::get<1>(temp_result))/2;
+    result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, experiment.delta);
   }
   else
     result = lower;
@@ -141,14 +129,15 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
 
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
-  if (!(at < 1)){
-    Rcpp::Rcout << "learning rate: " << at <<
+  if (!(average_lr < 1)){
+    Rcpp::Rcout << "learning rate larger than 1" <<
       "at Iter: " << t << std::endl;
+    Rcpp::Rcout << "lr = " << average_lr <<std::endl; 
   }
   mat theta_test;
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
-    theta_test = theta_new - at * ((datapoint.y - experiment.h_transfer(
+    theta_test = theta_new - average_lr * ((datapoint.y - experiment.h_transfer(
       dot(datapoint.x, theta_new) + experiment.offset[idx]))*datapoint.x).t();
   } else{
     theta_test = theta_old;
@@ -158,8 +147,15 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   if (error/scale > 1e-5 && error > 1e-5) {
     Rcpp::Rcout<< "Wrong SGD update at iter: " << t + 1 << std::endl;
     Rcpp::Rcout<< "Max Error = " <<  max(max(abs(theta_test - theta_old))) << std::endl;
-    // Rcpp::Rcout<< "Correct = " << theta_test << std::endl;
-    // Rcpp::Rcout<< "Output = " << theta_new << std::endl;
+    Rcpp::Rcout<< "test = " << theta_test << std::endl;
+    Rcpp::Rcout<< "new = " << theta_new << std::endl;
+    Rcpp::Rcout<< "old = " << theta_old << std::endl;
+    Rcpp::Rcout<< "result = " << result << std::endl;
+    Rcpp::Rcout<< "f(result) = " << implicit_fn(result) <<std::endl;
+    Rcpp::Rcout<< "lr = " << average_lr <<std::endl;
+    Rcpp::Rcout<< "data.x = " << datapoint.x <<std::endl;
+    Rcpp::Rcout<< "data.y = " << datapoint.y <<std::endl;
+    Rcpp::Rcout<< "normx = " << normx <<std::endl;
   }
 #endif
   return theta_new;

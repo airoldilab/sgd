@@ -756,7 +756,7 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
            implicit.control))
 }
 
-valid_implicit_control <- function(delta=14L, trace=FALSE, deviance=FALSE,
+valid_implicit_control <- function(delta=30L, trace=FALSE, deviance=FALSE,
                                    convergence=FALSE, ...) {
   # Maintain control parameters for running implicit SGD.
   #
