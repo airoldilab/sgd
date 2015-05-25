@@ -267,12 +267,16 @@ struct Implicit_fn {
   typedef boost::math::tuple<double, double, double> tuple_type;
 
   Implicit_fn(double a, const Get_grad_coeff<EXPERIMENT>& get_grad): at(a), g(get_grad) {}
-  tuple_type operator() (double u) const{
+  // tuple_type operator() (double u) const{
+  //   double value = u - at * g(u);
+  //   double first = 1 + at * g.first_derivative(u);
+  //   double second = at * g.second_derivative(u);
+  //   tuple_type result(value, first, second);
+  //   return result;
+  // }
+  double operator() (double u) const{
     double value = u - at * g(u);
-    double first = 1 + at * g.first_derivative(u);
-    double second = at * g.second_derivative(u);
-    tuple_type result(value, first, second);
-    return result;
+    return value;
   }
 
   double at;

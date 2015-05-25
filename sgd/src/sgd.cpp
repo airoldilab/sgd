@@ -120,8 +120,20 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
     lower = 0;
   }
   double result;
+  struct Tol
+  {
+    bool operator()(double min, double max){
+      if (max - min < 1e-100)
+        return true;
+      return false;
+    }
+  };
+  Tol tol;
   if (lower != upper) {
-    result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, experiment.delta);
+    // result = boost::math::tools::schroeder_iterate(implicit_fn, (lower + upper)/2, lower, upper, experiment.delta);
+    std::pair<double, double> temp_result;
+    temp_result = boost::math::tools::bisect(implicit_fn, lower, upper, tol);
+    result = (std::get<0>(temp_result) + std::get<1>(temp_result))/2;
   }
   else
     result = lower;
