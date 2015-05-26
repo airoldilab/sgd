@@ -25,16 +25,24 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
 Sgd_Size Sgd_dataset_size(const Sgd_Dataset& dataset) {
   Sgd_Size size;
   size.nsamples = dataset.n_samples;
-  size.d = dataset.X.n_cols;
+  size.d = dataset.n_cols;
   return size;
 }
 
 // return the @t th data point in @dataset
 Sgd_DataPoint Sgd_get_dataset_point(const Sgd_Dataset& dataset, unsigned t) {
   t = t - 1;
-  mat xt = mat(dataset.X.row(dataset.idxmap[t]));
-  
-  
+  mat xt;
+  if (!dataset.big){
+    xt = mat(dataset.X.row(dataset.idxmap[t]));
+  }
+  else{
+    MatrixAccessor<double> matacess(*dataset.xpMat);
+    xt = mat(1, dataset.n_cols);
+    for (unsigned i=0; i < dataset.n_cols; ++i){
+      xt(0, i) = matacess[i][dataset.idxmap[t]];
+    }
+  }
   double yt = dataset.Y(dataset.idxmap[t]);
   return Sgd_DataPoint(xt, yt);
 }
@@ -233,44 +241,53 @@ template<typename EXPERIMENT>
 Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data,
   const EXPERIMENT& exprm, mat& coef, unsigned X_rank) {
   // Check the validity of eta for all observations.
-  mat eta;
-  eta = data.X * out.get_last_estimate() + exprm.offset;
-  mat mu;
-  mu = exprm.h_transfer(eta);
-  for (int i = 0; i < eta.n_rows; ++i) {
-      if (!is_finite(eta[i])) {
-        Rcpp::Rcout << "warning: NaN or non-finite eta" << std::endl;
-        break;
-      }
-      if (!exprm.valideta(eta[i])) {
-        Rcpp::Rcout << "warning: eta is not in the support" << std::endl;
-        break;
-      }
-  }
-
-  // Check the validity of mu for Poisson and Binomial family.
-  double eps = 10. * datum::eps;
-  if (exprm.model_name == "poisson")
-    if (any(vectorise(mu) < eps))
-      Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
-  if (exprm.model_name == "binomial")
-      if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
-        Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
-
-  // Calculate the deviance.
-  double dev = exprm.deviance(data.Y, mu, exprm.weights);
-
-  // Check the number of features.
-  if (X_rank < Sgd_dataset_size(data).d) {
-    for (int i = X_rank; i < coef.n_rows; i++) {
-      coef.row(i) = datum::nan;
+  if (!data.big){
+    mat eta;
+    eta = data.X * out.get_last_estimate() + exprm.offset;
+    mat mu;
+    mu = exprm.h_transfer(eta);
+    for (int i = 0; i < eta.n_rows; ++i) {
+        if (!is_finite(eta[i])) {
+          Rcpp::Rcout << "warning: NaN or non-finite eta" << std::endl;
+          break;
+        }
+        if (!exprm.valideta(eta[i])) {
+          Rcpp::Rcout << "warning: eta is not in the support" << std::endl;
+          break;
+        }
     }
+
+    // Check the validity of mu for Poisson and Binomial family.
+    double eps = 10. * datum::eps;
+    if (exprm.model_name == "poisson")
+      if (any(vectorise(mu) < eps))
+        Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
+    if (exprm.model_name == "binomial")
+        if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
+          Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
+
+    // Calculate the deviance.
+    double dev = exprm.deviance(data.Y, mu, exprm.weights);
+
+    // Check the number of features.
+    if (X_rank < Sgd_dataset_size(data).d) {
+      for (int i = X_rank; i < coef.n_rows; i++) {
+        coef.row(i) = datum::nan;
+      }
+    }
+    return Rcpp::List::create(
+      Rcpp::Named("mu") = mu,
+      Rcpp::Named("eta") = eta,
+      Rcpp::Named("rank") = X_rank,
+      Rcpp::Named("deviance") = dev);
+    }
+  else{
+    return Rcpp::List::create(
+      Rcpp::Named("mu") = 0,
+      Rcpp::Named("eta") = 0,
+      Rcpp::Named("rank") = X_rank,
+      Rcpp::Named("deviance") = 0);
   }
-  return Rcpp::List::create(
-    Rcpp::Named("mu") = mu,
-    Rcpp::Named("eta") = eta,
-    Rcpp::Named("rank") = X_rank,
-    Rcpp::Named("deviance") = dev);
 }
 
 // TODO
@@ -288,9 +305,14 @@ Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   Rcpp::List model_attrs = Experiment["model.attrs"];
 
   Rcpp::List Dataset(dataset);
-  Sgd_Dataset data;
-  data.X = Rcpp::as<mat>(Dataset["X"]);
+  Sgd_Dataset data(Dataset["bigmat"], 0);
+  bool big = Rcpp::as<bool>(Dataset["big"]);
+  data.big = big;
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
+  if (!big){
+    data.X = Rcpp::as<mat>(Dataset["X"]);
+  }
+  
   data.init(Rcpp::as<unsigned>(Experiment["npasses"]));
 
   std::string meth = Rcpp::as<std::string>(method);
@@ -372,7 +394,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
       exprm.model_name == "binomial" ||
       exprm.model_name == "gamma") {
     if (exprm.rank) {
-      X_rank = rank(data.X);
+      X_rank = arma::rank(data.X);
       if (X_rank > nsamples) {
         Rcpp::Rcout << "X matrix has rank " << X_rank << ", but only "
           << nsamples << " observation" << std::endl;

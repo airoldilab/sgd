@@ -16,6 +16,7 @@
 #include <math.h>
 #include <string>
 #include <cstddef>
+#include <bigmemory/MatrixAccessor.hpp>
 
 using namespace arma;
 

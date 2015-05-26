@@ -286,6 +286,15 @@ sgd.matrix <- function(x, y, model,
   return(out)
 }
 
+#' @export
+#' @rdname sgd
+sgd.big.matrix <- function(x, y, model,
+                       model.control=list(),
+                       sgd.control=list(...),
+                       ...){
+  return(sgd.matrix(x, y, model, model.control, sgd.control))
+}
+
 ################################################################################
 # Generic methods
 ################################################################################
@@ -399,7 +408,14 @@ fit_glm <- function(x, y,
 
     # Select x, y with weights > 0; adjust for offsets.
     good <- weights > 0
-    dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
+#     dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
+    dataset <- list(X=x, Y=y, big=F)
+    if ('big.matrix' %in% class(x)){
+      dataset$big <- T
+      dataset[["bigmat"]] <- x@address
+    } else {
+      dataset[["bigmat"]] <- big.matrix(1, 1)@address
+    }
     experiment <- list()
     experiment$name <- family$family
     experiment$niters <- length(dataset$Y)
@@ -494,7 +510,13 @@ fit_ee <- function(x, y,
   if (EMPTY) {
     # TODO
   } else {
-    dataset <- list(X=x, Y=y)
+    dataset <- list(X=x, Y=y, big=F)
+    if ('big.matrix' %in% class(x)){
+      dataset$big <- T
+      dataset[["bigmat"]] <- x@address
+    } else {
+      dataset[["bigmat"]] <- big.matrix(1, 1)@address
+    }
     experiment <- list()
     experiment$name <- "ee"
     experiment$niters <- N

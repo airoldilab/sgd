@@ -26,4 +26,5 @@ Imports:
 LinkingTo:
     Rcpp,
     RcppArmadillo,
-    BH
+    BH,
+    bigmemory

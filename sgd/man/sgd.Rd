@@ -2,6 +2,7 @@
 % Please edit documentation in R/sgd.R
 \name{sgd}
 \alias{sgd}
+\alias{sgd.big.matrix}
 \alias{sgd.formula}
 \alias{sgd.function}
 \alias{sgd.matrix}
@@ -15,6 +16,9 @@ sgd(x, ...)
 \method{sgd}{function}(x, fn.control = list(), sgd.control = list(...), ...)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
+  sgd.control = list(...), ...)
+
+\method{sgd}{big.matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
 }
 \arguments{

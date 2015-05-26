@@ -5,6 +5,7 @@
 #include <vector>
 #include "basedef.h"
 
+
 using namespace arma;
 
 struct Sgd_DataPoint;
@@ -16,8 +17,8 @@ typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double)> grad_fun
 typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double, unsigned, unsigned)> learning_rate_type;
 
 struct Sgd_DataPoint {
-  Sgd_DataPoint(): x(mat()), y(0) {}
-  Sgd_DataPoint(mat xin, double yin):x(xin), y(yin) {}
+  Sgd_DataPoint(): x(mat()), y(0){}
+  Sgd_DataPoint(mat xin, double yin):x(xin), y(yin){}
 //@members
   mat x;
   double y;
@@ -25,23 +26,37 @@ struct Sgd_DataPoint {
 
 struct Sgd_Dataset
 {
-  Sgd_Dataset():X(mat()), Y(mat()) {}
-  Sgd_Dataset(mat xin, mat yin):X(xin), Y(yin) {}
+  Sgd_Dataset(SEXP ptr, unsigned a):X(mat()), Y(mat()),xpMat(ptr)  {}
+  // Sgd_Dataset(mat xin, mat yin):X(xin), Y(yin), xpMat(nullptr)  {}
+
 //@members
   mat X;
   mat Y;
   std::vector<unsigned> idxmap;
   unsigned n_samples;
+  unsigned n_cols;
+  bool big;
+  Rcpp::XPtr<BigMatrix> xpMat;
+
+
 //@methods
   void init(unsigned n_passes) {
-    n_samples = X.n_rows * n_passes;
+    unsigned nrow;
+    if (!big){
+      nrow = X.n_rows;
+      n_cols = X.n_cols;
+    } else{
+      nrow = xpMat->nrow();
+      n_cols = xpMat->ncol();
+    }
+    n_samples = nrow * n_passes;   
     idxmap = std::vector<unsigned>(n_samples);
     std::srand(unsigned(std::time(0)));
     for (unsigned i =0; i < n_passes; ++i) {
-        for (unsigned j =0; j < X.n_rows; ++j){
-            idxmap[i * X.n_rows + j] = j;
+        for (unsigned j =0; j < nrow; ++j){
+            idxmap[i * nrow + j] = j;
         }
-        std::random_shuffle(idxmap.begin()+ i * X.n_rows, idxmap.begin() + (i + 1) * X.n_rows);
+        std::random_shuffle(idxmap.begin()+ i * nrow, idxmap.begin() + (i + 1) * nrow);
     }
   }
   mat covariance() const {
@@ -49,8 +64,8 @@ struct Sgd_Dataset
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Sgd_Dataset& dataset) {
-    os << "  Dataset:\n" << "    X has " << dataset.X.n_cols << " features\n" <<
-          "    Total of " << dataset.X.n_rows << " data points" << std::endl;
+    os << "  Dataset:\n" << "    X has " << dataset.n_cols << " features\n" <<
+          "    Total of " << dataset.n_samples << " data points" << std::endl;
     return os;
   }
 };
@@ -60,7 +75,7 @@ struct Sgd_OnlineOutput
   //Construct Sgd_OnlineOutput compatible with
   //the shape of data
   Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100)
-   : estimates(mat(data.X.n_cols, s)), initial(init), last_estimate(init),
+   : estimates(mat(data.n_cols, s)), initial(init), last_estimate(init),
     n_iter(data.n_samples), iter(0), size(s), n_recorded(0), pos(Mat<unsigned>(1, s)) {
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
