@@ -3,7 +3,7 @@ library(ggplot2)
 
 
 multilogit.fit <- function(X, y, ...){
-  
+
   labels <- unique(y)
   nlabels <- length(unique(y))
   pivot.label <- labels[1]
@@ -42,13 +42,13 @@ multilogit.predict <- function(model, X){
 }
 
 run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
-  
-  # Args: 
+
+  # Args:
   #  methods: a list of "sgd", "implicit" or "ai-sgd"
   #  names: a list of labels for each experiment for plotting
   #  lrs: a list of learning rate types
   #  np: a list of number of passes
-  
+
   models = list()
   preds = list()
   y_tests = list()
@@ -56,7 +56,7 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
     ptm <- proc.time()
     model <- multilogit.fit(X, y, sgd.control=list(
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
-    pred <- multilogit.predict(model, X_test) 
+    pred <- multilogit.predict(model, X_test)
     models[[i]] <- model
     preds[[i]] <- pred
     y_tests[[i]] <- y_test
