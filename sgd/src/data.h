@@ -51,7 +51,8 @@ struct Sgd_Dataset
     }
     n_samples = nrow * n_passes;   
     idxmap = std::vector<unsigned>(n_samples);
-    std::srand(unsigned(std::time(0)));
+    // std::srand(unsigned(std::time(0)));
+    std::srand(0);
     for (unsigned i =0; i < n_passes; ++i) {
         for (unsigned j =0; j < nrow; ++j){
             idxmap[i * nrow + j] = j;
