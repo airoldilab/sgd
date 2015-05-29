@@ -38,7 +38,7 @@ multilogit.predict <- function(model, X){
   # TODO: vectorize this
   pred <- apply(etas, c(2,3), function(x) model$labels[which.max(x)])
   prob <- apply(etas, c(2,3), function(x) x/sum(x))
-  return(list(pred=pred, pos=model$pos, prob=prob))
+  return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
 }
 
 run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
@@ -51,20 +51,27 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
 
   models = list()
   preds = list()
+  pred_trains = list()
   y_tests = list()
+  y_trains = list()
   for (i in 1:length(methods)){
     ptm <- proc.time()
     model <- multilogit.fit(X, y, sgd.control=list(
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
     pred <- multilogit.predict(model, X_test)
+    pred_train <- multilogit.predict(model, X)
     models[[i]] <- model
     preds[[i]] <- pred
+    pred_trains[[i]] <- pred_train
     y_tests[[i]] <- y_test
+    y_trains[[i]] <- y
     time <- proc.time()[3]-ptm[3]
     print(sprintf("experiment %d of %d done! Time: %f s", i, length(methods), time))
   }
   if (plot){
-    return(plot.error(preds, y_tests, names))
+    return(list(
+      plot.error(preds, y_tests, names), 
+      plot.cost(pred_trains, y_trains, names)))
   } else{
     return(list(models=models, preds=preds))
   }
