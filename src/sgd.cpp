@@ -140,7 +140,7 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   if (!(average_lr < 1)){
     Rcpp::Rcout << "learning rate larger than 1" <<
       "at Iter: " << t << std::endl;
-    Rcpp::Rcout << "lr = " << average_lr <<std::endl; 
+    Rcpp::Rcout << "lr = " << average_lr <<std::endl;
   }
   mat theta_test;
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
@@ -298,21 +298,21 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   SEXP verbose) {
+
+  boost::timer t;
   // Convert all arguments from R to C++ types.
-  
   Rcpp::List Experiment(experiment);
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   Rcpp::List model_attrs = Experiment["model.attrs"];
 
   Rcpp::List Dataset(dataset);
-  Sgd_Dataset data(Dataset["bigmat"], 0);
+  Sgd_Dataset data(Dataset["bigmat"], 0, t);
   bool big = Rcpp::as<bool>(Dataset["big"]);
   data.big = big;
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
   if (!big){
     data.X = Rcpp::as<mat>(Dataset["X"]);
   }
-  
   data.init(Rcpp::as<unsigned>(Experiment["npasses"]));
 
   std::string meth = Rcpp::as<std::string>(method);
@@ -474,6 +474,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
     Rcpp::Named("coefficients") = coef,
     Rcpp::Named("converged") = true,
     Rcpp::Named("estimates") = out.estimates,
+    Rcpp::Named("times") = out.times,
     Rcpp::Named("pos") = out.pos,
     Rcpp::Named("model.out") = model_out);
 }

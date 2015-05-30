@@ -1,8 +1,8 @@
 # Run logistic regression on  CovType dataset
-# The dataset can be downloaded from 
+# The dataset can be downloaded from
 #   https://archive.ics.uci.edu/ml/datasets/Covertype
-# To run this script, the working directory should be "script"
-#   data files should be stored in "script/data"
+# To run this script, the working directory should be the base repo
+#   data files should be stored in "data/"
 
 library(sgd)
 source("multilogit.R")

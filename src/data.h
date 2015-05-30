@@ -26,7 +26,8 @@ struct Sgd_DataPoint {
 
 struct Sgd_Dataset
 {
-  Sgd_Dataset(SEXP ptr, unsigned a):X(mat()), Y(mat()),xpMat(ptr)  {}
+  Sgd_Dataset(SEXP ptr, unsigned a, const boost::timer t)
+   : X(mat()), Y(mat()), xpMat(ptr), t(t) { }
   // Sgd_Dataset(mat xin, mat yin):X(xin), Y(yin), xpMat(nullptr)  {}
 
 //@members
@@ -37,7 +38,7 @@ struct Sgd_Dataset
   unsigned n_cols;
   bool big;
   Rcpp::XPtr<BigMatrix> xpMat;
-
+  boost::timer t;
 
 //@methods
   void init(unsigned n_passes) {
@@ -49,7 +50,7 @@ struct Sgd_Dataset
       nrow = xpMat->nrow();
       n_cols = xpMat->ncol();
     }
-    n_samples = nrow * n_passes;   
+    n_samples = nrow * n_passes;
     idxmap = std::vector<unsigned>(n_samples);
     // std::srand(unsigned(std::time(0)));
     std::srand(0);
@@ -77,7 +78,8 @@ struct Sgd_OnlineOutput
   //the shape of data
   Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100)
    : estimates(mat(data.n_cols, s)), initial(init), last_estimate(init),
-    n_iter(data.n_samples), iter(0), size(s), n_recorded(0), pos(Mat<unsigned>(1, s)) {
+     times(s), t(data.t), n_iter(data.n_samples), iter(0), size(s),
+     n_recorded(0), pos(Mat<unsigned>(1, s)) {
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
       }
@@ -93,6 +95,8 @@ struct Sgd_OnlineOutput
   mat estimates;
   mat initial;
   mat last_estimate;
+  vec times;
+  boost::timer t;
   unsigned n_iter; // Total number of iterations
   unsigned iter; // Current iteration
   unsigned size; // Number of coefs to be recorded
@@ -109,12 +113,13 @@ struct Sgd_OnlineOutput
     iter += 1;
     if (iter == pos[n_recorded]) {
       estimates.col(n_recorded) = theta_new;
+      times.at(n_recorded) = t.elapsed();
       n_recorded += 1;
       while (n_recorded < size && pos[n_recorded-1] == pos[n_recorded]) {
         estimates.col(n_recorded) = theta_new;
+        times.at(n_recorded) = times.at(n_recorded-1);
         n_recorded += 1;
       }
-
     }
     return *this;
   }

@@ -148,7 +148,7 @@ plot.cost <- function(preds, ys, names){
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
     ggplot2::scale_x_log10() +
-    ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
+    ggplot2::scale_y_log10() +
     ggplot2::labs(
       title="Logloss",
       x="Iteration",

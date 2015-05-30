@@ -3,17 +3,13 @@ source("script/plot.R")
 library(sgd)
 library(ggplot2)
 
-multilogit.fit <- function(X, y, t_iters=100, ...) {
-
-  # Args:
-  #   t_iters: Number of iterations (equally spaced in log) to evaluate runtime
-
+multilogit.fit <- function(X, y, ...) {
   labels <- unique(y)
   nlabels <- length(unique(y))
   pivot.label <- labels[1]
   coefs <- array(0, dim=c(nlabels, ncol(X)+1, 100))
   pos <- array(0, dim=c(nlabels-1, 100))
-  times <- matrix(0, nrow=nlabels-1, ncol=t_iters) # store times
+  times <- matrix(0, nrow=nlabels-1, ncol=100)
   for (count in 2:nlabels) {
     label <- labels[count]
     X_temp <- X[y==label | y==pivot.label, ]
@@ -22,32 +18,14 @@ multilogit.fit <- function(X, y, t_iters=100, ...) {
     y_temp[!select] <- 0
     y_temp[select] <- 1
     X_temp <- cbind(rep(1, nrow(X_temp)), X_temp)
-    time_idxs <- round(10^(0:(t_iters-1) * log(nrow(X_temp), base=10) /
-                          (t_iters-1)))
-    for (t in 1:t_iters) {
-      if (t == t_iters) {
-        X_temp_sub <- X_temp
-        y_temp_sub <- y_temp
-      } else if (time_idxs[t] == 1) {
-        X_temp_sub <- matrix(X_temp[1], ncol=ncol(X_temp))
-        y_temp_sub <- y_temp[1]
-      } else {
-        idxs <- 1:time_idxs[t]
-        X_temp_sub <- X_temp[idxs, ]
-        y_temp_sub <- y_temp[idxs]
-      }
-      sink("/dev/null")
-      ptm <- proc.time()
-      model <- sgd(X_temp_sub, y_temp_sub, "glm",
-                   model.control=list(family="binomial"),
-                   ...)
-      times[count-1, t] <- proc.time()[3] - ptm[3]
-      sink()
-    }
+    model <- sgd(X_temp, y_temp, "glm",
+                 model.control=list(family="binomial"),
+                 ...)
     print(sprintf("Finish fitting %d out of %d labels; Time: %f s",
-          count-1, nlabels-1, times[count-1, t_iters]))
+          count-1, nlabels-1, model$times[length(model$times)]))
     coefs[count, , ] <- model$estimates
     pos[count-1, ] <- model$pos
+    times[count-1, ] <- model$times
   }
   times <- colMeans(times) # output average time for each iteration t, ranging
                            # over each sgd fit of binary classification
@@ -67,7 +45,7 @@ multilogit.predict <- function(model, X) {
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
 }
 
-run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T) {
+run_exp <- function(methods, names, lrs, np, X, y, X_test=X, y_test=y, plot=T) {
 
   # Args:
   #  methods: a list of "sgd", "implicit" or "ai-sgd"
@@ -82,7 +60,7 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T) {
   y_trains <- list()
   times <- list()
   for (i in 1:length(methods)) {
-    ptm <- proc.time()
+    time_start <- proc.time()
     model <- multilogit.fit(X, y, sgd.control=list(
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
     times[[i]] <- model$times
@@ -93,7 +71,7 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T) {
     pred_trains[[i]] <- pred_train
     y_tests[[i]] <- y_test
     y_trains[[i]] <- y
-    time <- proc.time()[3]-ptm[3]
+    time <- proc.time()[3] - time_start
     print(sprintf("experiment %d of %d done! Time: %f s", i, length(methods), time))
   }
   if (plot) {
@@ -101,7 +79,7 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T) {
       plot.error(preds, y_tests, names),
       plot.cost(pred_trains, y_trains, names),
       plot.error.runtime(preds, y_tests, names, times)))
-  } else{
+  } else {
     return(list(models=models, preds=preds))
   }
 }

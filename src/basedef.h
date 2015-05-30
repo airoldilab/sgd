@@ -12,6 +12,7 @@
 #endif
 
 #include <boost/function.hpp>
+#include <boost/timer.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <math.h>
 #include <string>

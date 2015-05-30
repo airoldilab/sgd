@@ -106,6 +106,13 @@
 #' \code{model.out}
 #' a list of model-specific output attributes
 #'
+#' \code{estimates}
+#' TODO
+#'
+#' \code{times}
+#' vector of times in seconds it took to complete the number of iterations to
+#' achieve the corresponding estimate
+#'
 #' @author Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
 #' @references
 #' John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for
@@ -338,6 +345,7 @@ fit_glm <- function(x, y,
                     model.control,
                     sgd.control) {
   suppressMessages(library(bigmemory))
+  time_start <- proc.time()[3] # TODO timer only starts here
   xnames <- dimnames(x)[[2L]]
   if (is.matrix(y)) {
     ynames <- rownames(y)
@@ -484,6 +492,7 @@ fit_glm <- function(x, y,
     df.null=nulldf,
     converged=if(sgd.control$convergence) converged,
     estimates=out$estimates,
+    times=out$times + (proc.time()[3] - time_start), # C++ time + R time
     pos=out$pos,
     aic=aic.model)
   class(result) <- c(class(result), "glm")
