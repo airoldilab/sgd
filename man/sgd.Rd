@@ -101,6 +101,13 @@ logical. Was the algorithm judged to have converged?
 
 \code{model.out}
 a list of model-specific output attributes
+
+\code{estimates}
+TODO
+
+\code{times}
+vector of times in seconds it took to complete the number of iterations to
+achieve the corresponding estimate
 }
 \description{
 Run stochastic gradient descent on the underlying loss function for a given

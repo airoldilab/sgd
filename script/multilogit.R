@@ -21,7 +21,7 @@ multilogit.fit <- function(X, y, ...) {
     model <- sgd(X_temp, y_temp, "glm",
                  model.control=list(family="binomial"),
                  ...)
-    print(sprintf("Finish fitting %d out of %d labels; Time: %f s",
+    print(sprintf("Finish training %d out of %d labels; Time: %f s",
           count-1, nlabels-1, model$times[length(model$times)]))
     coefs[count, , ] <- model$estimates
     pos[count-1, ] <- model$pos
@@ -33,6 +33,7 @@ multilogit.fit <- function(X, y, ...) {
 }
 
 multilogit.predict <- function(model, X) {
+  time_start <- proc.time()[3]
   X <- cbind(rep(1, nrow(X)), X)
   etas <- array(0, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
   # TODO: vectorize this
@@ -42,13 +43,15 @@ multilogit.predict <- function(model, X) {
   # TODO: vectorize this
   pred <- apply(etas, c(2,3), function(x) model$labels[which.max(x)])
   prob <- apply(etas, c(2,3), function(x) x/sum(x))
+  print(sprintf("Finish testing; Time: %f s",
+        proc.time()[3] - time_start))
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
 }
 
 run_exp <- function(methods, names, lrs, np, X, y, X_test=X, y_test=y, plot=T) {
 
   # Args:
-  #  methods: a list of "sgd", "implicit" or "ai-sgd"
+  #  methods: a list of sgd methods
   #  names: a list of labels for each experiment for plotting
   #  lrs: a list of learning rate types
   #  np: a list of number of passes
@@ -60,7 +63,7 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test=X, y_test=y, plot=T) {
   y_trains <- list()
   times <- list()
   for (i in 1:length(methods)) {
-    time_start <- proc.time()
+    time_start <- proc.time()[3]
     model <- multilogit.fit(X, y, sgd.control=list(
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
     times[[i]] <- model$times
@@ -72,7 +75,8 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test=X, y_test=y, plot=T) {
     y_tests[[i]] <- y_test
     y_trains[[i]] <- y
     time <- proc.time()[3] - time_start
-    print(sprintf("experiment %d of %d done! Time: %f s", i, length(methods), time))
+    print(sprintf("experiment %d (%s) of %d done! Time: %f s",
+                  i, methods[i], length(methods), time))
   }
   if (plot) {
     return(list(

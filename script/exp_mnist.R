@@ -17,6 +17,12 @@ y <- dat$train$y
 X_test <- dat$test$x
 y_test <- dat$test$y
 
+# Set task to be binary classification on digit 9.
+y[y != 9] <- 0
+y[y == 9] <- 1
+y_test[y_test != 9] <- 0
+y_test[y_test == 9] <- 1
+
 methods <- list("sgd", "ai-sgd", "implicit")
 lrs <- list("one-dim", "one-dim", "one-dim")
 np <- list(1, 1, 1)
