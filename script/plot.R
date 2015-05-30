@@ -51,9 +51,9 @@ plot_mse <- function(sgds, names){
   pos <- 0
   label <- 0
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
-    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
-    ggplot2::theme_bw() +
+    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
+      panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),
       panel.grid.major=ggplot2::element_blank(),
       panel.grid.minor=ggplot2::element_blank(),
@@ -64,12 +64,13 @@ plot_mse <- function(sgds, names){
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
+    ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_x_log10() +
     ggplot2::scale_y_log10() +
     ggplot2::labs(
       title="Mean Squared Error",
       x="Iteration",
-      y="MSE"
+      y=""
     )
   return(p)
 }
@@ -97,9 +98,9 @@ plot.error <- function(preds, ys, names){
     count <- count + 1
   }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=error, group=label)) +
-    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
-    ggplot2::theme_bw() +
+    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
+      panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),
       panel.grid.major=ggplot2::element_blank(),
       panel.grid.minor=ggplot2::element_blank(),
@@ -110,12 +111,13 @@ plot.error <- function(preds, ys, names){
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
+    ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_x_log10() +
     ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
     ggplot2::labs(
-      title="Error",
+      title="Test error",
       x="Iteration",
-      y="Error"
+      y=""
     )
   return(p)
 }
@@ -134,9 +136,9 @@ plot.cost <- function(preds, ys, names){
     count <- count + 1
   }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=logloss, group=label)) +
-    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
-    ggplot2::theme_bw() +
+    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
+      panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),
       panel.grid.major=ggplot2::element_blank(),
       panel.grid.minor=ggplot2::element_blank(),
@@ -147,12 +149,13 @@ plot.cost <- function(preds, ys, names){
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
+    ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_x_log10() +
-    ggplot2::scale_y_log10() +
+    ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
     ggplot2::labs(
-      title="Logloss",
+      title="Training cost",
       x="Iteration",
-      y="Logloss"
+      y=""
     )
   return(p)
 }
@@ -180,7 +183,7 @@ plot.error.runtime <- function(preds, ys, names, times) {
     count <- count + 1
   }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=time, y=error, group=label)) +
-    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       panel.border=ggplot2::element_blank(),
@@ -193,11 +196,12 @@ plot.error.runtime <- function(preds, ys, names, times) {
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
+    ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
     ggplot2::labs(
-      title="Error over runtime",
-      x="Time (seconds)",
-      y="Error"
+      title="Test error",
+      x="Training time (sec.)",
+      y=""
     )
   return(p)
 }

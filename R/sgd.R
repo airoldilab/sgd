@@ -590,8 +590,8 @@ plot_mse <- function(x, ...){
   label <- 0
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label)) +
-    ggplot2::theme_bw() +
     ggplot2::theme(
+      panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),
       panel.grid.major=ggplot2::element_blank(),
       panel.grid.minor=ggplot2::element_blank(),
@@ -602,6 +602,7 @@ plot_mse <- function(x, ...){
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
+    ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_x_log10() +
     ggplot2::scale_y_log10() +
     ggplot2::labs(
