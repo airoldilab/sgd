@@ -337,6 +337,7 @@ plot.sgd <- function(x, type="mse", ...) {
 fit_glm <- function(x, y,
                     model.control,
                     sgd.control) {
+  suppressMessages(library(bigmemory))
   xnames <- dimnames(x)[[2L]]
   if (is.matrix(y)) {
     ynames <- rownames(y)
@@ -575,7 +576,7 @@ plot_mse <- function(x, ...){
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   }
-  
+
   pos <- 0
   label <- 0
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
@@ -588,7 +589,7 @@ plot_mse <- function(x, ...){
       axis.line=ggplot2::element_line(color="black"),
       legend.position=c(1, 1),
       legend.justification = c(1, 1),
-      legend.title=ggplot2::element_blank(), 
+      legend.title=ggplot2::element_blank(),
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
@@ -751,7 +752,7 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
   } else if (length(offset) != N) {
     stop(gettextf("length of 'offset' should equal %d", N), domain=NA)
   }
-  
+
   # Check validity of npasses
   if (is.null(npasses)) {
     npasses <- 1

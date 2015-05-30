@@ -20,11 +20,12 @@ License: GPL-2
 Suggests:
     testthat
 Imports:
-    Rcpp (>= 0.11.3),
+    bigmemory,
+    ggplot2,
     MASS,
-    ggplot2
+    Rcpp (>= 0.11.3)
 LinkingTo:
-    Rcpp,
-    RcppArmadillo,
+    bigmemory,
     BH,
-    bigmemory
+    Rcpp,
+    RcppArmadillo

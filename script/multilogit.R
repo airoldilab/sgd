@@ -1,34 +1,60 @@
+source("script/plot.R")
+
 library(sgd)
 library(ggplot2)
 
+multilogit.fit <- function(X, y, t_iters=100, ...) {
 
-multilogit.fit <- function(X, y, ...){
+  # Args:
+  #   t_iters: Number of iterations (equally spaced in log) to evaluate runtime
 
   labels <- unique(y)
   nlabels <- length(unique(y))
   pivot.label <- labels[1]
   coefs <- array(0, dim=c(nlabels, ncol(X)+1, 100))
   pos <- array(0, dim=c(nlabels-1, 100))
-  count <- 2
-  for (label in labels[2:nlabels]){
-    ptm <- proc.time()
+  times <- matrix(0, nrow=nlabels-1, ncol=t_iters) # store times
+  for (count in 2:nlabels) {
+    label <- labels[count]
     X_temp <- X[y==label | y==pivot.label, ]
     y_temp <- y[y==label | y==pivot.label]
     select <- y_temp==label
     y_temp[!select] <- 0
     y_temp[select] <- 1
     X_temp <- cbind(rep(1, nrow(X_temp)), X_temp)
-    model <- sgd(X_temp, y_temp, "glm", model.control=list(family="binomial"), ...)
+    time_idxs <- round(10^(0:(t_iters-1) * log(nrow(X_temp), base=10) /
+                          (t_iters-1)))
+    for (t in 1:t_iters) {
+      if (t == t_iters) {
+        X_temp_sub <- X_temp
+        y_temp_sub <- y_temp
+      } else if (time_idxs[t] == 1) {
+        X_temp_sub <- matrix(X_temp[1], ncol=ncol(X_temp))
+        y_temp_sub <- y_temp[1]
+      } else {
+        idxs <- 1:time_idxs[t]
+        X_temp_sub <- X_temp[idxs, ]
+        y_temp_sub <- y_temp[idxs]
+      }
+      sink("/dev/null")
+      ptm <- proc.time()
+      model <- sgd(X_temp_sub, y_temp_sub, "glm",
+                   model.control=list(family="binomial"),
+                   ...)
+      times[count-1, t] <- proc.time()[3] - ptm[3]
+      sink()
+    }
+    print(sprintf("Finish fitting %d out of %d labels; Time: %f s",
+          count-1, nlabels-1, times[count-1, t_iters]))
     coefs[count, , ] <- model$estimates
     pos[count-1, ] <- model$pos
-    time <-proc.time()[3]-ptm[3]
-    print(sprintf("Finish fitting %d out of %d labels; Time: %f s", count-1, nlabels-1, time))
-    count <- count + 1
   }
-  return(list(coefs=coefs, pos=pos, labels=labels))
+  times <- colMeans(times) # output average time for each iteration t, ranging
+                           # over each sgd fit of binary classification
+  return(list(coefs=coefs, pos=pos, labels=labels, times=times))
 }
 
-multilogit.predict <- function(model, X){
+multilogit.predict <- function(model, X) {
   X <- cbind(rep(1, nrow(X)), X)
   etas <- array(0, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
   # TODO: vectorize this
@@ -41,7 +67,7 @@ multilogit.predict <- function(model, X){
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
 }
 
-run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
+run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T) {
 
   # Args:
   #  methods: a list of "sgd", "implicit" or "ai-sgd"
@@ -49,15 +75,17 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
   #  lrs: a list of learning rate types
   #  np: a list of number of passes
 
-  models = list()
-  preds = list()
-  pred_trains = list()
-  y_tests = list()
-  y_trains = list()
-  for (i in 1:length(methods)){
+  models <- list()
+  preds <- list()
+  pred_trains <- list()
+  y_tests <- list()
+  y_trains <- list()
+  times <- list()
+  for (i in 1:length(methods)) {
     ptm <- proc.time()
     model <- multilogit.fit(X, y, sgd.control=list(
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
+    times[[i]] <- model$times
     pred <- multilogit.predict(model, X_test)
     pred_train <- multilogit.predict(model, X)
     models[[i]] <- model
@@ -68,10 +96,11 @@ run_exp <- function(methods, names, lrs, np, X, y, X_test, y_test, plot=T){
     time <- proc.time()[3]-ptm[3]
     print(sprintf("experiment %d of %d done! Time: %f s", i, length(methods), time))
   }
-  if (plot){
+  if (plot) {
     return(list(
-      plot.error(preds, y_tests, names), 
-      plot.cost(pred_trains, y_trains, names)))
+      plot.error(preds, y_tests, names),
+      plot.cost(pred_trains, y_trains, names),
+      plot.error.runtime(preds, y_tests, names, times)))
   } else{
     return(list(models=models, preds=preds))
   }
