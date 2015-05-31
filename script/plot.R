@@ -185,6 +185,13 @@ plot.error.runtime <- function(preds, ys, names, times, title) {
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   }
+  if (max(dat$time) < 5) {
+    time_breaks <- seq(0, max(dat$time), 1)
+  } else if (max(dat$time) < 10) {
+    time_breaks <- seq(0, max(dat$time), 2)
+  } else {
+    time_breaks <- seq(0, max(dat$time), 5)
+  }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=time, y=error, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme_bw() +
@@ -200,7 +207,9 @@ plot.error.runtime <- function(preds, ys, names, times, title) {
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_continuous(limits=c(0, max(dat$time)), breaks=seq(0, max(dat$time), 1)) +
+    #ggplot2::scale_x_continuous(limits=c(0, max(dat$time)), breaks=seq(0, max(dat$time), 1)) +
+    ggplot2::scale_x_continuous(limits=c(min(dat$time), max(dat$time)),
+    breaks=time_breaks) +
     ggplot2::scale_y_continuous(breaks=seq(0.05, 1, 0.05)) +
     ggplot2::labs(
       title=title,

@@ -5,10 +5,10 @@
 #   data files should be stored in "data/"
 
 source("script/multilogit.R")
-source("script/multiplot.R")
 source("script/plot.R")
 
 library(sgd)
+library(gridExtra)
 
 set.seed(42)
 raw <- read.table("data/covtype.data", sep=",")
@@ -29,8 +29,11 @@ y_test[y_test == 2] <- 1
 
 methods <- list("implicit")
 lrs <- list("one-dim")
-np <- list(10)
+np <- list(1)
 names <- methods
+dataset <- "covtype"
 
-out <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test)
-do.call("multiplot", out)
+out_covtype <- run_exp(methods, names, lrs, np, X_train, y_train, X_test,
+                       y_test, dataset)
+grid.arrange(out_covtype[[1]], out_covtype[[2]], out_covtype[[3]],
+             ncol=3)

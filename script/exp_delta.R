@@ -6,6 +6,7 @@
 #   data files should be stored in "data/"
 
 library(sgd)
+library(gridExtra)
 # N = 500000
 # raw <- read.table("data/delta_train.dat.bz2", header = F, nrows=N)
 # labels <- read.table("data/delta_train.lab.bz2", header = F, nrows=N)
@@ -26,5 +27,9 @@ methods <- list("implicit")
 lrs <- list("one-dim")
 np <- list(10)
 names <- methods
+dataset <- "delta"
 
-run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test)
+out_delta <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test,
+                     dataset)
+grid.arrange(out_delta[[1]], out_delta[[2]], out_delta[[3]],
+             ncol=3)

@@ -492,7 +492,8 @@ fit_glm <- function(x, y,
     df.null=nulldf,
     converged=if(sgd.control$convergence) converged,
     estimates=out$estimates,
-    times=out$times + (proc.time()[3] - time_start), # C++ time + R time
+    #times=out$times + (proc.time()[3] - time_start), # C++ time + R time
+    times=out$times, #C++ time only
     pos=out$pos,
     aic=aic.model)
   class(result) <- c(class(result), "glm")

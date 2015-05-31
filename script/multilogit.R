@@ -58,7 +58,7 @@ multilogit.predict <- function(model, X) {
 }
 
 run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
-                    y_test=NULL, plot=T) {
+                    y_test=NULL, dataset=NULL, plot=T) {
 
   # Args:
   #  methods: a list of sgd methods
@@ -78,9 +78,9 @@ run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
     models[[i]] <- model
     times[[i]] <- model$times
-    pred_train <- multilogit.predict(model, X_train)
-    pred_trains[[i]] <- pred_train
-    y_trains[[i]] <- y_train
+    #pred_train <- multilogit.predict(model, X_train)
+    #pred_trains[[i]] <- pred_train
+    #y_trains[[i]] <- y_train
     if (!is.null(X_test) && !is.null(y_test)) {
       pred <- multilogit.predict(model, X_test)
       preds[[i]] <- pred
@@ -94,10 +94,18 @@ run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
                   i, methods[i], length(methods), time))
   }
   if (plot) {
+    if (is.null(dataset)) {
+      titles <- c("Test error", "Test error", "Test cost")
+    } else {
+      titles <- c(sprintf("%s test error", dataset),
+                  sprintf("%s test error", dataset),
+                  sprintf("%s test cost", dataset))
+    }
     return(list(
-      plot.error(preds, y_tests, names, np, title="Test error"),
-      plot.cost(pred_trains, y_trains, names, np, title="Training cost"),
-      plot.error.runtime(preds, y_tests, names, times, title="Test error")))
+      plot.error(preds, y_tests, names, np, title=titles[1]),
+      plot.error.runtime(preds, y_tests, names, times, title=titles[2]),
+      plot.cost(preds, y_tests, names, np, title=titles[3])))
+      #plot.cost(pred_trains, y_trains, names, np, title=titles[3])))
   } else {
     return(list(models=models, preds=preds))
   }
