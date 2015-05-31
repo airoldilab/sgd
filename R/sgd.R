@@ -54,6 +54,8 @@
 #'     \item npasses: the number of passes for sgd
 #'     \item lr.control: scalar hyperparameter one can tweak dependent on the
 #'       learning rate
+#'     \item lambda1: L1 regularization parameter. Default is 0.
+#'     \item lambda2: L2 regularization parameter. Default is 0.
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
@@ -433,6 +435,8 @@ fit_glm <- function(x, y,
     experiment$d <- dim(dataset$X)[2]
     experiment$lr <- lr
     experiment$lr.control <- sgd.control$lr.control
+    experiment$lambda1 <- sgd.control$lambda1
+    experiment$lambda2 <- sgd.control$lambda2
     experiment$start <- as.matrix(start)
     experiment$weights <- as.matrix(weights[good])
     experiment$offset <- as.matrix(offset[good]) # TODO not implemented
@@ -713,7 +717,8 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 valid_sgd_control <- function(method="implicit", lr="one-dim",
                               start=NULL, weights=NULL,
                               offset=NULL, N, d, npasses=NULL,
-                              lr.control=NULL, ...) {
+                              lr.control=NULL,
+                              lambda1=NULL, lambda2=NULL, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -785,6 +790,22 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
     stop(gettextf("length of 'lr.control' should equal %d", 1), domain=NA)
   }
 
+  # Check validity of regularization parameters.
+  if (is.null(lambda1)) {
+    lambda1 <- 0
+  } else if (!is.numeric(lambda1)) {
+    stop("'lambda1' must be numeric")
+  } else if (length(lambda1) != 1) {
+    stop(gettextf("length of 'lambda1' should equal %d", 1), domain=NA)
+  }
+  if (is.null(lambda2)) {
+    lambda2 <- 0
+  } else if (!is.numeric(lambda2)) {
+    stop("'lambda2' must be numeric")
+  } else if (length(lambda2) != 1) {
+    stop(gettextf("length of 'lambda2' should equal %d", 1), domain=NA)
+  }
+
   # Check validity of additional arguments if the method is implicit.
   if (method %in% c("implicit", "ai-sgd")) {
     call <- match.call()
@@ -801,7 +822,9 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
                 weights=weights,
                 offset=offset,
                 npasses=npasses,
-                lr.control=lr.control),
+                lr.control=lr.control,
+                lambda1=lambda1,
+                lambda2=lambda2),
            implicit.control))
 }
 

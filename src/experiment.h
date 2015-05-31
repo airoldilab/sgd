@@ -32,6 +32,8 @@ struct Sgd_Experiment {
   mat weights;
   mat offset;
   double delta;
+  double lambda1;
+  double lambda2;
   bool trace;
   bool dev;
   bool convergence;
@@ -173,7 +175,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
   // Gradient
   mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
     return ((datapoint.y - h_transfer(dot(datapoint.x, theta_old) + offset)) *
-      datapoint.x).t();
+      datapoint.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
   }
 
   // TODO not all models have these methods

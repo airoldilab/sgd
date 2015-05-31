@@ -80,6 +80,8 @@ equation).}
   \item npasses: the number of passes for sgd
   \item lr.control: scalar hyperparameter one can tweak dependent on the
     learning rate
+  \item lambda1: L1 regularization parameter. Default is 0.
+  \item lambda2: L2 regularization parameter. Default is 0.
 }}
 
 \item{fn.control}{for \code{sgd.function}, it is a list of controls for the

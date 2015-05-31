@@ -342,6 +342,8 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
   exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
   exprm.delta = Rcpp::as<double>(Experiment["delta"]);
+  exprm.lambda1 = Rcpp::as<double>(Experiment["lambda1"]);
+  exprm.lambda2 = Rcpp::as<double>(Experiment["lambda2"]);
   exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);
