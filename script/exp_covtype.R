@@ -3,6 +3,7 @@
 #   https://archive.ics.uci.edu/ml/datasets/Covertype
 # To run this script, the working directory should be the base repo
 #   data files should be stored in "data/"
+# * covtype.data
 
 source("script/plot.R")
 source("script/run_exp.R")
@@ -12,6 +13,7 @@ library(gridExtra)
 
 raw <- read.table("data/covtype.data", sep=",")
 
+# Subset to work on.
 set.seed(42)
 #idxs <- sample(1:nrow(raw), floor(0.80*nrow(raw)))
 #test_idxs <- 1:nrow(raw)[-idxs]
@@ -31,11 +33,12 @@ y_train[y_train == 2] <- 1
 y_test[y_test != 2] <- 0
 y_test[y_test == 2] <- 1
 
-methods <- list("sgd", "implicit", "sgd", "ai-sgd")
-lrs <- list("one-dim", "one-dim", "adagrad", "adagrad")
-lr.controls <- list(0.00025, 0.00025, NULL, 0.00025)
-np <- list(5, 5, 5, 5)
-names <- list("sgd", "implicit", "adagrad", "ai-sgd")
+# Arguments for main function.
+methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
+lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
+lr.controls <- list(0.00025, 0.00025, 0.00025, 0.00025, NULL)
+np <- list(5, 5, 5, 5, 5)
+names <- list("sgd", "implicit", "asgd", "ai-sgd", "adagrad")
 dataset <- "covtype"
 ylim <- list(c(0.25, 0.45), c(0.25, 0.45), NULL)
 

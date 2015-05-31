@@ -37,9 +37,9 @@ multilogit.predict <- function(model, X) {
   if (dim(model$coefs)[1] == 2) { # make computation easier in binary case
     prob <- array(NA, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
     prob[2, , ] <- 1 / (1 + exp(-X %*% model$coefs[2, , ]))
-    prob[1, , ] <- 1 - prob[2, , ]
     prob[prob < 1e-16] <- 1e-16
     prob[prob > 1-1e-16] <- 1-1e-16
+    prob[1, , ] <- 1 - prob[2, , ]
   } else {
     # TODO numerical stability issues due to exp(X*B)/(1 + sum(exp(X*B)))
     etas <- array(0, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))

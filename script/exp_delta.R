@@ -3,6 +3,8 @@
 #   ftp://largescale.ml.tu-berlin.de/largescale
 # To run this script, the working directory should be the base repo
 #   data files should be stored in "data/"
+# * delta_train.dat.bz2
+# * delta_train.lab.bz2
 
 library(sgd)
 library(gridExtra)
@@ -17,6 +19,8 @@ source("script/run_exp.R")
 # save(raw, labels, file="data/delta.Rdata")
 load("data/delta.Rdata")
 
+# Subset to work on.
+set.seed(42)
 #idxs <- sample(1:nrow(raw), floor(0.75*nrow(raw)))
 #test_idxs <- 1:nrow(raw)[-idxs]
 idxs <- sample(1:nrow(raw), floor(0.01*nrow(raw))) # using very small training set
@@ -27,13 +31,17 @@ y_train <- labels[idxs]
 X_test <- as.matrix(raw[test_idxs, ])
 y_test <- labels[test_idxs]
 
-methods <- list("implicit")
-lrs <- list("one-dim")
-np <- list(10)
-names <- methods
+# Arguments for main function.
+methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
+lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
+lr.controls <- NULL
+np <- list(2, 2, 2, 2, 2)
+names <- list("sgd", "implicit", "asgd", "ai-sgd", "adagrad")
 dataset <- "delta"
+ylim <- NULL
 
-out_delta <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test,
+out_delta <- run_exp(methods, names, lrs, lr.controls, np,
+                     X_train, y_train, X_test, y_test,
                      dataset)
 grid.arrange(out_delta[[1]], out_delta[[2]], out_delta[[3]],
              ncol=3)

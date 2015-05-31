@@ -3,6 +3,10 @@
 #   http://yann.lecun.com/exdb/mnist/
 # To run this script, the working directory should be the base repo
 #   data files should be stored in "data/"
+# * t10k-images.idx3-ubyte
+# * t10k-labels.idx1-ubyte
+# * train-images.idx3-ubyte
+# * train-labels.idx1-ubyte
 
 source("script/load_mnist.R")
 source("script/plot.R")
@@ -19,8 +23,9 @@ y_test <- dat$test$y
 
 # Subset to work on.
 set.seed(42)
-idxs <- sample(1:nrow(X_train), floor(0.10*nrow(X_train))) # using very small training set
-test_idxs <- sample(1:nrow(X_test), floor(0.10*nrow(X_test)))
+idxs <- sample(1:nrow(X_train), floor(0.10*nrow(X_train))) # using small training set
+test_idxs <- sample(1:nrow(X_test), floor(0.10*nrow(X_test))) # using small testing set
+
 X_train <- X_train[idxs, ]
 y_train <- y_train[idxs]
 X_test <- X_test[test_idxs, ]
@@ -32,11 +37,12 @@ y_train[y_train == 9] <- 1
 y_test[y_test != 9] <- 0
 y_test[y_test == 9] <- 1
 
-methods <- list("sgd", "implicit", "sgd", "ai-sgd")
-lrs <- list("one-dim", "one-dim", "adagrad", "one-dim")
-lr.controls <- list(0.025, 0.025, NULL, 0.025)
-np <- list(2, 2, 2, 2)
-names <- list("sgd", "implicit", "adagrad", "ai-sgd")
+# Arguments for main function.
+methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
+lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
+lr.controls <- list(0.025, 0.025, 0.025, 0.025, NULL)
+np <- list(2, 2, 2, 2, 2)
+names <- list("sgd", "implicit", "asgd", "ai-sgd", "adagrad")
 dataset <- "mnist"
 ylim <- list(c(0.025, 0.075), c(0.025, 0.075), c(0,2))
 
