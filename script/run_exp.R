@@ -34,32 +34,43 @@ multilogit.fit <- function(X, y, ...) {
 multilogit.predict <- function(model, X) {
   time_start <- proc.time()[3]
   X <- cbind(rep(1, nrow(X)), X)
-  etas <- array(0, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
-  for (i in 1:dim(model$coefs)[1]) {
-    if (i == 1) {
-      etas[i, , ] <- 1
-    } else {
-      etas[i, , ] <- exp(X %*% model$coefs[i, , ])
+  if (dim(model$coefs)[1] == 2) { # make computation easier in binary case
+    prob <- array(NA, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
+    prob[2, , ] <- 1 / (1 + exp(-X %*% model$coefs[2, , ]))
+    prob[1, , ] <- 1 - prob[2, , ]
+    prob[prob < 1e-16] <- 1e-16
+    prob[prob > 1-1e-16] <- 1-1e-16
+  } else {
+    # TODO numerical stability issues due to exp(X*B)/(1 + sum(exp(X*B)))
+    etas <- array(0, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
+    for (i in 1:dim(model$coefs)[1]) {
+      if (i == 1) {
+        etas[i, , ] <- 1
+      } else {
+        etas[i, , ] <- exp(X %*% model$coefs[i, , ])
+      }
     }
+    # Calculate probability, and truncate if < eps, > 1-eps, or NaN.
+    prob <- array(NA, dim=dim(etas))
+    for (k in 1:(dim(etas)[3])) {
+      prob[, , k] <- etas[, , k]/colSums(etas[, , k])
+    }
+    #prob[prob < 1e-8] <- 1e-8
+    #prob[prob > 1-1e-8] <- 1 - 1e-8
+    prob[is.nan(prob)] <- 1-1e-5
   }
-  # Calculate probability, and truncate if < eps, > 1-eps, or NaN.
-  prob <- array(NA, dim=dim(etas))
-  for (k in 1:(dim(etas)[3])) {
-    prob[, , k] <- etas[, , k]/colSums(etas[, , k])
-  }
-  #prob[prob < 1e-16] <- 1e-16
-  #prob[is.nan(prob) | prob > 1-1e-16] <- 1 - 1e-16
-  prob[is.nan(prob)] <- 1-1e-5
   # Predict label based on highest probability.
-  pred <- matrix(NA, nrow=dim(etas)[2], ncol=dim(etas)[3])
-  for (k in 1:(dim(etas)[3])) {
-    for (j in 1:(dim(etas)[2])) {
+  pred <- matrix(NA, nrow=dim(prob)[2], ncol=dim(prob)[3])
+  for (k in 1:(dim(prob)[3])) {
+    for (j in 1:(dim(prob)[2])) {
       # note: does not break ties randomly; it chooses the first index
       pred[j, k] <- model$labels[which.max(prob[, j, k])]
     }
   }
-  prob[prob < 1e-8] <- 1e-5
-  #prob[prob > 1-1e-8] <- 1-1e-5
+  if (dim(model$coefs)[1] != 2) {
+    prob[prob < 1e-8] <- 1e-8
+    #prob[prob > 1-1e-8] <- 1-1e-8
+  }
   print(sprintf("Finish testing; Time: %f s",
         proc.time()[3] - time_start))
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
