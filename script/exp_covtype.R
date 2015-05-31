@@ -10,11 +10,15 @@ source("script/run_exp.R")
 library(sgd)
 library(gridExtra)
 
-set.seed(42)
 raw <- read.table("data/covtype.data", sep=",")
-idxs <- sample(1:nrow(raw), floor(0.80*nrow(raw)))
+
+set.seed(42)
+#idxs <- sample(1:nrow(raw), floor(0.80*nrow(raw)))
+#test_idxs <- 1:nrow(raw)[-idxs]
+idxs <- sample(1:nrow(raw), floor(0.09*nrow(raw))) # using small training set
+test_idxs <- sample(1:nrow(raw), floor(0.01*nrow(raw))) # using small testing set
 raw_train <- raw[idxs, ]
-raw_test <- raw[-idxs, ]
+raw_test <- raw[test_idxs, ]
 
 X_train <- as.matrix(raw_train[, -55])
 y_train <- raw_train[, 55]
@@ -27,13 +31,16 @@ y_train[y_train == 2] <- 1
 y_test[y_test != 2] <- 0
 y_test[y_test == 2] <- 1
 
-methods <- list("implicit")
-lrs <- list("one-dim")
-np <- list(1)
-names <- methods
+methods <- list("sgd", "implicit", "sgd", "ai-sgd")
+lrs <- list("one-dim", "one-dim", "adagrad", "adagrad")
+lr.controls <- list(0.00025, 0.00025, NULL, 0.00025)
+np <- list(5, 5, 5, 5)
+names <- list("sgd", "implicit", "adagrad", "ai-sgd")
 dataset <- "covtype"
+ylim <- list(c(0.25, 0.45), c(0.25, 0.45), NULL)
 
-out_covtype <- run_exp(methods, names, lrs, np, X_train, y_train, X_test,
-                       y_test, dataset)
+out_covtype <- run_exp(methods, names, lrs, lr.controls, np,
+                       X_train, y_train, X_test, y_test,
+                       dataset, ylim)
 grid.arrange(out_covtype[[1]], out_covtype[[2]], out_covtype[[3]],
              ncol=3)

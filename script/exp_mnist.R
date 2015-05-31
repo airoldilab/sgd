@@ -17,6 +17,15 @@ y_train <- dat$train$y
 X_test <- dat$test$x
 y_test <- dat$test$y
 
+# Subset to work on.
+set.seed(42)
+idxs <- sample(1:nrow(X_train), floor(0.10*nrow(X_train))) # using very small training set
+test_idxs <- sample(1:nrow(X_test), floor(0.10*nrow(X_test)))
+X_train <- X_train[idxs, ]
+y_train <- y_train[idxs]
+X_test <- X_test[test_idxs, ]
+y_test <- y_test[test_idxs]
+
 # Set task to be binary classification on digit 9.
 y_train[y_train != 9] <- 0
 y_train[y_train == 9] <- 1
@@ -25,18 +34,14 @@ y_test[y_test == 9] <- 1
 
 methods <- list("sgd", "implicit", "sgd", "ai-sgd")
 lrs <- list("one-dim", "one-dim", "adagrad", "one-dim")
-np <- list(1, 1, 1, 1)
+lr.controls <- list(0.025, 0.025, NULL, 0.025)
+np <- list(2, 2, 2, 2)
 names <- list("sgd", "implicit", "adagrad", "ai-sgd")
 dataset <- "mnist"
-#ylim <- list(NULL, NULL, c(0,2))
+ylim <- list(c(0.025, 0.075), c(0.025, 0.075), c(0,2))
 
-#methods <- list("sgd")
-#lrs <- list("one-dim")
-#np <- list(1)
-#names <- list("sgd")
-#dataset <- "mnist"
-
-out_mnist <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test,
-                     dataset)
+out_mnist <- run_exp(methods, names, lrs, lr.controls, np,
+                     X_train, y_train, X_test, y_test,
+                     dataset, ylim)
 grid.arrange(out_mnist[[1]], out_mnist[[2]], out_mnist[[3]],
              ncol=3)

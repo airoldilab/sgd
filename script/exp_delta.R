@@ -17,13 +17,15 @@ source("script/run_exp.R")
 # save(raw, labels, file="data/delta.Rdata")
 load("data/delta.Rdata")
 
-idxs <- sample(1:nrow(raw), floor(0.75*nrow(raw)))
-# idxs <- sample(1:nrow(raw), floor(0.01*nrow(raw))) # using very small training set
+#idxs <- sample(1:nrow(raw), floor(0.75*nrow(raw)))
+#test_idxs <- 1:nrow(raw)[-idxs]
+idxs <- sample(1:nrow(raw), floor(0.01*nrow(raw))) # using very small training set
+test_idxs <- sample(1:nrow(raw), floor(0.01*nrow(raw))) # using small testing set
 
 X_train <- as.matrix(raw[idxs, ])
 y_train <- labels[idxs]
-X_test <- as.matrix(raw[-idxs, ])
-y_test <- labels[-idxs]
+X_test <- as.matrix(raw[test_idxs, ])
+y_test <- labels[test_idxs]
 
 methods <- list("implicit")
 lrs <- list("one-dim")
