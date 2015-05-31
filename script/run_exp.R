@@ -42,18 +42,24 @@ multilogit.predict <- function(model, X) {
       etas[i, , ] <- exp(X %*% model$coefs[i, , ])
     }
   }
-  pred <- matrix(NA, nrow=dim(etas)[2], ncol=dim(etas)[3])
+  # Calculate probability, and truncate if < eps, > 1-eps, or NaN.
   prob <- array(NA, dim=dim(etas))
   for (k in 1:(dim(etas)[3])) {
     prob[, , k] <- etas[, , k]/colSums(etas[, , k])
+  }
+  #prob[prob < 1e-16] <- 1e-16
+  #prob[is.nan(prob) | prob > 1-1e-16] <- 1 - 1e-16
+  prob[is.nan(prob)] <- 1-1e-5
+  # Predict label based on highest probability.
+  pred <- matrix(NA, nrow=dim(etas)[2], ncol=dim(etas)[3])
+  for (k in 1:(dim(etas)[3])) {
     for (j in 1:(dim(etas)[2])) {
-      #prob[, j, k] <- etas[, j, k]/sum(etas[, j, k]) # non-vectorized version
       # note: does not break ties randomly; it chooses the first index
       pred[j, k] <- model$labels[which.max(prob[, j, k])]
     }
   }
   prob[prob < 1e-8] <- 1e-5
-  prob[is.nan(prob)] <- 1 - 1e-5
+  #prob[prob > 1-1e-8] <- 1-1e-5
   print(sprintf("Finish testing; Time: %f s",
         proc.time()[3] - time_start))
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
