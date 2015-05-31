@@ -18,6 +18,7 @@ N <- 1e5
 d <- 1e2
 
 # Generate data.
+set.seed(42)
 X <- matrix(rnorm(N*d), ncol=d)
 theta <- rep(5, d+1)
 eps <- rnorm(N)

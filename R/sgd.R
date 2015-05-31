@@ -52,6 +52,8 @@
 #'       more than one is specified their sum is used. See
 #'       \code{\link[stats]{offset}}
 #'     \item npasses: the number of passes for sgd
+#'     \item lr.control: scalar hyperparameter one can tweak dependent on the
+#'       learning rate
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
@@ -258,7 +260,7 @@ sgd.matrix <- function(x, y, model,
   if (missing(model)) {
     stop("model not specified")
   }
-  if (!is.list(model.control))  {
+  if (!is.list(model.control)) {
     stop("'model.control' is not a list")
   }
   model.control <- do.call("valid_model_control", c(model.control, model=model))
@@ -430,6 +432,7 @@ fit_glm <- function(x, y,
     experiment$niters <- length(dataset$Y)
     experiment$d <- dim(dataset$X)[2]
     experiment$lr <- lr
+    experiment$lr.control <- sgd.control$lr.control
     experiment$start <- as.matrix(start)
     experiment$weights <- as.matrix(weights[good])
     experiment$offset <- as.matrix(offset[good]) # TODO not implemented
@@ -709,7 +712,8 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 
 valid_sgd_control <- function(method="implicit", lr="one-dim",
                               start=NULL, weights=NULL,
-                              offset=NULL, N, d, npasses=NULL, ...) {
+                              offset=NULL, N, d, npasses=NULL,
+                              lr.control=NULL, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -763,11 +767,22 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
     stop(gettextf("length of 'offset' should equal %d", N), domain=NA)
   }
 
-  # Check validity of npasses
+  # Check validity of npasses.
   if (is.null(npasses)) {
     npasses <- 1
   } else if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
     stop("'npasses' must be positive integer")
+  }
+
+  # Check validity of lr.control.
+  # TODO lr.control for now is only a scalar value, so lr can only accept one
+  # additional hyperparameter
+  if (is.null(lr.control)) {
+    lr.control <- 1
+  } else if (!is.numeric(lr.control)) {
+    stop("'lr.control' must be numeric")
+  } else if (length(lr.control) != 1) {
+    stop(gettextf("length of 'lr.control' should equal %d", 1), domain=NA)
   }
 
   # Check validity of additional arguments if the method is implicit.
@@ -785,7 +800,8 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
                 start=start,
                 weights=weights,
                 offset=offset,
-                npasses=npasses),
+                npasses=npasses,
+                lr.control=lr.control),
            implicit.control))
 }
 

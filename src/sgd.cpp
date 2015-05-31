@@ -358,7 +358,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
     // if (lr_alpha < 1e-8) {
       // lr_alpha = 1; // temp hack
     // }
-    double lr_alpha = 1;
+    double lr_alpha = Rcpp::as<double>(Experiment["lr.control"]);
     double c;
     if (method == "asgd" || method == "ai-sgd") {
       c = 2./3.;

@@ -17,6 +17,7 @@ library(sgd)
 N <- 1e5
 
 # Generate data.
+set.seed(42)
 Q <- 0.2
 code <- sample(0:2, size=N, replace=T, prob=c((1-2*Q), Q, Q))
 X <- matrix(0, nrow=N, ncol=2)
