@@ -28,12 +28,13 @@ lrs <- list("one-dim", "one-dim", "adagrad", "one-dim")
 np <- list(1, 1, 1, 1)
 names <- list("sgd", "implicit", "adagrad", "ai-sgd")
 dataset <- "mnist"
+#ylim <- list(NULL, NULL, c(0,2))
 
-methods <- list("implicit")
-lrs <- list("one-dim")
-np <- list(1)
-names <- list("implicit")
-dataset <- "mnist"
+#methods <- list("sgd")
+#lrs <- list("one-dim")
+#np <- list(1)
+#names <- list("sgd")
+#dataset <- "mnist"
 
 out_mnist <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test,
                      dataset)

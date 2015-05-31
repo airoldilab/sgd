@@ -75,7 +75,7 @@ plot_mse <- function(sgds, names, np) {
   return(p)
 }
 
-plot.error <- function(preds, ys, names, np, title) {
+plot.error <- function(preds, ys, names, np, title, ylim=NULL) {
 
   # Plot test error for classification
   # Args:
@@ -99,7 +99,9 @@ plot.error <- function(preds, ys, names, np, title) {
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   }
-  ylimits <- mean(dat$error) + c(-2.5*sd(dat$error), 2*sd(dat$error))
+  if (is.null(ylim)) {
+    ylim <- mean(dat$error) + c(-2.5*sd(dat$error), 2*sd(dat$error))
+  }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=npass, y=error, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
@@ -116,7 +118,7 @@ plot.error <- function(preds, ys, names, np, title) {
     ) +
     ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_x_continuous(limits=c(0, max(unlist(np))), breaks=seq(0.5, max(unlist(np)), 0.5)) +
-    ggplot2::scale_y_continuous(limits=ylimits, breaks=seq(0.05, 1, 0.05)) +
+    ggplot2::scale_y_continuous(limits=ylim, breaks=seq(0.05, 1, 0.05)) +
     ggplot2::labs(
       title=title,
       x="Number of passes",
@@ -125,7 +127,7 @@ plot.error <- function(preds, ys, names, np, title) {
   return(p)
 }
 
-plot.error.runtime <- function(preds, ys, names, times, title) {
+plot.error.runtime <- function(preds, ys, names, times, title, ylim=NULL) {
   # Plot test error for classification by runtime
   #
   # Args:
@@ -151,12 +153,14 @@ plot.error.runtime <- function(preds, ys, names, times, title) {
     time_breaks <- seq(0, max(dat$time), 1)
   } else if (max(dat$time) < 10) {
     time_breaks <- seq(0, max(dat$time), 2)
-  } else if (max(dat$times) < 50) {
+  } else if (max(dat$time) < 50) {
     time_breaks <- seq(0, max(dat$time), 5)
   } else {
     time_breaks <- seq(0, max(dat$time), 10)
   }
-  ylimits <- mean(dat$error) + c(-2.5*sd(dat$error), 2*sd(dat$error))
+  if (is.null(ylim)) {
+    ylim <- mean(dat$error) + c(-2.5*sd(dat$error), 2*sd(dat$error))
+  }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=time, y=error, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
@@ -175,7 +179,7 @@ plot.error.runtime <- function(preds, ys, names, times, title) {
     #ggplot2::scale_x_continuous(limits=c(0, max(dat$time)), breaks=seq(0, max(dat$time), 1)) +
     ggplot2::scale_x_continuous(limits=c(min(dat$time), max(dat$time)),
     breaks=time_breaks) +
-    ggplot2::scale_y_continuous(limits=ylimits, breaks=seq(0.05, 1, 0.05)) +
+    ggplot2::scale_y_continuous(limits=ylim, breaks=seq(0.05, 1, 0.05)) +
     ggplot2::labs(
       title=title,
       x="Training time (sec.)",
@@ -184,7 +188,7 @@ plot.error.runtime <- function(preds, ys, names, times, title) {
   return(p)
 }
 
-plot.cost <- function(preds, ys, names, np, title) {
+plot.cost <- function(preds, ys, names, np, title, ylim=NULL) {
   dat <- data.frame()
   count <- 1
   for (pred in preds) {
@@ -201,7 +205,10 @@ plot.cost <- function(preds, ys, names, np, title) {
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   }
-  ylimits <- mean(dat$logloss) + c(-2.5*sd(dat$logloss), 2*sd(dat$logloss))
+  if (is.null(ylim)) {
+    ylim <- mean(dat$logloss) + c(-2.5*sd(dat$logloss), 2*sd(dat$logloss))
+    ylim[1] <- max(0, ylim[1])
+  }
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=npass, y=logloss, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
@@ -218,7 +225,7 @@ plot.cost <- function(preds, ys, names, np, title) {
     ) +
     ggplot2::scale_fill_hue(l=50) +
     ggplot2::scale_x_continuous(limits=c(0, max(unlist(np))), breaks=seq(0.5, max(unlist(np)), 0.5)) +
-    ggplot2::scale_y_continuous(limits=ylimits) +
+    ggplot2::scale_y_continuous(limits=ylim) +
     ggplot2::labs(
       title=title,
       x="Number of passes",

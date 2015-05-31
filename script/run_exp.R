@@ -60,13 +60,15 @@ multilogit.predict <- function(model, X) {
 }
 
 run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
-                    y_test=NULL, dataset=NULL, plot=T) {
+                    y_test=NULL, dataset=NULL, ylim=NULL, plot=T) {
 
   # Args:
   #  methods: a list of sgd methods
   #  names: a list of labels for each experiment for plotting
   #  lrs: a list of learning rate types
   #  np: a list of number of passes
+  #  dataset: character string specifying name of experiment
+  #  ylim: list of 3 two-vectors which y-limits for each plot
 
   models <- list()
   preds <- list()
@@ -100,9 +102,10 @@ run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
                   sprintf("%s test cost", dataset))
     }
     return(list(
-      plot.error(preds, y_tests, names, np, title=titles[1]),
-      plot.error.runtime(preds, y_tests, names, times, title=titles[2]),
-      plot.cost(preds, y_tests, names, np, title=titles[3])))
+      plot.error(preds, y_tests, names, np, title=titles[1], ylim=ylim[[1]]),
+      plot.error.runtime(preds, y_tests, names, times, title=titles[2],
+                         ylim=ylim[[2]]),
+      plot.cost(preds, y_tests, names, np, title=titles[3], ylim=ylim[[3]])))
   } else {
     return(list(models=models, preds=preds))
   }
