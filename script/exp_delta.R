@@ -1,18 +1,20 @@
-# TODO
-# Run logistic regression on Covertype dataset
+# Run logistic regression on delta dataset
 # The dataset can be downloaded from
-#   https://archive.ics.uci.edu/ml/datasets/Covertype
+#   ftp://largescale.ml.tu-berlin.de/largescale
 # To run this script, the working directory should be the base repo
 #   data files should be stored in "data/"
 
 library(sgd)
 library(gridExtra)
+
+source("script/plot.R")
+source("script/run_exp.R")
+
 # N = 500000
-# raw <- read.table("data/delta_train.dat.bz2", header = F, nrows=N)
-# labels <- read.table("data/delta_train.lab.bz2", header = F, nrows=N)
+# raw <- read.table("data/delta_train.dat.bz2", header=F, nrows=N)
+# labels <- read.table("data/delta_train.lab.bz2", header=F, nrows=N)
 # labels <- as.numeric(labels[1:nrow(labels), 1])
 # save(raw, labels, file="data/delta.Rdata")
-
 load("data/delta.Rdata")
 
 idxs <- sample(1:nrow(raw), floor(0.75*nrow(raw)))

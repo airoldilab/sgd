@@ -4,8 +4,8 @@
 # To run this script, the working directory should be the base repo
 #   data files should be stored in "data/"
 
-source("script/multilogit.R")
 source("script/plot.R")
+source("script/run_exp.R")
 
 library(sgd)
 library(gridExtra)

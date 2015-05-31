@@ -36,22 +36,24 @@ multilogit.predict <- function(model, X) {
   X <- cbind(rep(1, nrow(X)), X)
   etas <- array(0, dim=c(dim(model$coefs)[1], nrow(X), dim(model$coefs)[3]))
   for (i in 1:dim(model$coefs)[1]) {
-    etas[i, , ] <- exp(X %*% model$coefs[i, , ])
+    if (i == 1) {
+      etas[i, , ] <- 1
+    } else {
+      etas[i, , ] <- exp(X %*% model$coefs[i, , ])
+    }
   }
-  # TODO
-  #prob <- array(NA, dim=dim(etas))
-  #pred <- matrix(NA, nrow=dim(etas)[2], ncol=dim(etas)[3])
-  #for (k in 1:(dim(etas)[3])) {
-  #  #prob[, , k] <- etas[, , k]/colSums(etas[, , k])
-  #  for (j in 1:(dim(etas)[2])) {
-  #    prob[, j, k] <- etas[, j, k]/sum(etas[, j, k])
-  #    pred[j, k] <- model$labels[which.max(etas[, j, k])]
-  #  }
-  #}
-  pred <- apply(etas, c(2,3), function(x) model$labels[which.max(x)])
-  prob <- apply(etas, c(2,3), function(x) x/sum(x))
-  prob[prob < 1e-8] <- 0
-  prob[is.nan(prob)] <- 1
+  pred <- matrix(NA, nrow=dim(etas)[2], ncol=dim(etas)[3])
+  prob <- array(NA, dim=dim(etas))
+  for (k in 1:(dim(etas)[3])) {
+    prob[, , k] <- etas[, , k]/colSums(etas[, , k])
+    for (j in 1:(dim(etas)[2])) {
+      #prob[, j, k] <- etas[, j, k]/sum(etas[, j, k]) # non-vectorized version
+      # note: does not break ties randomly; it chooses the first index
+      pred[j, k] <- model$labels[which.max(prob[, j, k])]
+    }
+  }
+  prob[prob < 1e-8] <- 1e-5
+  prob[is.nan(prob)] <- 1 - 1e-5
   print(sprintf("Finish testing; Time: %f s",
         proc.time()[3] - time_start))
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
@@ -68,9 +70,7 @@ run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
 
   models <- list()
   preds <- list()
-  pred_trains <- list()
   y_tests <- list()
-  y_trains <- list()
   times <- list()
   for (i in 1:length(methods)) {
     time_start <- proc.time()[3]
@@ -78,20 +78,18 @@ run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
       method=methods[[i]], lr=lrs[[i]], npasses=np[[i]]))
     models[[i]] <- model
     times[[i]] <- model$times
-    #pred_train <- multilogit.predict(model, X_train)
-    #pred_trains[[i]] <- pred_train
-    #y_trains[[i]] <- y_train
     if (!is.null(X_test) && !is.null(y_test)) {
       pred <- multilogit.predict(model, X_test)
       preds[[i]] <- pred
       y_tests[[i]] <- y_test
     } else {
+      pred_train <- multilogit.predict(model, X_train)
       preds[[i]] <- pred_train
       y_tests[[i]] <- y_train
     }
     time <- proc.time()[3] - time_start
     print(sprintf("Experiment %d (%s) of %d done! Time: %f s",
-                  i, methods[i], length(methods), time))
+                  i, names[i], length(methods), time))
   }
   if (plot) {
     if (is.null(dataset)) {
@@ -105,7 +103,6 @@ run_exp <- function(methods, names, lrs, np, X_train, y_train, X_test=NULL,
       plot.error(preds, y_tests, names, np, title=titles[1]),
       plot.error.runtime(preds, y_tests, names, times, title=titles[2]),
       plot.cost(preds, y_tests, names, np, title=titles[3])))
-      #plot.cost(pred_trains, y_trains, names, np, title=titles[3])))
   } else {
     return(list(models=models, preds=preds))
   }

@@ -5,8 +5,8 @@
 #   data files should be stored in "data/"
 
 source("script/load_mnist.R")
-source("script/multilogit.R")
 source("script/plot.R")
+source("script/run_exp.R")
 
 library(sgd)
 library(gridExtra)
@@ -27,6 +27,12 @@ methods <- list("sgd", "implicit", "sgd", "ai-sgd")
 lrs <- list("one-dim", "one-dim", "adagrad", "one-dim")
 np <- list(1, 1, 1, 1)
 names <- list("sgd", "implicit", "adagrad", "ai-sgd")
+dataset <- "mnist"
+
+methods <- list("implicit")
+lrs <- list("one-dim")
+np <- list(1)
+names <- list("implicit")
 dataset <- "mnist"
 
 out_mnist <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test,
