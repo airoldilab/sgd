@@ -12,21 +12,26 @@ source("script/plot.R")
 library(sgd)
 
 dat <- load_mnist()
-X <- dat$train$x
-y <- dat$train$y
+X_train <- dat$train$x
+y_train <- dat$train$y
 X_test <- dat$test$x
 y_test <- dat$test$y
 
 # Set task to be binary classification on digit 9.
-y[y != 9] <- 0
-y[y == 9] <- 1
+y_train[y_train != 9] <- 0
+y_train[y_train == 9] <- 1
 y_test[y_test != 9] <- 0
 y_test[y_test == 9] <- 1
 
-methods <- list("sgd", "ai-sgd", "implicit")
-lrs <- list("one-dim", "one-dim", "one-dim")
-np <- list(1, 1, 1)
+#methods <- list("sgd", "implicit", "sgd", "ai-sgd")
+#lrs <- list("one-dim", "one-dim", "adagrad", "one-dim")
+#np <- list(1, 1, 1, 1)
+#names <- list("sgd", "implicit", "adagrad", "ai-sgd")
+
+methods <- list("sgd", "ai-sgd")
+lrs <- list("one-dim", "one-dim")
+np <- list(1, 1)
 names <- methods
 
-out <- run_exp(methods, names, lrs, np, X, y, X_test, y_test)
+out <- run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test)
 do.call("multiplot", out)

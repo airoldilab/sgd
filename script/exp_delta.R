@@ -1,5 +1,9 @@
-
-
+# TODO
+# Run logistic regression on Covertype dataset
+# The dataset can be downloaded from
+#   https://archive.ics.uci.edu/ml/datasets/Covertype
+# To run this script, the working directory should be the base repo
+#   data files should be stored in "data/"
 
 library(sgd)
 # N = 500000
@@ -13,8 +17,8 @@ load("data/delta.Rdata")
 idxs <- sample(1:nrow(raw), floor(0.75*nrow(raw)))
 # idxs <- sample(1:nrow(raw), floor(0.01*nrow(raw))) # using very small training set
 
-X <- as.matrix(raw[idxs, ])
-y <- labels[idxs]
+X_train <- as.matrix(raw[idxs, ])
+y_train <- labels[idxs]
 X_test <- as.matrix(raw[-idxs, ])
 y_test <- labels[-idxs]
 
@@ -22,4 +26,5 @@ methods <- list("implicit")
 lrs <- list("one-dim")
 np <- list(10)
 names <- methods
-run_exp(methods, names, lrs, np, X, y, X_test, y_test)
+
+run_exp(methods, names, lrs, np, X_train, y_train, X_test, y_test)

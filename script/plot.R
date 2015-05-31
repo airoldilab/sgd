@@ -16,33 +16,33 @@ plot.sgd <- function(sgds, names, type="mse") {
   return(plot(sgds, names))
 }
 
-get_mse_glm <- function(x){
+get_mse_glm <- function(x) {
   eta <- x$sample.x %*% x$estimates
   mu <- x$family$linkinv(eta)
   mse <- colMeans((mu - x$sample.y)^2)
   return(mse)
 }
 
-plot_mse <- function(sgds, names){
+plot_mse <- function(sgds, names, np) {
 
   # Plot training MSE
   # Args:
   #   sgds: a list of sgd objects
   #   names: a list of names that will be included in the legend
 
-  if (any(class(sgds[[1]]) %in% "glm")){
+  if (any(class(sgds[[1]]) %in% "glm")) {
     get_mse <- get_mse_glm
-  }
-  else{
+  } else {
     stop("Model not recognized!")
   }
 
   dat <- data.frame()
   count <- 1
-  for (sgd in sgds){
+  for (sgd in sgds) {
     mse <- get_mse(sgd)
     temp_dat <- data.frame(mse=mse, pos=sgd$pos[1, ])
     temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
+    temp_dat[["npass"]] <- temp_dat$pos/max(temp_dat$pos) * np[[count]]
     temp_dat[["label"]] <- as.factor(names[[count]])
     dat <- rbind(dat, temp_dat)
     count <- count + 1
@@ -50,7 +50,7 @@ plot_mse <- function(sgds, names){
 
   pos <- 0
   label <- 0
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=npass, y=mse, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
       panel.background=ggplot2::element_blank(),
@@ -65,17 +65,17 @@ plot_mse <- function(sgds, names){
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_log10() +
-    ggplot2::scale_y_log10() +
+    ggplot2::scale_x_continuous(limits=c(0, max(unlist(np))), breaks=seq(0.5, max(unlist(np)), 0.5)) +
+    ggplot2::scale_y_continuous(breaks=seq(0.05, 1, 0.05)) +
     ggplot2::labs(
       title="Mean Squared Error",
-      x="Iteration",
+      x="Number of passes",
       y=""
     )
   return(p)
 }
 
-plot.error <- function(preds, ys, names){
+plot.error <- function(preds, ys, names, np, title) {
 
   # Plot test error for classification
   # Args:
@@ -86,18 +86,20 @@ plot.error <- function(preds, ys, names){
   #   ys: a list of true labels
   #     each y: length(y) == nsamples
   #   names: a list of names that will be included in the legend
+  #   title: title of plot
 
-  dat = data.frame()
+  dat <- data.frame()
   count <- 1
-  for (pred in preds){
+  for (pred in preds) {
     error <- 1 - colSums(pred$pred == ys[[count]]) / nrow(pred$pred)
     pos <- colMeans(pred$pos)
     temp_dat <- data.frame(error=error, pos=pos)
+    temp_dat[["npass"]] <- temp_dat$pos/max(temp_dat$pos) * np[[count]]
     temp_dat[["label"]] <- as.factor(names[[count]])
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   }
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=error, group=label)) +
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=npass, y=error, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
       panel.background=ggplot2::element_blank(),
@@ -112,30 +114,31 @@ plot.error <- function(preds, ys, names){
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_log10() +
-    ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
+    ggplot2::scale_x_continuous(limits=c(0, max(unlist(np))), breaks=seq(0.5, max(unlist(np)), 0.5)) +
+    ggplot2::scale_y_continuous(breaks=seq(0.05, 1, 0.05)) +
     ggplot2::labs(
-      title="Test error",
-      x="Iteration",
+      title=title,
+      x="Number of passes",
       y=""
     )
   return(p)
 }
 
-plot.cost <- function(preds, ys, names){
-  dat = data.frame()
+plot.cost <- function(preds, ys, names, np, title) {
+  dat <- data.frame()
   count <- 1
-  for (pred in preds){
+  for (pred in preds) {
     predclass <- match(ys[[count]], pred$labels)
     logprob <- t(sapply(1:dim(pred$prob)[2], function(i) log(pred$prob[predclass[i], i, ])))
     logloss <- -colSums(logprob) / nrow(logprob)
     pos <- colMeans(pred$pos)
     temp_dat <- data.frame(logloss=logloss, pos=pos)
+    temp_dat[["npass"]] <- temp_dat$pos/max(temp_dat$pos) * np[[count]]
     temp_dat[["label"]] <- as.factor(names[[count]])
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   }
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=logloss, group=label)) +
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=npass, y=logloss, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
       panel.background=ggplot2::element_blank(),
@@ -150,17 +153,17 @@ plot.cost <- function(preds, ys, names){
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_log10() +
-    ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
+    ggplot2::scale_x_continuous(limits=c(0, max(unlist(np))), breaks=seq(0.5, max(unlist(np)), 0.5)) +
+    ggplot2::scale_y_continuous() +
     ggplot2::labs(
-      title="Training cost",
-      x="Iteration",
+      title=title,
+      x="Number of passes",
       y=""
     )
   return(p)
 }
 
-plot.error.runtime <- function(preds, ys, names, times) {
+plot.error.runtime <- function(preds, ys, names, times, title) {
   # Plot test error for classification by runtime
   #
   # Args:
@@ -197,9 +200,10 @@ plot.error.runtime <- function(preds, ys, names, times) {
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
     ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_y_log10(breaks=seq(0.1, 1, 0.1)) +
+    ggplot2::scale_x_continuous(limits=c(0, max(dat$time)), breaks=seq(0, max(dat$time), 1)) +
+    ggplot2::scale_y_continuous(breaks=seq(0.05, 1, 0.05)) +
     ggplot2::labs(
-      title="Test error",
+      title=title,
       x="Training time (sec.)",
       y=""
     )

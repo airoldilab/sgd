@@ -14,15 +14,15 @@
 library(sgd)
 
 # Dimensions
-N <- 1e5
+N <- 1e4
 d <- 1e2
 
 # Generate data.
 X <- matrix(rnorm(N*d), ncol=d)
 theta <- rep(5, d+1)
 eps <- rnorm(N)
-y <- cbind(1, X) %*% theta + eps
+y <- 1/1+exp(-(cbind(1, X) %*% theta + eps))
 dat <- data.frame(y=y, x=X)
 
-sgd.theta <- sgd(y ~ ., data=dat, model="lm")
+sgd.theta <- sgd(y ~ ., data=dat, model="lm", sgd.control=list(npass=3))
 mean((sgd.theta$coefficients - theta)^2) # MSE

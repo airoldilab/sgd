@@ -570,8 +570,7 @@ get_mse_glm <- function(x){
 plot_mse <- function(x, ...){
   if (any(class(x) %in% "glm")){
     get_mse <- get_mse_glm
-  }
-  else{
+  } else {
     stop("Model not recognized!")
   }
   sgds <- list(x, ...)
@@ -589,7 +588,7 @@ plot_mse <- function(x, ...){
   pos <- 0
   label <- 0
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
-    ggplot2::geom_line(ggplot2::aes(linetype=label)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
       panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),

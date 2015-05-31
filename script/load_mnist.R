@@ -18,13 +18,10 @@ load_label_file <- function(filename) {
   close(f)
   y
 }
-
-
 show_digit <- function(arr784, col=gray(12:1/12), ...) {
   image(matrix(arr784, nrow=28)[,28:1], col=col, ...)
 }
-
-load_mnist <- function(){
+load_mnist <- function() {
   train <- load_image_file('data/train-images.idx3-ubyte')
   test <- load_image_file('data/t10k-images.idx3-ubyte')
 
