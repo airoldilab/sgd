@@ -18,7 +18,7 @@ labels[labels != 1] <- 0
 
 # Subset to work on.
 set.seed(42)
-idxs <- sample(1:nrow(raw), floor(0.75*nrow(raw)))
+idxs <- sample(1:nrow(raw), floor(0.80*nrow(raw)))
 test_idxs <- 1:nrow(raw)[-idxs]
 
 X_train <- as.matrix(raw[idxs, ])
@@ -27,6 +27,7 @@ X_test <- as.matrix(raw[test_idxs, ])
 y_test <- labels[test_idxs]
 
 # Arguments for main function.
+# lr.controls are optimized according to a grid search on a subset of the data.
 methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
 lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
 lr.controls <- NULL

@@ -32,6 +32,7 @@ X_test <- as.matrix(raw[test_idxs, ])
 y_test <- labels[test_idxs]
 
 # Arguments for main function.
+# lr.controls are optimized according to a grid search on a subset of the data.
 methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
 lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
 lr.controls <- NULL

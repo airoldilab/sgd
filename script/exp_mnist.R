@@ -38,6 +38,7 @@ y_test[y_test != 9] <- 0
 y_test[y_test == 9] <- 1
 
 # Arguments for main function.
+# lr.controls are optimized according to a grid search on a subset of the data.
 methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
 lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
 lr.controls <- list(0.025, 0.025, 0.025, 0.025, NULL)
