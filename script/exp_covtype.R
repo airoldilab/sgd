@@ -37,12 +37,13 @@ y_test[y_test == 2] <- 1
 methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
 lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
 lr.controls <- list(0.00025, 0.00025, 0.00025, 0.00025, NULL)
+lambda2s <- list(1e-6, 1e-6, 1e-6, 1e-6, 1e-6)
 np <- list(5, 5, 5, 5, 5)
 names <- list("sgd", "implicit", "asgd", "ai-sgd", "adagrad")
 dataset <- "covtype"
 ylim <- list(c(0.25, 0.45), c(0.25, 0.45), NULL)
 
-out_covtype <- run_exp(methods, names, lrs, lr.controls, np,
+out_covtype <- run_exp(methods, names, lrs, lr.controls, lambda2s, np,
                        X_train, y_train, X_test, y_test,
                        dataset, ylim)
 grid.arrange(out_covtype[[1]], out_covtype[[2]], out_covtype[[3]],

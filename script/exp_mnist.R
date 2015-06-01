@@ -41,6 +41,7 @@ y_test[y_test == 9] <- 1
 methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
 lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
 lr.controls <- list(0.025, 0.025, 0.025, 0.025, NULL)
+lambda2s <- list(1e-3, 1e-3, 1e-3, 1e-3, 1e-3)
 np <- list(2, 2, 2, 2, 2)
 names <- list("sgd", "implicit", "asgd", "ai-sgd", "adagrad")
 dataset <- "mnist"

@@ -76,7 +76,7 @@ multilogit.predict <- function(model, X) {
   return(list(pred=pred, pos=model$pos, prob=prob, labels=model$labels))
 }
 
-run_exp <- function(methods, names, lrs, lr.controls=NULL, np,
+run_exp <- function(methods, names, lrs, lr.controls=NULL, lambda2s=NULL, np,
                     X_train, y_train, X_test=NULL, y_test=NULL,
                     dataset=NULL, ylim=NULL, plot=T) {
 
@@ -96,7 +96,8 @@ run_exp <- function(methods, names, lrs, lr.controls=NULL, np,
     time_start <- proc.time()[3]
     model <- multilogit.fit(X_train, y_train,
       sgd.control=list(method=methods[[i]], lr=lrs[[i]],
-                       lr.control=lr.controls[[i]], npasses=np[[i]]))
+                       lr.control=lr.controls[[i]], npasses=np[[i]],
+                       lambda2=lambda2s[[i]]))
     models[[i]] <- model
     times[[i]] <- model$times
     if (!is.null(X_test) && !is.null(y_test)) {

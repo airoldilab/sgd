@@ -35,6 +35,7 @@ y_test <- labels[test_idxs]
 methods <- list("sgd", "implicit", "asgd", "ai-sgd", "sgd")
 lrs <- list("one-dim", "one-dim", "one-dim", "one-dim", "adagrad")
 lr.controls <- NULL
+lambda2s <- list(1e-2, 1e-2, 1e-2, 1e-2, 1e-2)
 np <- list(2, 2, 2, 2, 2)
 names <- list("sgd", "implicit", "asgd", "ai-sgd", "adagrad")
 dataset <- "delta"
