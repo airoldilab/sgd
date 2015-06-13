@@ -139,14 +139,16 @@ private:
 };
 
 // d-dimensional learning rate with parameter weight alpha and exponent c
-// adagrad: a=1, b=1, c=1/2, eps=1e-6
-// d-dim: a=0, b=1, c=1, eps=1e-6
-// rmsprop: a=gamma, b=1-gamma, c=1/2, eps=1e-6
+// adagrad: a=1, b=1, c=1/2, eta=1, eps=1e-6
+// d-dim: a=0, b=1, c=1, eta=1, eps=1e-6
+// rmsprop: a=gamma, b=1-gamma, c=1/2, eta=1, eps=1e-6
 struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 {
-  Sgd_Ddim_Learn_Rate(unsigned d, double a_, double b_, double c_, double eps_, const
-    grad_func_type& gr) :
-    Idiag(ones<vec>(d)), a(a_), b(b_), c(c_), eps(eps_), grad_func(gr), v(2, d) { }
+  Sgd_Ddim_Learn_Rate(unsigned d, double eta_, double a_, double b_,
+                      double c_, double eps_, const grad_func_type&
+                      gr) :
+    Idiag(ones<vec>(d)), eta(eta_), a(a_), b(b_), c(c_), eps(eps_),
+    grad_func(gr), v(2, d) { }
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
@@ -157,7 +159,7 @@ struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
 
     for (unsigned i = 0; i < d; ++i) {
       if (std::abs(Idiag.at(i)) > 1e-8) {
-        v.lr_mat.at(i, i) = 1. / pow(Idiag.at(i) + eps, c);
+        v.lr_mat.at(i, i) = eta / pow(Idiag.at(i) + eps, c);
       }
       else {
         v.lr_mat.at(i, i) = Idiag.at(i);
@@ -171,6 +173,7 @@ private:
   double a;
   double b;
   double c;
+  double eta;
   double eps;
   grad_func_type grad_func;
   Sgd_Learn_Rate_Value v;

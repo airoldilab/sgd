@@ -61,9 +61,9 @@ struct Sgd_Experiment {
     lr_obj_ = lp;
   }
 
-  void init_ddim_learning_rate(double a, double b, double c, double eps) {
+  void init_ddim_learning_rate(double eta, double a, double b, double c, double eps) {
     grad_func_type grad_func = create_grad_func_instance();
-    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, a, b, c, eps, grad_func));
+    learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, eta, a, b, c, eps, grad_func));
     lr_obj_ = lp;
   }
 

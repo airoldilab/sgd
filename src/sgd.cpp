@@ -350,38 +350,24 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
 
 
   // Set learning rate in experiment.
+  vec lr_control= Rcpp::as<vec>(Experiment["lr.control"]);
   if (exprm.lr == "one-dim") {
-    // use the min eigenvalue of the covariance of data as alpha in LR
-    // TODO this can be arbitrarily small
-    cx_vec eigval;
-    cx_mat eigvec;
-    // eig_gen(eigval, eigvec, data.covariance());
-    // double lr_alpha = min(eigval).real();
-    // if (lr_alpha < 1e-8) {
-      // lr_alpha = 1; // temp hack
-    // }
-    double lr_alpha = Rcpp::as<double>(Experiment["lr.control"]);
-    double c;
-    if (method == "asgd" || method == "ai-sgd") {
-      c = 2./3.;
-    }
-    else {
-      c = 1.;
-    }
-    exprm.init_one_dim_learning_rate(1., lr_alpha, c, 1.);
+    exprm.init_one_dim_learning_rate(lr_control(0), lr_control(1),
+                                     lr_control(2), lr_control(3));
   }
   else if (exprm.lr == "one-dim-eigen") {
     exprm.init_one_dim_eigen_learning_rate();
   }
   else if (exprm.lr == "d-dim") {
-    exprm.init_ddim_learning_rate(0., 1., 1., 0.000001);
+    exprm.init_ddim_learning_rate(1., 0., 1., 1., lr_control(0));
   }
   else if (exprm.lr == "adagrad") {
-    exprm.init_ddim_learning_rate(1., 1., .5, 0.000001);
+    exprm.init_ddim_learning_rate(lr_control(0), 1., 1., .5,
+                                  lr_control(1));
   }
   else if (exprm.lr == "rmsprop") {
-    double gamma = 0.9;
-    exprm.init_ddim_learning_rate(gamma, 1-gamma, .5, 0.000001);
+    exprm.init_ddim_learning_rate(lr_control(0), lr_control(1),
+                                  1-lr_control(1), .5, lr_control(2));
   }
 
 

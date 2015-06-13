@@ -36,7 +36,7 @@
 #'   \itemize{
 #'     \item method: character specifying the method to be used: \code{"sgd"},
 #'     \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}. Default is
-#'     \code{"implicit"}.  See \sQuote{Details}.
+#'     \code{"ai-sgd"}.  See \sQuote{Details}.
 #'     \item lr: character specifying the learning rate to be used:
 #'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
 #'       \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
@@ -51,9 +51,11 @@
 #'       offset terms can be included in the formula instead or as well, and if
 #'       more than one is specified their sum is used. See
 #'       \code{\link[stats]{offset}}
-#'     \item npasses: the number of passes for sgd
-#'     \item lr.control: scalar hyperparameter one can tweak dependent on the
-#'       learning rate
+#'     \item npasses: the number of passes for sgd. Default is 1.
+#'     \item lr.control: vector of scalar hyperparameters one can
+#'       set dependent on the learning rate. For hyperparameters aimed
+#'       to be left as default, specify \code{NA} in the corresponding
+#'       entries. See \sQuote{Details}.
 #'     \item lambda1: L1 regularization parameter. Default is 0.
 #'     \item lambda2: L2 regularization parameter. Default is 0.
 #'   }
@@ -78,23 +80,23 @@
 #'     al., 2015)
 #' }
 #'
-#' Learning rates:
+#' Learning rates and hyperparameters:
 #' \itemize{
 #'   \item \code{one-dim}: scalar value prescribed in Xu (2011) as
 #'     \code{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
-#'     where the defaults are \code{scale=1}, \code{gamma=1}, \code{alpha} the
-#'     minimum eigenvalue of the covariance of the data's design matrix, and
-#'     \code{c} is \code{1} if implemented without averaging, \code{2/3} if with
-#'     averaging
+#'     where the defaults are
+#'     \code{lr_control = (scale=1, gamma=1, alpha=1, c)}
+#'     where \code{c} is \code{1} if implemented without averaging,
+#'     \code{2/3} if with averaging
 #'   \item \code{one-dim-eigen}: diagonal matrix
-#'     \code{}
+#'     \code{lr_control = NULL}
 #'   \item \code{d-dim}: diagonal matrix
-#'     \code{}
+#'     \code{lr_control = (epsilon=1e-6)}
 #'   \item \code{adagrad}: diagonal matrix prescribed in Duchi et al. (2011) as
-#'     \code{}
+#'     \code{lr_control = (eta=1, epsilon=1e-6)}
 #'   \item \code{rmsprop}: diagonal matrix prescribed in Tieleman and Hinton
 #'     (2012) as
-#'     \code{}
+#'     \code{lr_control = (eta=1, gamma=0.9, epsilon=1e-6)}
 #' }
 #'
 #' @return
@@ -714,7 +716,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   }
 }
 
-valid_sgd_control <- function(method="implicit", lr="one-dim",
+valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               start=NULL, weights=NULL,
                               offset=NULL, N, d, npasses=NULL,
                               lr.control=NULL,
@@ -780,14 +782,55 @@ valid_sgd_control <- function(method="implicit", lr="one-dim",
   }
 
   # Check validity of lr.control.
-  # TODO lr.control for now is only a scalar value, so lr can only accept one
-  # additional hyperparameter
-  if (is.null(lr.control)) {
-    lr.control <- 1
-  } else if (!is.numeric(lr.control)) {
+  if (!is.null(lr.control) && !is.numeric(lr.control)) {
     stop("'lr.control' must be numeric")
-  } else if (length(lr.control) != 1) {
-    stop(gettextf("length of 'lr.control' should equal %d", 1), domain=NA)
+  } else if (lr == "one-dim") {
+    if (method %in% c("asgd", "ai-sgd")) {
+      c <- 2/3
+    } else {
+      c <- 1
+    }
+    defaults <- c(1, 1, c, 1)
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 4) {
+      stop(gettextf("length of 'lr.control' should equal %d", 4), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  } else if (lr == "one-dim-eigen") {
+    if (is.null(lr.control)) {
+      lr.control <- 0 # garbage number to store double in C++
+    } else if (length(lr.control) != 0) {
+      stop(gettextf("length of 'lr.control' should equal %d", 0), domain=NA)
+    }
+  } else if (lr == "d-dim") {
+    defaults <- 1e-6
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 1) {
+      stop(gettextf("length of 'lr.control' should equal %d", 1), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  } else if (lr == "adagrad") {
+    defaults <- c(1, 1e-6)
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 2) {
+      stop(gettextf("length of 'lr.control' should equal %d", 2), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  } else if (lr == "rmsprop") {
+    defaults <- c(1, 0.9, 1e-6)
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 3) {
+      stop(gettextf("length of 'lr.control' should equal %d", 3), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
   }
 
   # Check validity of regularization parameters.

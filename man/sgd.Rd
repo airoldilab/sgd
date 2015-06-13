@@ -62,7 +62,7 @@ equation).}
 \itemize{
   \item method: character specifying the method to be used: \code{"sgd"},
   \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}. Default is
-  \code{"implicit"}.  See \sQuote{Details}.
+  \code{"ai-sgd"}.  See \sQuote{Details}.
   \item lr: character specifying the learning rate to be used:
     \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
     \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
@@ -77,9 +77,11 @@ equation).}
     offset terms can be included in the formula instead or as well, and if
     more than one is specified their sum is used. See
     \code{\link[stats]{offset}}
-  \item npasses: the number of passes for sgd
-  \item lr.control: scalar hyperparameter one can tweak dependent on the
-    learning rate
+  \item npasses: the number of passes for sgd. Default is 1.
+  \item lr.control: vector of scalar hyperparameters one can
+    set dependent on the learning rate. For hyperparameters aimed
+    to be left as default, specify \code{NA} in the corresponding
+    entries. See \sQuote{Details}.
   \item lambda1: L1 regularization parameter. Default is 0.
   \item lambda2: L2 regularization parameter. Default is 0.
 }}
@@ -129,23 +131,23 @@ Methods:
     al., 2015)
 }
 
-Learning rates:
+Learning rates and hyperparameters:
 \itemize{
   \item \code{one-dim}: scalar value prescribed in Xu (2011) as
     \code{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
-    where the defaults are \code{scale=1}, \code{gamma=1}, \code{alpha} the
-    minimum eigenvalue of the covariance of the data's design matrix, and
-    \code{c} is \code{1} if implemented without averaging, \code{2/3} if with
-    averaging
+    where the defaults are
+    \code{lr_control = (scale=1, gamma=1, alpha=1, c)}
+    where \code{c} is \code{1} if implemented without averaging,
+    \code{2/3} if with averaging
   \item \code{one-dim-eigen}: diagonal matrix
-    \code{}
+    \code{lr_control = NULL}
   \item \code{d-dim}: diagonal matrix
-    \code{}
+    \code{lr_control = (epsilon=1e-6)}
   \item \code{adagrad}: diagonal matrix prescribed in Duchi et al. (2011) as
-    \code{}
+    \code{lr_control = (eta=1, epsilon=1e-6)}
   \item \code{rmsprop}: diagonal matrix prescribed in Tieleman and Hinton
     (2012) as
-    \code{}
+    \code{lr_control = (eta=1, gamma=0.9, epsilon=1e-6)}
 }
 }
 \examples{
