@@ -5,81 +5,83 @@
 #include <vector>
 #include "basedef.h"
 
-
 using namespace arma;
 
 struct Sgd_DataPoint;
 struct Sgd_Dataset;
 struct Sgd_OnlineOutput;
-struct Sgd_Size;
 
-typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double)> grad_func_type;
-typedef boost::function<mat (const mat&, const Sgd_DataPoint&, double, unsigned, unsigned)> learning_rate_type;
+typedef boost::function<mat(const mat&, const Sgd_DataPoint&, double)> grad_func_type;
+typedef boost::function<mat(const mat&, const Sgd_DataPoint&, double, unsigned, unsigned)> learning_rate_type;
 
 struct Sgd_DataPoint {
-  Sgd_DataPoint(): x(mat()), y(0){}
-  Sgd_DataPoint(mat xin, double yin):x(xin), y(yin){}
+  /* Collection for an individual observation and its response. */
+  Sgd_DataPoint() : x(mat()), y(0) {}
+  Sgd_DataPoint(mat xin, double yin) : x(xin), y(yin) {}
+
 //@members
   mat x;
   double y;
 };
 
-struct Sgd_Dataset
-{
-  Sgd_Dataset(SEXP ptr, unsigned a, const boost::timer t)
-   : X(mat()), Y(mat()), xpMat(ptr), t(t) { }
-  // Sgd_Dataset(mat xin, mat yin):X(xin), Y(yin), xpMat(nullptr)  {}
+struct Sgd_Dataset {
+  /* Collection of all data points. */
+  Sgd_Dataset(SEXP ptr, unsigned a, const boost::timer t) :
+    X(mat()), Y(mat()), xpMat(ptr), t(t) {}
 
 //@members
   mat X;
   mat Y;
   std::vector<unsigned> idxmap;
   unsigned n_samples;
-  unsigned n_cols;
+  unsigned n_features;
   bool big;
   Rcpp::XPtr<BigMatrix> xpMat;
   boost::timer t;
 
 //@methods
   void init(unsigned n_passes) {
+    // Initialize number of columns and samples.
     unsigned nrow;
-    if (!big){
+    if (!big) {
       nrow = X.n_rows;
-      n_cols = X.n_cols;
-    } else{
+      n_features = X.n_cols;
+    } else {
       nrow = xpMat->nrow();
-      n_cols = xpMat->ncol();
+      n_features = xpMat->ncol();
     }
     n_samples = nrow * n_passes;
+    // Initialize index mapping.
     idxmap = std::vector<unsigned>(n_samples);
     // std::srand(unsigned(std::time(0)));
     std::srand(0);
-    for (unsigned i =0; i < n_passes; ++i) {
-        for (unsigned j =0; j < nrow; ++j){
-            idxmap[i * nrow + j] = j;
-        }
-        std::random_shuffle(idxmap.begin()+ i * nrow, idxmap.begin() + (i + 1) * nrow);
+    for (unsigned i=0; i < n_passes; ++i) {
+      for (unsigned j=0; j < nrow; ++j) {
+        idxmap[i * nrow + j] = j;
+      }
+      std::random_shuffle(idxmap.begin() + i * nrow,
+                          idxmap.begin() + (i + 1) * nrow);
     }
   }
+
   mat covariance() const {
     return cov(X);
   }
 
   friend std::ostream& operator<<(std::ostream& os, const Sgd_Dataset& dataset) {
-    os << "  Dataset:\n" << "    X has " << dataset.n_cols << " features\n" <<
-          "    Total of " << dataset.n_samples << " data points" << std::endl;
+    os << "  Dataset:\n"
+       << "    X has " << dataset.n_features << " features\n"
+       << "    Total of " << dataset.n_samples << " data points" << std::endl;
     return os;
   }
 };
 
-struct Sgd_OnlineOutput
-{
-  //Construct Sgd_OnlineOutput compatible with
-  //the shape of data
-  Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100)
-   : estimates(mat(data.n_cols, s)), initial(init), last_estimate(init),
-     times(s), t(data.t), n_iter(data.n_samples), iter(0), size(s),
-     n_recorded(0), pos(Mat<unsigned>(1, s)) {
+struct Sgd_OnlineOutput {
+  /* Collection of SGD-related values for the data set. */
+  Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100) :
+    estimates(mat(data.n_features, s)), initial(init), last_estimate(init),
+    times(s), t(data.t), n_iter(data.n_samples), iter(0), size(s),
+    n_recorded(0), pos(Mat<unsigned>(1, s)) {
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));
       }
@@ -123,13 +125,6 @@ struct Sgd_OnlineOutput
     }
     return *this;
   }
-};
-
-struct Sgd_Size {
-  Sgd_Size():nsamples(0), d(0) {}
-  Sgd_Size(unsigned nin, unsigned din):nsamples(nin), d(din) {}
-  unsigned nsamples;
-  unsigned d;
 };
 
 #endif

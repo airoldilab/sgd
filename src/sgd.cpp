@@ -21,14 +21,6 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(BH)]]
 
-// return the nsamples and nfeatures of a dataset
-Sgd_Size Sgd_dataset_size(const Sgd_Dataset& dataset) {
-  Sgd_Size size;
-  size.nsamples = dataset.n_samples;
-  size.d = dataset.n_cols;
-  return size;
-}
-
 // return the @t th data point in @dataset
 Sgd_DataPoint Sgd_get_dataset_point(const Sgd_Dataset& dataset, unsigned t) {
   t = t - 1;
@@ -270,7 +262,7 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
     double dev = exprm.deviance(data.Y, mu, exprm.weights);
 
     // Check the number of features.
-    if (X_rank < Sgd_dataset_size(data).d) {
+    if (X_rank < data.n_features) {
       for (int i = X_rank; i < coef.n_rows; i++) {
         coef.row(i) = datum::nan;
       }
@@ -370,13 +362,11 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
                                   1-lr_control(1), .5, lr_control(2));
   }
 
-
-  unsigned nsamples = Sgd_dataset_size(data).nsamples;
-  unsigned ndim = Sgd_dataset_size(data).d;
-
+  unsigned nsamples = data.n_samples;
+  unsigned nfeatures = data.n_features;
 
   // Check if the number of observations is greater than the rank of X.
-  unsigned X_rank = ndim;
+  unsigned X_rank = nfeatures;
   if (exprm.model_name == "gaussian" ||
       exprm.model_name == "poisson" ||
       exprm.model_name == "binomial" ||
