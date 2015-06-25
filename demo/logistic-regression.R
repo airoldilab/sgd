@@ -28,6 +28,5 @@ y <- rbinom(N, 1, p)
 dat <- data.frame(y=y, x=X)
 
 sgd.theta <- sgd(y ~ ., data=dat, model="glm",
-                 model.control=list(family="binomial"),
-                 sgd.control=list(lr.control=5e-5))
+                 model.control=list(family="binomial"))
 sgd.theta$coefficients

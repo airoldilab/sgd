@@ -1,25 +1,25 @@
-#ifndef TRANSFER_H
-#define TRANSFER_H
+#ifndef GLM_TRANSFER_H
+#define GLM_TRANSFER_H
 
 #include "basedef.h"
 
 using namespace arma;
 
-class Sgd_Transfer_Base;
-class Sgd_Identity_Transfer;
-class Sgd_Inverse_Transfer;
-class Sgd_Exp_Transfer;
-class Sgd_Logistic_Transfer;
+class base_transfer;
+class identity_transfer;
+class inverse_transfer;
+class exp_transfer;
+class logistic_transfer;
 
-class Sgd_Transfer_Base {
+class base_transfer {
   /* Base class from which all transfer function classes inherit from */
 public:
 #if DEBUG
-  virtual ~Sgd_Transfer_Base() {
+  virtual ~base_transfer() {
     Rcpp::Rcout << "Transfer object released! " << std::endl;
   }
 #else
-  virtual ~Sgd_Transfer_Base() {}
+  virtual ~base_transfer() {}
 #endif
 
   virtual double transfer(double u) const = 0;
@@ -39,7 +39,7 @@ public:
   virtual bool valideta(double eta) const = 0;
 };
 
-class Sgd_Identity_Transfer : public Sgd_Transfer_Base {
+class identity_transfer : public base_transfer {
   // Identity transfer function
 public:
   virtual double transfer(double u) const {
@@ -63,7 +63,7 @@ public:
   }
 };
 
-class Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
+class inverse_transfer : public base_transfer {
   // Inverse transfer function
 public:
   virtual double transfer(double u) const {
@@ -99,7 +99,7 @@ public:
   }
 };
 
-class Sgd_Exp_Transfer : public Sgd_Transfer_Base {
+class exp_transfer : public base_transfer {
   // Exponentional transfer function
 public:
   virtual double transfer(double u) const {
@@ -126,7 +126,7 @@ public:
   }
 };
 
-class Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
+class logistic_transfer : public base_transfer {
   // Logistic transfer function
 public:
   virtual double transfer(double u) const {

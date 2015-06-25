@@ -1,11 +1,14 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 
 #include "basedef.h"
-#include "data.h"
-#include "experiment.h"
-#include "glm-family.h"
-#include "glm-transfer.h"
-#include "learningrate.h"
+#include "data/data_point.h"
+#include "data/data_set.h"
+#include "data/online_output.h"
+#include "experiment/ee_experiment.h"
+#include "experiment/glm_experiment.h"
+#include "learn-rate/onedim_learn_rate.h"
+#include "learn-rate/onedim_eigen_learn_rate.h"
+#include "learn-rate/ddim_learn_rate.h"
 #include <stdlib.h>
 
 // [[Rcpp::depends(BH)]]
@@ -14,17 +17,16 @@
 
 // Auxiliary function
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method, bool verbose, Rcpp::List Experiment);
+Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method, bool verbose, Rcpp::List Experiment);
 
 template<typename EXPERIMENT>
-mat Sgd_algorithm(unsigned t, const mat& theta_old,
-  const Sgd_Dataset& data_history, const EXPERIMENT& experiment,
-  bool& good_gradient) {
+mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
+  const EXPERIMENT& experiment, bool& good_gradient) {
   /* Return the new estimate of parameters, using SGD */
-  Sgd_DataPoint datapoint = data_history.get_datapoint(t);
-  unsigned idx = data_history.idxmap[t-1];
-  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[idx], t);
-  mat grad_t = experiment.gradient(theta_old, datapoint, experiment.offset[idx]);
+  data_point data_pt = data.get_data_point(t);
+  unsigned idx = data.idxmap[t-1];
+  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, experiment.offset[idx], t);
+  mat grad_t = experiment.gradient(theta_old, data_pt, experiment.offset[idx]);
   if (!is_finite(grad_t)) {
     good_gradient = false;
   }
@@ -39,8 +41,8 @@ mat Sgd_algorithm(unsigned t, const mat& theta_old,
   mat theta_test;
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
-    theta_test = theta_old + at * ((datapoint.y - experiment.h_transfer(
-      dot(datapoint.x, theta_old) + experiment.offset[idx]))*datapoint.x).t();
+    theta_test = theta_old + at * ((data_pt.y - experiment.h_transfer(
+      dot(data_pt.x, theta_old) + experiment.offset[idx]))*data_pt.x).t();
   } else{
     theta_test = theta_new;
   }
@@ -56,15 +58,14 @@ mat Sgd_algorithm(unsigned t, const mat& theta_old,
   return theta_new;
 }
 
-mat Implicit_algorithm(unsigned t, const mat& theta_old,
-  const Sgd_Dataset& data_history, const Sgd_Experiment_Glm& experiment,
-  bool& good_gradient) {
+mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
+  const glm_experiment& experiment, bool& good_gradient) {
   /* return the new estimate of parameters, using implicit SGD */
   // TODO add per model
-  Sgd_DataPoint datapoint= data_history.get_datapoint(t);
+  data_point data_pt = data.get_data_point(t);
+  unsigned idx = data.idxmap[t-1];
   mat theta_new;
-  unsigned idx = data_history.idxmap[t-1];
-  Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[idx], t);
+  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, experiment.offset[idx], t);
   double average_lr = 0;
   if (at.type == 0) average_lr = at.lr_scalar;
   else {
@@ -75,10 +76,10 @@ mat Implicit_algorithm(unsigned t, const mat& theta_old,
     average_lr /= diag_lr.n_elem;
   }
 
-  double normx = dot(datapoint.x, datapoint.x);
+  double normx = dot(data_pt.x, data_pt.x);
 
-  Get_grad_coeff<Sgd_Experiment_Glm> get_grad_coeff(experiment, datapoint, theta_old, normx, experiment.offset[idx]);
-  Implicit_fn<Sgd_Experiment_Glm> implicit_fn(average_lr, get_grad_coeff);
+  Get_grad_coeff<glm_experiment> get_grad_coeff(experiment, data_pt, theta_old, normx, experiment.offset[idx]);
+  Implicit_fn<glm_experiment> implicit_fn(average_lr, get_grad_coeff);
 
   double rt = average_lr * get_grad_coeff(0);
   double lower = 0;
@@ -89,7 +90,7 @@ mat Implicit_algorithm(unsigned t, const mat& theta_old,
   }
   else {
     // double u = 0;
-    // u = (experiment.g_link(datapoint.y) - dot(theta_old,datapoint.x))/normx;
+    // u = (experiment.g_link(data_pt.y) - dot(theta_old,data_pt.x))/normx;
     // upper = std::min(rt, u);
     // lower = 0;
     upper = rt;
@@ -101,7 +102,7 @@ mat Implicit_algorithm(unsigned t, const mat& theta_old,
   }
   else
     result = lower;
-  theta_new = theta_old + result * datapoint.x.t();
+  theta_new = theta_old + result * data_pt.x.t();
 
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
@@ -113,8 +114,8 @@ mat Implicit_algorithm(unsigned t, const mat& theta_old,
   mat theta_test;
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
-    theta_test = theta_new - average_lr * ((datapoint.y - experiment.h_transfer(
-      dot(datapoint.x, theta_new) + experiment.offset[idx]))*datapoint.x).t();
+    theta_test = theta_new - average_lr * ((data_pt.y - experiment.h_transfer(
+      dot(data_pt.x, theta_new) + experiment.offset[idx]))*data_pt.x).t();
   } else{
     theta_test = theta_old;
   }
@@ -129,8 +130,8 @@ mat Implicit_algorithm(unsigned t, const mat& theta_old,
     Rcpp::Rcout<< "result = " << result << std::endl;
     Rcpp::Rcout<< "f(result) = " << implicit_fn(result) <<std::endl;
     Rcpp::Rcout<< "lr = " << average_lr <<std::endl;
-    Rcpp::Rcout<< "data.x = " << datapoint.x <<std::endl;
-    Rcpp::Rcout<< "data.y = " << datapoint.y <<std::endl;
+    Rcpp::Rcout<< "data.x = " << data_pt.x <<std::endl;
+    Rcpp::Rcout<< "data.y = " << data_pt.y <<std::endl;
     Rcpp::Rcout<< "normx = " << normx <<std::endl;
   }
 #endif
@@ -138,8 +139,8 @@ mat Implicit_algorithm(unsigned t, const mat& theta_old,
 }
 
 template<typename EXPERIMENT>
-bool validity_check(const Sgd_Dataset& data, const mat& theta,
-  bool good_gradient, unsigned t, const EXPERIMENT& exprm) {
+bool validity_check(const data_set& data, const mat& theta, bool good_gradient,
+  unsigned t, const EXPERIMENT& exprm) {
   if (!good_gradient) {
     Rcpp::Rcout << "NA or infinite gradient" << std::endl;
     return false;
@@ -153,12 +154,12 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta,
   return validity_check_model(data, theta, t, exprm);
 }
 
-bool validity_check_model(const Sgd_Dataset& data, const mat& theta, unsigned t,
-  const Sgd_Experiment_Glm& exprm) {
+bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
+  const glm_experiment& exprm) {
   // TODO add per model
   // Check if eta is in the support.
   unsigned idx = data.idxmap[t-1];
-  double eta = exprm.offset[idx] + dot(data.get_datapoint(t).x, theta);
+  double eta = exprm.offset[idx] + dot(data.get_data_point(t).x, theta);
   if (!exprm.valideta(eta)) {
     Rcpp::Rcout << "no valid set of coefficients has been found: please supply starting values" << t << std::endl;
     return false;
@@ -206,7 +207,7 @@ bool validity_check_model(const Sgd_Dataset& data, const mat& theta, unsigned t,
 }
 
 template<typename EXPERIMENT>
-Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data,
+Rcpp::List post_process_glm(const online_output& out, const data_set& data,
   const EXPERIMENT& exprm, mat& coef, unsigned X_rank) {
   // Check the validity of eta for all observations.
   if (!data.big) {
@@ -274,13 +275,13 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   Rcpp::List model_attrs = Experiment["model.attrs"];
 
-  Rcpp::List Dataset(dataset);
-  Sgd_Dataset data(Dataset["bigmat"], 0, t);
-  bool big = Rcpp::as<bool>(Dataset["big"]);
+  Rcpp::List Data(dataset);
+  data_set data(Data["bigmat"], 0, t);
+  bool big = Rcpp::as<bool>(Data["big"]);
   data.big = big;
-  data.Y = Rcpp::as<mat>(Dataset["Y"]);
+  data.Y = Rcpp::as<mat>(Data["Y"]);
   if (!big) {
-    data.X = Rcpp::as<mat>(Dataset["X"]);
+    data.X = Rcpp::as<mat>(Data["X"]);
   }
   data.init(Rcpp::as<unsigned>(Experiment["npasses"]));
 
@@ -288,10 +289,10 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
   bool verb = Rcpp::as<bool>(verbose);
 
   if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
-    Sgd_Experiment_Glm exprm(model_name, model_attrs);
+    glm_experiment exprm(model_name, model_attrs);
     return run_experiment(data, exprm, meth, verb, Experiment);
   //} else if (model_name == "ee") {
-  //  Sgd_Experiment_Ee exprm(model_name, model_attrs);
+  //  ee_experiment exprm(model_name, model_attrs);
   //  return run_experiment(data, exprm, meth, verb, Experiment);
   } else {
     return Rcpp::List();
@@ -299,7 +300,7 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
 }
 
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method,
+Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
   bool verbose, Rcpp::List Experiment) {
   /* Run experiment with templated argument */
   // Put remaining attributes into experiment.
@@ -373,7 +374,7 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   }
 
   // Initialize estimates.
-  Sgd_OnlineOutput out(data, exprm.start);
+  online_output out(data, exprm.start);
   mat theta_new;
   mat theta_old = out.get_last_estimate();
   mat theta_new_ave;
@@ -386,10 +387,10 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   for (int t = 1; t <= nsamples; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {
-      theta_new = Sgd_algorithm(t, theta_old, data, exprm, good_gradient);
+      theta_new = explicit_sgd(t, theta_old, data, exprm, good_gradient);
     }
     else if (method == "implicit" || method == "ai-sgd") {
-      theta_new = Implicit_algorithm(t, theta_old, data, exprm, good_gradient);
+      theta_new = implicit_sgd(t, theta_old, data, exprm, good_gradient);
     }
 
     // Whether to do averaging

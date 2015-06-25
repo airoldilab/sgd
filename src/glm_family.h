@@ -1,32 +1,32 @@
-#ifndef FAMILY_H
-#define FAMILY_H
+#ifndef GLM_FAMILY_H
+#define GLM_FAMILY_H
 
 #include "basedef.h"
 
 using namespace arma;
 
-class Sgd_Family_Base;
-class Sgd_Gaussian;
-class Sgd_Poisson;
-class Sgd_Binomial;
-class Sgd_Gamma;
+class base_family;
+class gaussian_family;
+class poisson_family;
+class binomial_family;
+class gamma_family;
 
-class Sgd_Family_Base {
+class base_family {
   /* Base class from which all exponential family classes inherit from */
 public:
 #if DEBUG
-  virtual ~Sgd_Family_Base() {
+  virtual ~base_family() {
     Rcpp::Rcout << "Family object released" << std::endl;
   }
 #else
-  virtual ~Sgd_Family_Base() {}
+  virtual ~base_family() {}
 #endif
 
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
 };
 
-class Sgd_Gaussian : public Sgd_Family_Base {
+class gaussian_family : public base_family {
   // gaussian model family
 public:
   virtual double variance(double u) const {
@@ -38,7 +38,7 @@ public:
   }
 };
 
-class Sgd_Poisson : public Sgd_Family_Base {
+class poisson_family : public base_family {
   // poisson model family
 public:
   virtual double variance(double u) const {
@@ -56,7 +56,7 @@ public:
   }
 };
 
-class Sgd_Binomial : public Sgd_Family_Base {
+class binomial_family : public base_family {
   // binomial model family
 public:
   virtual double variance(double u) const {
@@ -79,7 +79,7 @@ private:
   }
 };
 
-class Sgd_Gamma : public Sgd_Family_Base {
+class gamma_family : public base_family {
   // gamma model family
 public:
   virtual double variance(double u) const {
