@@ -64,6 +64,23 @@ struct Sgd_Dataset {
     }
   }
 
+  Sgd_DataPoint get_datapoint(unsigned t) const {
+    /* Return the @t th data point */
+    t = t - 1;
+    mat xt;
+    if (!big) {
+      xt = mat(X.row(idxmap[t]));
+    } else {
+      MatrixAccessor<double> matacess(*xpMat);
+      xt = mat(1, n_features);
+      for (unsigned i=0; i < n_features; ++i) {
+        xt(0, i) = matacess[i][idxmap[t]];
+      }
+    }
+    double yt = Y(idxmap[t]);
+    return Sgd_DataPoint(xt, yt);
+  }
+
   mat covariance() const {
     return cov(X);
   }

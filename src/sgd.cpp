@@ -21,31 +21,12 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
 // [[Rcpp::plugins(cpp11)]]
 // [[Rcpp::depends(BH)]]
 
-// return the @t th data point in @dataset
-Sgd_DataPoint Sgd_get_dataset_point(const Sgd_Dataset& dataset, unsigned t) {
-  t = t - 1;
-  mat xt;
-  if (!dataset.big){
-    xt = mat(dataset.X.row(dataset.idxmap[t]));
-  }
-  else{
-    MatrixAccessor<double> matacess(*dataset.xpMat);
-    xt = mat(1, dataset.n_cols);
-    for (unsigned i=0; i < dataset.n_cols; ++i){
-      xt(0, i) = matacess[i][dataset.idxmap[t]];
-    }
-  }
-  double yt = dataset.Y(dataset.idxmap[t]);
-  return Sgd_DataPoint(xt, yt);
-}
-
-// return the new estimate of parameters, using SGD
 template<typename EXPERIMENT>
 mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   const Sgd_Dataset& data_history, const EXPERIMENT& experiment,
   bool& good_gradient) {
-
-  Sgd_DataPoint datapoint = Sgd_get_dataset_point(data_history, t);
+  /* Return the new estimate of parameters, using SGD */
+  Sgd_DataPoint datapoint = data_history.get_datapoint(t);
   unsigned idx = data_history.idxmap[t-1];
   Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[idx], t);
   mat grad_t = experiment.gradient(theta_old, datapoint, experiment.offset[idx]);
@@ -56,13 +37,13 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
 
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
-  if (!(at < 1)){
+  if (!(at < 1)) {
     Rcpp::Rcout << "learning rate larger than 1 " <<
       "at Iter: " << t << std::endl;
   }
   mat theta_test;
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
-    || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
+    || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
     theta_test = theta_old + at * ((datapoint.y - experiment.h_transfer(
       dot(datapoint.x, theta_old) + experiment.offset[idx]))*datapoint.x).t();
   } else{
@@ -80,12 +61,12 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   return theta_new;
 }
 
-// return the new estimate of parameters, using implicit SGD
-// TODO add per model
 mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
   const Sgd_Dataset& data_history, const Sgd_Experiment_Glm& experiment,
   bool& good_gradient) {
-  Sgd_DataPoint datapoint= Sgd_get_dataset_point(data_history, t);
+  /* return the new estimate of parameters, using implicit SGD */
+  // TODO add per model
+  Sgd_DataPoint datapoint= data_history.get_datapoint(t);
   mat theta_new;
   unsigned idx = data_history.idxmap[t-1];
   Sgd_Learn_Rate_Value at = experiment.learning_rate(theta_old, datapoint, experiment.offset[idx], t);
@@ -129,14 +110,14 @@ mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
 
   // check the correctness of SGD update in DEBUG mode
 #if DEBUG
-  if (!(average_lr < 1)){
+  if (!(average_lr < 1)) {
     Rcpp::Rcout << "learning rate larger than 1" <<
       "at Iter: " << t << std::endl;
     Rcpp::Rcout << "lr = " << average_lr <<std::endl;
   }
   mat theta_test;
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
-    || experiment.model_name == "binomial" || experiment.model_name == "gamma"){
+    || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
     theta_test = theta_new - average_lr * ((datapoint.y - experiment.h_transfer(
       dot(datapoint.x, theta_new) + experiment.offset[idx]))*datapoint.x).t();
   } else{
@@ -177,12 +158,12 @@ bool validity_check(const Sgd_Dataset& data, const mat& theta,
   return validity_check_model(data, theta, t, exprm);
 }
 
-// TODO add per model
 bool validity_check_model(const Sgd_Dataset& data, const mat& theta, unsigned t,
   const Sgd_Experiment_Glm& exprm) {
+  // TODO add per model
   // Check if eta is in the support.
   unsigned idx = data.idxmap[t-1];
-  double eta = exprm.offset[idx] + dot(Sgd_get_dataset_point(data, t).x, theta);
+  double eta = exprm.offset[idx] + dot(data.get_datapoint(t).x, theta);
   if (!exprm.valideta(eta)) {
     Rcpp::Rcout << "no valid set of coefficients has been found: please supply starting values" << t << std::endl;
     return false;
@@ -233,7 +214,7 @@ template<typename EXPERIMENT>
 Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data,
   const EXPERIMENT& exprm, mat& coef, unsigned X_rank) {
   // Check the validity of eta for all observations.
-  if (!data.big){
+  if (!data.big) {
     mat eta;
     eta = data.X * out.get_last_estimate() + exprm.offset;
     mat mu;
@@ -286,11 +267,13 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
 // post_process_ee
 // model.out: flag to include weighting matrix
 
-// use the method specified by method to estimate parameters
 // [[Rcpp::export]]
 Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   SEXP verbose) {
-
+  /**
+   * Runs the proposed experiment and method on the data set.
+   * This is the main interfacing function in R.
+   */
   boost::timer t;
   // Convert all arguments from R to C++ types.
   Rcpp::List Experiment(experiment);
@@ -302,7 +285,7 @@ Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
   bool big = Rcpp::as<bool>(Dataset["big"]);
   data.big = big;
   data.Y = Rcpp::as<mat>(Dataset["Y"]);
-  if (!big){
+  if (!big) {
     data.X = Rcpp::as<mat>(Dataset["X"]);
   }
   data.init(Rcpp::as<unsigned>(Experiment["npasses"]));
@@ -324,7 +307,7 @@ Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method,
   bool verbose, Rcpp::List Experiment) {
-
+  /* Run experiment with templated argument */
   // Put remaining attributes into experiment.
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
