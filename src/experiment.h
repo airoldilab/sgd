@@ -15,19 +15,19 @@
 
 using namespace arma;
 
-struct Sgd_Experiment;
-struct Sgd_Experiment_Ee;
-struct Sgd_Experiment_Glm;
+class Sgd_Experiment;
+class Sgd_Experiment_Ee;
+class Sgd_Experiment_Glm;
 //TODO
 template<typename EXPERIMENT>
-struct Get_grad_coeff;
+class Get_grad_coeff;
 template<typename EXPERIMENT>
-struct Implicit_fn;
+class Implicit_fn;
 
-struct Sgd_Experiment {
+class Sgd_Experiment {
   /* Base experiment class from which all model experiment classes inherit from
    */
-//@members
+public:
   std::string model_name;
   unsigned n_iters;
   unsigned d;
@@ -44,7 +44,7 @@ struct Sgd_Experiment {
   bool convergence;
   Rcpp::List model_attrs;
 
-//@methods
+  // Constructors
   Sgd_Experiment(std::string m_name, Rcpp::List mp_attrs) :
     model_name(m_name), model_attrs(mp_attrs) {}
 
@@ -87,11 +87,9 @@ protected:
   learnrate_ptr_type lr_obj_;
 };
 
-struct Sgd_Experiment_Ee : public Sgd_Experiment {
+class Sgd_Experiment_Ee : public Sgd_Experiment {
   /* Experiment class for estimating equations */
-//@members
-
-//@methods
+public:
   Sgd_Experiment_Ee(std::string m_name, Rcpp::List mp_attrs, Rcpp::Function gr)
   : gr_(gr), Sgd_Experiment(m_name, mp_attrs) {
     // TODO
@@ -127,11 +125,9 @@ private:
   //TODO look into how optim calls its C function, maybe it stores it too
 };
 
-struct Sgd_Experiment_Glm : public Sgd_Experiment {
+class Sgd_Experiment_Glm : public Sgd_Experiment {
   /* Experiment class for generalized linear models */
-//@members
-
-//@methods
+public:
   Sgd_Experiment_Glm(std::string m_name, Rcpp::List mp_attrs) :
     Sgd_Experiment(m_name, mp_attrs) {
     if (model_name == "gaussian") {
@@ -243,8 +239,9 @@ private:
 };
 
 template<typename EXPERIMENT>
-struct Get_grad_coeff {
+class Get_grad_coeff {
   // Compute gradient coeff and its derivative for Implicit-SGD update
+public:
   Get_grad_coeff(const EXPERIMENT& e, const Sgd_DataPoint& d,
     const mat& t, double n, double off) :
     experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
@@ -272,12 +269,14 @@ struct Get_grad_coeff {
 };
 
 template<typename EXPERIMENT>
-struct Implicit_fn {
+class Implicit_fn {
   // Root finding functor for Implicit-SGD update
+public:
   typedef boost::math::tuple<double, double, double> tuple_type;
 
   Implicit_fn(double a, const Get_grad_coeff<EXPERIMENT>& get_grad) :
     at(a), g(get_grad) {}
+
   tuple_type operator() (double u) const {
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);

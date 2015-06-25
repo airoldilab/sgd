@@ -8,8 +8,8 @@
 using namespace arma;
 
 struct Sgd_DataPoint;
-struct Sgd_Dataset;
-struct Sgd_OnlineOutput;
+class Sgd_Dataset;
+class Sgd_OnlineOutput;
 
 typedef boost::function<mat(const mat&, const Sgd_DataPoint&, double)> grad_func_type;
 typedef boost::function<mat(const mat&, const Sgd_DataPoint&, double, unsigned, unsigned)> learning_rate_type;
@@ -19,17 +19,13 @@ struct Sgd_DataPoint {
   Sgd_DataPoint() : x(mat()), y(0) {}
   Sgd_DataPoint(mat xin, double yin) : x(xin), y(yin) {}
 
-//@members
   mat x;
   double y;
 };
 
-struct Sgd_Dataset {
+class Sgd_Dataset {
   /* Collection of all data points. */
-  Sgd_Dataset(SEXP ptr, unsigned a, const boost::timer t) :
-    X(mat()), Y(mat()), xpMat(ptr), t(t) {}
-
-//@members
+public:
   mat X;
   mat Y;
   std::vector<unsigned> idxmap;
@@ -39,7 +35,9 @@ struct Sgd_Dataset {
   Rcpp::XPtr<BigMatrix> xpMat;
   boost::timer t;
 
-//@methods
+  Sgd_Dataset(SEXP ptr, unsigned a, const boost::timer t) :
+    X(mat()), Y(mat()), xpMat(ptr), t(t) {}
+
   void init(unsigned n_passes) {
     // Initialize number of columns and samples.
     unsigned nrow;
@@ -93,8 +91,9 @@ struct Sgd_Dataset {
   }
 };
 
-struct Sgd_OnlineOutput {
+class Sgd_OnlineOutput {
   /* Collection of SGD-related values for the data set. */
+public:
   Sgd_OnlineOutput(const Sgd_Dataset& data, const mat& init, unsigned s=100) :
     estimates(mat(data.n_features, s)), initial(init), last_estimate(init),
     times(s), t(data.t), n_iter(data.n_samples), iter(0), size(s),
@@ -108,23 +107,18 @@ struct Sgd_OnlineOutput {
         Rcpp::Rcout << "Warning: Too few data points for plotting!" << std::endl;
     }
 
-  Sgd_OnlineOutput() {}
-
-//@members
-  mat estimates;
-  mat initial;
-  mat last_estimate;
-  vec times;
-  boost::timer t;
-  unsigned n_iter; // Total number of iterations
-  unsigned iter; // Current iteration
-  unsigned size; // Number of coefs to be recorded
-  unsigned n_recorded; //Number of coefs that have been recorded
-  Mat<unsigned> pos; //The iteration of recorded coefficients
-
-//@methods
+  // Getters
+  mat get_estimates() const {
+    return estimates;
+  }
   mat get_last_estimate() const {
     return last_estimate;
+  }
+  vec get_times() const {
+    return times;
+  }
+  Mat<unsigned> get_pos() const {
+    return pos;
   }
 
   Sgd_OnlineOutput& operator=(const mat& theta_new) {
@@ -142,6 +136,18 @@ struct Sgd_OnlineOutput {
     }
     return *this;
   }
+
+private:
+  mat estimates;
+  mat initial;
+  mat last_estimate;
+  vec times;
+  boost::timer t;
+  unsigned n_iter; // Total number of iterations
+  unsigned iter; // Current iteration
+  unsigned size; // Number of coefs to be recorded
+  unsigned n_recorded; //Number of coefs that have been recorded
+  Mat<unsigned> pos; //The iteration of recorded coefficients
 };
 
 #endif

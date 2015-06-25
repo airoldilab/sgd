@@ -6,15 +6,16 @@
 
 using namespace arma;
 
-struct Sgd_Learn_Rate_Value;
-struct Sgd_Learn_Rate_Base;
-struct Sgd_Onedim_Learn_Rate;
-struct Sgd_Onedim_Eigen_Learn_Rate;
-struct Sgd_Ddim_Learn_Rate;
+class Sgd_Learn_Rate_Value;
+class Sgd_Learn_Rate_Base;
+class Sgd_Onedim_Learn_Rate;
+class Sgd_Onedim_Eigen_Learn_Rate;
+class Sgd_Ddim_Learn_Rate;
 
-struct Sgd_Learn_Rate_Value {
+class Sgd_Learn_Rate_Value {
   /* Object to return for all learning rate classes; it collects the return
    * value which can be a scalar, vector, or matrix. */
+public:
   Sgd_Learn_Rate_Value(unsigned t, unsigned d) : type(t), dim(d) {
     if (type == 0) { // scalar
       lr_scalar = 1;
@@ -82,8 +83,9 @@ std::ostream& operator<<(std::ostream& os, const Sgd_Learn_Rate_Value& lr) {
   return os;
 }
 
-struct Sgd_Learn_Rate_Base {
+class Sgd_Learn_Rate_Base {
   /* Base class from which all learning rate classes inherit from */
+public:
 #if DEBUG
   virtual ~Sgd_Learn_Rate_Base() {
     Rcpp::Rcout << "Learning rate object released" << std::endl;
@@ -95,8 +97,9 @@ struct Sgd_Learn_Rate_Base {
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) = 0;
 };
 
-struct Sgd_Onedim_Learn_Rate : public Sgd_Learn_Rate_Base {
+class Sgd_Onedim_Learn_Rate : public Sgd_Learn_Rate_Base {
   /* One-dimensional (scalar) learning rate, following Xu */
+public:
   Sgd_Onedim_Learn_Rate(double g, double a, double c_, double s) :
   gamma(g), alpha(a), c(c_), scale(s), v(0, 1) {}
 
@@ -114,8 +117,9 @@ private:
   Sgd_Learn_Rate_Value v;
 };
 
-struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base {
+class Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base {
   /* One-dimensional learning rate to parameterize a diagonal matrix */
+public:
   Sgd_Onedim_Eigen_Learn_Rate(const grad_func_type& gr) : grad_func(gr), v(0, 1) {}
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
@@ -136,13 +140,14 @@ private:
   Sgd_Learn_Rate_Value v;
 };
 
-struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base {
+class Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base {
   /**
    * d-dimensional learning rate with parameter weight alpha and exponent c
    * adagrad: a=1, b=1, c=1/2, eta=1, eps=1e-6
    * d-dim: a=0, b=1, c=1, eta=1, eps=1e-6
    * rmsprop: a=gamma, b=1-gamma, c=1/2, eta=1, eps=1e-6
    */
+public:
   Sgd_Ddim_Learn_Rate(unsigned d, double eta_, double a_, double b_,
                       double c_, double eps_, const grad_func_type&
                       gr) :

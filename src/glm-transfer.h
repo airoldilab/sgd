@@ -5,14 +5,15 @@
 
 using namespace arma;
 
-struct Sgd_Transfer_Base;
-struct Sgd_Identity_Transfer;
-struct Sgd_Inverse_Transfer;
-struct Sgd_Exp_Transfer;
-struct Sgd_Logistic_Transfer;
+class Sgd_Transfer_Base;
+class Sgd_Identity_Transfer;
+class Sgd_Inverse_Transfer;
+class Sgd_Exp_Transfer;
+class Sgd_Logistic_Transfer;
 
-struct Sgd_Transfer_Base {
+class Sgd_Transfer_Base {
   /* Base class from which all transfer function classes inherit from */
+public:
 #if DEBUG
   virtual ~Sgd_Transfer_Base() {
     Rcpp::Rcout << "Transfer object released! " << std::endl;
@@ -38,8 +39,9 @@ struct Sgd_Transfer_Base {
   virtual bool valideta(double eta) const = 0;
 };
 
-struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
+class Sgd_Identity_Transfer : public Sgd_Transfer_Base {
   // Identity transfer function
+public:
   virtual double transfer(double u) const {
     return u;
   }
@@ -61,8 +63,9 @@ struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
+class Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
   // Inverse transfer function
+public:
   virtual double transfer(double u) const {
     if (valideta(u)) {
       return -1. / u;
@@ -96,8 +99,9 @@ struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
+class Sgd_Exp_Transfer : public Sgd_Transfer_Base {
   // Exponentional transfer function
+public:
   virtual double transfer(double u) const {
     return exp(u);
   }
@@ -122,8 +126,9 @@ struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-struct Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
+class Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
   // Logistic transfer function
+public:
   virtual double transfer(double u) const {
     return sigmoid(u);
   }

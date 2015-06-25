@@ -8,18 +8,13 @@
 #include "learningrate.h"
 #include <stdlib.h>
 
+// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::plugins(cpp11)]]
+
 // Auxiliary function
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method, bool verbose, Rcpp::List Experiment);
-
-// via the depends attribute we tell Rcpp to create hooks for
-// RcppArmadillo so that the build process will know what to do
-// This file will be compiled with C++11
-// BH provides methods to use boost library
-//
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::plugins(cpp11)]]
-// [[Rcpp::depends(BH)]]
 
 template<typename EXPERIMENT>
 mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
@@ -434,8 +429,8 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   return Rcpp::List::create(
     Rcpp::Named("coefficients") = coef,
     Rcpp::Named("converged") = true,
-    Rcpp::Named("estimates") = out.estimates,
-    Rcpp::Named("times") = out.times,
-    Rcpp::Named("pos") = out.pos,
+    Rcpp::Named("estimates") = out.get_estimates(),
+    Rcpp::Named("times") = out.get_times(),
+    Rcpp::Named("pos") = out.get_pos(),
     Rcpp::Named("model.out") = model_out);
 }
