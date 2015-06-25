@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-// run_online_algorithm
-Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose);
-RcppExport SEXP sgd_run_online_algorithm(SEXP datasetSEXP, SEXP experimentSEXP, SEXP methodSEXP, SEXP verboseSEXP) {
+// run
+Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose);
+RcppExport SEXP sgd_run(SEXP datasetSEXP, SEXP experimentSEXP, SEXP methodSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -16,7 +16,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type experiment(experimentSEXP);
     Rcpp::traits::input_parameter< SEXP >::type method(methodSEXP);
     Rcpp::traits::input_parameter< SEXP >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(run_online_algorithm(dataset, experiment, method, verbose));
+    __result = Rcpp::wrap(run(dataset, experiment, method, verbose));
     return __result;
 END_RCPP
 }

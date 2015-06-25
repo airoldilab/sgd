@@ -17,7 +17,7 @@ template<typename EXPERIMENT>
 Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method, bool verbose, Rcpp::List Experiment);
 
 template<typename EXPERIMENT>
-mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
+mat Sgd_algorithm(unsigned t, const mat& theta_old,
   const Sgd_Dataset& data_history, const EXPERIMENT& experiment,
   bool& good_gradient) {
   /* Return the new estimate of parameters, using SGD */
@@ -56,7 +56,7 @@ mat Sgd_sgd_online_algorithm(unsigned t, const mat& theta_old,
   return theta_new;
 }
 
-mat Sgd_implicit_online_algorithm(unsigned t, const mat& theta_old,
+mat Implicit_algorithm(unsigned t, const mat& theta_old,
   const Sgd_Dataset& data_history, const Sgd_Experiment_Glm& experiment,
   bool& good_gradient) {
   /* return the new estimate of parameters, using implicit SGD */
@@ -263,8 +263,7 @@ Rcpp::List post_process_glm(const Sgd_OnlineOutput& out, const Sgd_Dataset& data
 // model.out: flag to include weighting matrix
 
 // [[Rcpp::export]]
-Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP method,
-  SEXP verbose) {
+Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
   /**
    * Runs the proposed experiment and method on the data set.
    * This is the main interfacing function in R.
@@ -387,10 +386,10 @@ Rcpp::List run_experiment(Sgd_Dataset data, EXPERIMENT exprm, std::string method
   for (int t = 1; t <= nsamples; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {
-      theta_new = Sgd_sgd_online_algorithm(t, theta_old, data, exprm, good_gradient);
+      theta_new = Sgd_algorithm(t, theta_old, data, exprm, good_gradient);
     }
     else if (method == "implicit" || method == "ai-sgd") {
-      theta_new = Sgd_implicit_online_algorithm(t, theta_old, data, exprm, good_gradient);
+      theta_new = Implicit_algorithm(t, theta_old, data, exprm, good_gradient);
     }
 
     // Whether to do averaging

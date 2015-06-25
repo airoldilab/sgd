@@ -1,6 +1,6 @@
 context("Mean Squared Error")
 
-test_that("MSE is correct for lm", {
+test_that("MSE converges for linear models", {
 
   skip_on_cran()
 

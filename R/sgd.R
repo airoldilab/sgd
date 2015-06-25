@@ -238,7 +238,7 @@ sgd.function <- function(x,
                         fn.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # TODO run_online_algorithm will not work as it relies on data
+  # TODO run() will not work as it relies on data
   # default args for fn.control
   gr <- NULL
   lower <- -Inf
@@ -451,7 +451,7 @@ fit_glm <- function(x, y,
     experiment$model.attrs$transfer.name <- transfer_name(family$link)
     experiment$model.attrs$rank <- model.control$rank
 
-    out <- run_online_algorithm(dataset, experiment, method, verbose=F)
+    out <- run(dataset, experiment, method, verbose=F)
     if (length(out) == 0) {
       stop("An error has occured, program stopped")
     }
@@ -553,7 +553,7 @@ fit_ee <- function(x, y,
     experiment$model.attrs$gr <- model.control$gr
     experiment$model.attrs$type <- model.control$type
 
-    out <- run_online_algorithm(dataset, experiment, sgd.control$method, verbose=F)
+    out <- run(dataset, experiment, sgd.control$method, verbose=F)
     if (length(out) == 0) {
       stop("An error has occured, program stopped")
     }
