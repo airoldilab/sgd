@@ -6,16 +6,16 @@
 
 using namespace arma;
 
+struct Sgd_Learn_Rate_Value;
 struct Sgd_Learn_Rate_Base;
 struct Sgd_Onedim_Learn_Rate;
 struct Sgd_Onedim_Eigen_Learn_Rate;
 struct Sgd_Ddim_Learn_Rate;
-struct Sgd_Learn_Rate_Value;
 
-// The return value for learning_rate method
-struct Sgd_Learn_Rate_Value
-{
-  Sgd_Learn_Rate_Value(unsigned t, unsigned d): type(t), dim(d) {
+struct Sgd_Learn_Rate_Value {
+  /* Object to return for all learning rate classes; it collects the return
+   * value which can be a scalar, vector, or matrix. */
+  Sgd_Learn_Rate_Value(unsigned t, unsigned d) : type(t), dim(d) {
     if (type == 0) { // scalar
       lr_scalar = 1;
     }
@@ -34,6 +34,7 @@ struct Sgd_Learn_Rate_Value
   unsigned dim;
 };
 
+// Overload operators so as to work for arbitrary learning rate value.
 mat operator*(const Sgd_Learn_Rate_Value& lr, const mat& grad) {
   if (lr.type == 0) {
     return lr.lr_scalar * grad;
@@ -55,17 +56,17 @@ mat operator*(const Sgd_Learn_Rate_Value& lr, const mat& grad) {
   }
 }
 
-bool operator<(const Sgd_Learn_Rate_Value& lr, const double thres){
-  if (lr.type == 0){
+bool operator<(const Sgd_Learn_Rate_Value& lr, const double thres) {
+  if (lr.type == 0) {
     return lr.lr_scalar < thres;
-  } else if (lr.type == 1){
+  } else if (lr.type == 1) {
     return all(lr.lr_vec < thres);
   } else{
     return all(diagvec(lr.lr_mat) < thres);
   }
 }
 
-bool operator>(const Sgd_Learn_Rate_Value& lr, const double thres){
+bool operator>(const Sgd_Learn_Rate_Value& lr, const double thres) {
   return !(lr < thres);
 }
 
@@ -81,8 +82,8 @@ std::ostream& operator<<(std::ostream& os, const Sgd_Learn_Rate_Value& lr) {
   return os;
 }
 
-struct Sgd_Learn_Rate_Base
-{
+struct Sgd_Learn_Rate_Base {
+  /* Base class from which all learning rate classes inherit from */
 #if DEBUG
   virtual ~Sgd_Learn_Rate_Base() {
     Rcpp::Rcout << "Learning rate object released" << std::endl;
@@ -94,12 +95,10 @@ struct Sgd_Learn_Rate_Base
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) = 0;
 };
 
-/* one-dimensional (scalar) learning rate, suggested in Xu's paper
- */
-struct Sgd_Onedim_Learn_Rate : public Sgd_Learn_Rate_Base
-{
+struct Sgd_Onedim_Learn_Rate : public Sgd_Learn_Rate_Base {
+  /* One-dimensional (scalar) learning rate, following Xu */
   Sgd_Onedim_Learn_Rate(double g, double a, double c_, double s) :
-  gamma(g), alpha(a), c(c_), scale(s), v(0, 1) { }
+  gamma(g), alpha(a), c(c_), scale(s), v(0, 1) {}
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
@@ -115,10 +114,9 @@ private:
   Sgd_Learn_Rate_Value v;
 };
 
-// one-dimensional learning rate to parameterize a diagonal matrix
-struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base
-{
-  Sgd_Onedim_Eigen_Learn_Rate(const grad_func_type& gr) : grad_func(gr), v(0, 1) { }
+struct Sgd_Onedim_Eigen_Learn_Rate : public Sgd_Learn_Rate_Base {
+  /* One-dimensional learning rate to parameterize a diagonal matrix */
+  Sgd_Onedim_Eigen_Learn_Rate(const grad_func_type& gr) : grad_func(gr), v(0, 1) {}
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {
@@ -138,17 +136,18 @@ private:
   Sgd_Learn_Rate_Value v;
 };
 
-// d-dimensional learning rate with parameter weight alpha and exponent c
-// adagrad: a=1, b=1, c=1/2, eta=1, eps=1e-6
-// d-dim: a=0, b=1, c=1, eta=1, eps=1e-6
-// rmsprop: a=gamma, b=1-gamma, c=1/2, eta=1, eps=1e-6
-struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base
-{
+struct Sgd_Ddim_Learn_Rate : public Sgd_Learn_Rate_Base {
+  /**
+   * d-dimensional learning rate with parameter weight alpha and exponent c
+   * adagrad: a=1, b=1, c=1/2, eta=1, eps=1e-6
+   * d-dim: a=0, b=1, c=1, eta=1, eps=1e-6
+   * rmsprop: a=gamma, b=1-gamma, c=1/2, eta=1, eps=1e-6
+   */
   Sgd_Ddim_Learn_Rate(unsigned d, double eta_, double a_, double b_,
                       double c_, double eps_, const grad_func_type&
                       gr) :
     Idiag(ones<vec>(d)), eta(eta_), a(a_), b(b_), c(c_), eps(eps_),
-    grad_func(gr), v(2, d) { }
+    grad_func(gr), v(2, d) {}
 
   virtual const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
     Sgd_DataPoint& data_pt, double offset, unsigned t, unsigned d) {

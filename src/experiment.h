@@ -16,12 +16,17 @@
 using namespace arma;
 
 struct Sgd_Experiment;
+struct Sgd_Experiment_Ee;
+struct Sgd_Experiment_Glm;
 //TODO
-//struct Get_grad_coeff;
-//struct Implicit_fn;
+template<typename EXPERIMENT>
+struct Get_grad_coeff;
+template<typename EXPERIMENT>
+struct Implicit_fn;
 
-// Base experiment class for arbitrary model
 struct Sgd_Experiment {
+  /* Base experiment class from which all model experiment classes inherit from
+   */
 //@members
   std::string model_name;
   unsigned n_iters;
@@ -40,17 +45,15 @@ struct Sgd_Experiment {
   Rcpp::List model_attrs;
 
 //@methods
-  Sgd_Experiment(std::string m_name, Rcpp::List mp_attrs)
-  : model_name(m_name), model_attrs(mp_attrs) {
-  }
+  Sgd_Experiment(std::string m_name, Rcpp::List mp_attrs) :
+    model_name(m_name), model_attrs(mp_attrs) {}
 
   // Gradient
   mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const;
 
-  /*
-   * Learning rates
-   */
-  void init_one_dim_learning_rate(double gamma, double alpha, double c, double scale) {
+  // Learning rates
+  void init_one_dim_learning_rate(double gamma, double alpha, double c,
+    double scale) {
     learnrate_ptr_type lp(new Sgd_Onedim_Learn_Rate(gamma, alpha, c, scale));
     lr_obj_ = lp;
   }
@@ -61,13 +64,15 @@ struct Sgd_Experiment {
     lr_obj_ = lp;
   }
 
-  void init_ddim_learning_rate(double eta, double a, double b, double c, double eps) {
+  void init_ddim_learning_rate(double eta, double a, double b, double c,
+    double eps) {
     grad_func_type grad_func = create_grad_func_instance();
     learnrate_ptr_type lp(new Sgd_Ddim_Learn_Rate(d, eta, a, b, c, eps, grad_func));
     lr_obj_ = lp;
   }
 
-  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const Sgd_DataPoint& data_pt, double offset, unsigned t) const {
+  const Sgd_Learn_Rate_Value& learning_rate(const mat& theta_old, const
+    Sgd_DataPoint& data_pt, double offset, unsigned t) const {
     //return lr_(theta_old, data_pt, offset, t, d);
     return lr_obj_->learning_rate(theta_old, data_pt, offset, t, d);
   }
@@ -82,14 +87,13 @@ protected:
   learnrate_ptr_type lr_obj_;
 };
 
-// Experiment class for estimating equations
 struct Sgd_Experiment_Ee : public Sgd_Experiment {
+  /* Experiment class for estimating equations */
 //@members
 
 //@methods
-  Sgd_Experiment_Ee(std::string m_name, Rcpp::List mp_attrs)
-  : Sgd_Experiment(m_name, mp_attrs) {
-    //gr = Rcpp::Function(mp_attrs["gr"]);
+  Sgd_Experiment_Ee(std::string m_name, Rcpp::List mp_attrs, Rcpp::Function gr)
+  : gr_(gr), Sgd_Experiment(m_name, mp_attrs) {
     // TODO
     // if model_attrs["wmatrix"] == NULL {
       int k = 5;
@@ -100,13 +104,13 @@ struct Sgd_Experiment_Ee : public Sgd_Experiment {
   }
 
   // Gradient
-  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
-    Rcpp::NumericVector r_theta_old = Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(theta_old));
-    Rcpp::NumericVector r_datapoint = Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(datapoint.x)); // TODO include both x and y (?)
-    //Rcpp::NumericMatrix r_out = gr(r_theta_old, r_datapoint);
-    //Rcpp::NumericMatrix r_out = mp_attrs["gr"](r_theta_old, r_datapoint);
-    // TODO don't know how to do this part
-    Rcpp::NumericMatrix r_out;
+  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint,
+    double offset) const {
+    Rcpp::NumericVector r_theta_old =
+      Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(theta_old));
+    Rcpp::NumericVector r_datapoint =
+      Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(datapoint.x)); // TODO include both x and y (?)
+    Rcpp::NumericMatrix r_out = gr_(r_theta_old, r_datapoint);
     mat out = Rcpp::as<mat>(r_out);
     // TODO include weighting matrix
     return out;
@@ -119,17 +123,17 @@ private:
   }
 
   mat wmatrix_;
-  //Rcpp::Function gr;
+  Rcpp::Function gr_;
   //TODO look into how optim calls its C function, maybe it stores it too
 };
 
-// Experiment class for generalized linear models
 struct Sgd_Experiment_Glm : public Sgd_Experiment {
+  /* Experiment class for generalized linear models */
 //@members
 
 //@methods
-  Sgd_Experiment_Glm(std::string m_name, Rcpp::List mp_attrs)
-  : Sgd_Experiment(m_name, mp_attrs) {
+  Sgd_Experiment_Glm(std::string m_name, Rcpp::List mp_attrs) :
+    Sgd_Experiment(m_name, mp_attrs) {
     if (model_name == "gaussian") {
       family_ptr_type fp(new Sgd_Gaussian());
       family_obj_ = fp;
@@ -147,7 +151,10 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
       family_obj_ = fp;
     }
 
-    if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
+    if (model_name == "gaussian" ||
+        model_name == "poisson" ||
+        model_name == "binomial" ||
+        model_name == "gamma") {
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
       rank = Rcpp::as<bool>(model_attrs["rank"]);
 
@@ -173,7 +180,8 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
   }
 
   // Gradient
-  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint, double offset) const {
+  mat gradient(const mat& theta_old, const Sgd_DataPoint& datapoint,
+    double offset) const {
     return ((datapoint.y - h_transfer(dot(datapoint.x, theta_old) + offset)) *
       datapoint.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
   }
@@ -201,7 +209,7 @@ struct Sgd_Experiment_Glm : public Sgd_Experiment {
     return transfer_obj_->second_derivative(u);
   }
 
-  bool valideta(double eta) const{
+  bool valideta(double eta) const {
     return transfer_obj_->valideta(eta);
   }
 
@@ -234,24 +242,24 @@ private:
   family_ptr_type family_obj_;
 };
 
-// Compute gradient coeff and its derivative for Implicit-SGD update
 template<typename EXPERIMENT>
 struct Get_grad_coeff {
-
+  // Compute gradient coeff and its derivative for Implicit-SGD update
   Get_grad_coeff(const EXPERIMENT& e, const Sgd_DataPoint& d,
-      const mat& t, double n, double off) : experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
+    const mat& t, double n, double off) :
+    experiment(e), datapoint(d), theta_old(t), normx(n), offset(off) {}
 
-  double operator() (double ksi) const{
+  double operator() (double ksi) const {
     return datapoint.y-experiment.h_transfer(dot(theta_old, datapoint.x)
                      + normx * ksi +offset);
   }
 
-  double first_derivative (double ksi) const{
+  double first_derivative (double ksi) const {
     return experiment.h_first_derivative(dot(theta_old, datapoint.x)
            + normx * ksi + offset)*normx;
   }
 
-  double second_derivative (double ksi) const{
+  double second_derivative (double ksi) const {
     return experiment.h_second_derivative(dot(theta_old, datapoint.x)
              + normx * ksi + offset)*normx*normx;
   }
@@ -263,13 +271,14 @@ struct Get_grad_coeff {
   double offset;
 };
 
-// Root finding functor for Implicit-SGD update
 template<typename EXPERIMENT>
 struct Implicit_fn {
+  // Root finding functor for Implicit-SGD update
   typedef boost::math::tuple<double, double, double> tuple_type;
 
-  Implicit_fn(double a, const Get_grad_coeff<EXPERIMENT>& get_grad): at(a), g(get_grad) {}
-  tuple_type operator() (double u) const{
+  Implicit_fn(double a, const Get_grad_coeff<EXPERIMENT>& get_grad) :
+    at(a), g(get_grad) {}
+  tuple_type operator() (double u) const {
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);
     double second = at * g.second_derivative(u);

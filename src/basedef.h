@@ -6,9 +6,9 @@
 #define DEBUG 0
 
 #if __R__
-	#include "RcppArmadillo.h"
+  #include "RcppArmadillo.h"
 #else
-	#include <armadillo>
+  #include <armadillo>
 #endif
 
 #include <boost/function.hpp>

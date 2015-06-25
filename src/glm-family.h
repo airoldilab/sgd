@@ -11,8 +11,8 @@ struct Sgd_Poisson;
 struct Sgd_Binomial;
 struct Sgd_Gamma;
 
-struct Sgd_Family_Base
-{
+struct Sgd_Family_Base {
+  /* Base class from which all exponential family classes inherit from */
 #if DEBUG
   virtual ~Sgd_Family_Base() {
     Rcpp::Rcout << "Family object released" << std::endl;
@@ -25,8 +25,8 @@ struct Sgd_Family_Base
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
 };
 
-// gaussian model family
 struct Sgd_Gaussian : public Sgd_Family_Base {
+  // gaussian model family
   virtual double variance(double u) const {
     return 1.;
   }
@@ -36,8 +36,8 @@ struct Sgd_Gaussian : public Sgd_Family_Base {
   }
 };
 
-// poisson model family
 struct Sgd_Poisson : public Sgd_Family_Base {
+  // poisson model family
   virtual double variance(double u) const {
     return u;
   }
@@ -53,9 +53,8 @@ struct Sgd_Poisson : public Sgd_Family_Base {
   }
 };
 
-// binomial model family
-struct Sgd_Binomial : public Sgd_Family_Base
-{
+struct Sgd_Binomial : public Sgd_Family_Base {
+  // binomial model family
   virtual double variance(double u) const {
     return u * (1. - u);
   }
@@ -76,8 +75,8 @@ private:
   }
 };
 
-struct Sgd_Gamma : public Sgd_Family_Base
-{
+struct Sgd_Gamma : public Sgd_Family_Base {
+  // gamma model family
   virtual double variance(double u) const {
     return pow(u, 2);
   }

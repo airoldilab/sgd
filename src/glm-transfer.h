@@ -12,6 +12,7 @@ struct Sgd_Exp_Transfer;
 struct Sgd_Logistic_Transfer;
 
 struct Sgd_Transfer_Base {
+  /* Base class from which all transfer function classes inherit from */
 #if DEBUG
   virtual ~Sgd_Transfer_Base() {
     Rcpp::Rcout << "Transfer object released! " << std::endl;
@@ -37,8 +38,8 @@ struct Sgd_Transfer_Base {
   virtual bool valideta(double eta) const = 0;
 };
 
-// Identity transfer function
 struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
+  // Identity transfer function
   virtual double transfer(double u) const {
     return u;
   }
@@ -60,8 +61,8 @@ struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-// Inverse transfer function
 struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
+  // Inverse transfer function
   virtual double transfer(double u) const {
     if (valideta(u)) {
       return -1. / u;
@@ -95,8 +96,8 @@ struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-// Exponentional transfer function
 struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
+  // Exponentional transfer function
   virtual double transfer(double u) const {
     return exp(u);
   }
@@ -121,8 +122,8 @@ struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-// Logistic transfer function
 struct Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
+  // Logistic transfer function
   virtual double transfer(double u) const {
     return sigmoid(u);
   }
@@ -149,7 +150,6 @@ struct Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
   }
 
 private:
-  // sigmoid function
   double sigmoid(double u) const {
       return 1. / (1. + exp(-u));
   }
