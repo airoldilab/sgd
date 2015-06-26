@@ -13,14 +13,15 @@ mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   /* Return the new estimate of parameters, using SGD */
   data_point data_pt = data.get_data_point(t);
   unsigned idx = data.idxmap[t-1];
-  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, experiment.offset[idx], t);
+  learn_rate_value at = experiment.learning_rate(theta_old, data_pt,
+    experiment.offset[idx], t);
   mat grad_t = experiment.gradient(theta_old, data_pt, experiment.offset[idx]);
   if (!is_finite(grad_t)) {
     good_gradient = false;
   }
   mat theta_new = theta_old + (at * grad_t);
 
-  // check the correctness of SGD update in DEBUG mode
+  // Check the correctness of SGD update in DEBUG mode.
 #if DEBUG
   if (!(at < 1)) {
     Rcpp::Rcout << "learning rate larger than 1 " <<
@@ -43,6 +44,7 @@ mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
     Rcpp::Rcout<< "Output = " << theta_new << std::endl;
   }
 #endif
+
   return theta_new;
 }
 

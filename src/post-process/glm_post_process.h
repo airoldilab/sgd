@@ -4,11 +4,11 @@
 #include "basedef.h"
 #include "data/data_set.h"
 #include "data/online_output.h"
+#include "experiment/glm_experiment.h"
 #include <stdlib.h>
 
-template<typename EXPERIMENT>
-Rcpp::List glm_post_process(const online_output& out, const data_set& data,
-  const EXPERIMENT& exprm, mat& coef, unsigned X_rank) {
+Rcpp::List post_process(const online_output& out, const data_set& data,
+  const glm_experiment& exprm, mat& coef, unsigned X_rank) {
   // Check the validity of eta for all observations.
   if (!data.big) {
     mat eta;
@@ -49,8 +49,7 @@ Rcpp::List glm_post_process(const online_output& out, const data_set& data,
       Rcpp::Named("eta") = eta,
       Rcpp::Named("rank") = X_rank,
       Rcpp::Named("deviance") = dev);
-    }
-  else{
+  } else {
     return Rcpp::List::create(
       Rcpp::Named("mu") = 0,
       Rcpp::Named("eta") = 0,

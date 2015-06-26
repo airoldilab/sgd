@@ -8,15 +8,22 @@
 using namespace arma;
 
 class base_learn_rate {
-  /* Base class from which all learning rate classes inherit from */
+  /**
+   * Base class for learning rates
+   */
 public:
+  // Constructors
+  base_learn_rate() {}
+
 #if DEBUG
-  virtual ~base_learn_rate() {
+  ~base_learn_rate() {
     Rcpp::Rcout << "Learning rate object released" << std::endl;
   }
 #else
-  virtual ~base_learn_rate() {}
+  ~base_learn_rate() {}
 #endif
+
+  // Operators
   virtual const learn_rate_value& learning_rate(const mat& theta_old, const
     data_point& data_pt, double offset, unsigned t, unsigned d) = 0;
 };

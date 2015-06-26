@@ -22,7 +22,9 @@ template<typename EXPERIMENT>
 class Implicit_fn;
 
 class base_experiment {
-  /* Base class from which all model experiment classes inherit from */
+  /**
+   * Base class for experiments
+   */
 public:
   std::string model_name;
   unsigned n_iters;

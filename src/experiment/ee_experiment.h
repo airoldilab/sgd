@@ -16,10 +16,14 @@
 using namespace arma;
 
 class ee_experiment : public base_experiment {
-  /* Experiment class for estimating equations */
+  /**
+   * Estimating equations
+   */
 public:
-  ee_experiment(std::string m_name, Rcpp::List mp_attrs, Rcpp::Function gr)
-  : gr_(gr), base_experiment(m_name, mp_attrs) {
+  ee_experiment(std::string m_name, Rcpp::List mp_attrs) :
+    base_experiment(m_name, mp_attrs) {
+    //gr_(mp_attrs["gr"]), base_experiment(m_name, mp_attrs) {
+      //gr_ = model_attrs["gr"];
     // TODO
     // if model_attrs["wmatrix"] == NULL {
       int k = 5;
@@ -30,6 +34,7 @@ public:
   }
 
   // Gradient
+  #if 0
   mat gradient(const mat& theta_old, const data_point& data_pt,
     double offset) const {
     Rcpp::NumericVector r_theta_old =
@@ -41,7 +46,10 @@ public:
     // TODO include weighting matrix
     return out;
   }
+  #endif
 
+  // TODO
+  bool rank;
 private:
   grad_func_type create_grad_func_instance() {
     grad_func_type grad_func = boost::bind(&ee_experiment::gradient, this, _1, _2, _3);
@@ -49,8 +57,7 @@ private:
   }
 
   mat wmatrix_;
-  Rcpp::Function gr_;
-  //TODO look into how optim calls its C function, maybe it stores it too
+  //Rcpp::Function gr_;
 };
 
 #endif

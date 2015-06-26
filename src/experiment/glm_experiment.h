@@ -18,7 +18,9 @@
 using namespace arma;
 
 class glm_experiment : public base_experiment {
-  /* Experiment class for generalized linear models */
+  /**
+   * Generalized linear models
+   */
 public:
   glm_experiment(std::string m_name, Rcpp::List mp_attrs) :
     base_experiment(m_name, mp_attrs) {

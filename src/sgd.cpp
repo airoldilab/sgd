@@ -12,6 +12,7 @@
 #include "learn-rate/onedim_eigen_learn_rate.h"
 #include "learn-rate/ddim_learn_rate.h"
 #include "post-process/glm_post_process.h"
+#include "post-process/ee_post_process.h"
 #include "validity-check/validity_check.h"
 #include <stdlib.h>
 
@@ -78,24 +79,19 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
   exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
   exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);
 
-
   // Set learning rate in experiment.
   vec lr_control= Rcpp::as<vec>(Experiment["lr.control"]);
   if (exprm.lr == "one-dim") {
     exprm.init_one_dim_learning_rate(lr_control(0), lr_control(1),
                                      lr_control(2), lr_control(3));
-  }
-  else if (exprm.lr == "one-dim-eigen") {
+  } else if (exprm.lr == "one-dim-eigen") {
     exprm.init_one_dim_eigen_learning_rate();
-  }
-  else if (exprm.lr == "d-dim") {
+  } else if (exprm.lr == "d-dim") {
     exprm.init_ddim_learning_rate(1., 0., 1., 1., lr_control(0));
-  }
-  else if (exprm.lr == "adagrad") {
+  } else if (exprm.lr == "adagrad") {
     exprm.init_ddim_learning_rate(lr_control(0), 1., 1., .5,
                                   lr_control(1));
-  }
-  else if (exprm.lr == "rmsprop") {
+  } else if (exprm.lr == "rmsprop") {
     exprm.init_ddim_learning_rate(lr_control(0), lr_control(1),
                                   1-lr_control(1), .5, lr_control(2));
   }
@@ -148,23 +144,21 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
     // SGD update
     if (method == "sgd" || method == "asgd") {
       theta_new = explicit_sgd(t, theta_old, data, exprm, good_gradient);
-    }
-    else if (method == "implicit" || method == "ai-sgd") {
+    } else if (method == "implicit" || method == "ai-sgd") {
       theta_new = implicit_sgd(t, theta_old, data, exprm, good_gradient);
     }
 
     // Whether to do averaging
     if (flag_ave) {
       if (t != 1) {
-        theta_new_ave = (1. - 1./(double)t) * theta_old_ave
-          + 1./((double)t) * theta_new;
+        theta_new_ave = (1. - 1./(double)t) * theta_old_ave +
+          1./((double)t) * theta_new;
       } else {
         theta_new_ave = theta_new;
       }
       out = theta_new_ave;
       theta_old_ave = theta_new_ave;
-    }
-    else {
+    } else {
       out = theta_new;
     }
     theta_old = theta_new;
@@ -178,13 +172,7 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
 
   // Collect model-specific output.
   mat coef = out.get_last_estimate();
-  Rcpp::List model_out;
-  if (exprm.model_name == "gaussian" ||
-      exprm.model_name == "poisson" ||
-      exprm.model_name == "binomial" ||
-      exprm.model_name == "gamma") {
-    model_out = glm_post_process(out, data, exprm, coef, X_rank);
-  }
+  Rcpp::List model_out = post_process(out, data, exprm, coef, X_rank);
 
   return Rcpp::List::create(
     Rcpp::Named("coefficients") = coef,

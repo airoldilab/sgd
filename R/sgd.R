@@ -162,7 +162,6 @@
 #' @useDynLib sgd
 #' @import MASS
 #' @importFrom Rcpp evalCpp
-#' @aliases sgd.formula sgd.function sgd.matrix
 
 ################################################################################
 # Classes
@@ -243,6 +242,7 @@ sgd.function <- function(x,
   gr <- NULL
   lower <- -Inf
   upper <- Inf
+  stop("sgd.function not implemented yet")
 }
 
 #' @export
@@ -285,11 +285,10 @@ sgd.matrix <- function(x, y, model,
     stop("'model' not recognized")
   }
   out <- fit(x, y, model.control, sgd.control)
-  if (nrow(x) > 200){
-    samples = sample(nrow(x), 200,replace = F)
-  }
-  else {
-    samples = 1:nrow(x)
+  if (nrow(x) > 200) {
+    samples <- sample(nrow(x), 200,replace = F)
+  } else {
+    samples <- 1:nrow(x)
   }
   sample.x <- x[samples, ]
   sample.y <- y[samples]
@@ -312,13 +311,15 @@ sgd.big.matrix <- function(x, y, model,
 # Generic methods
 ################################################################################
 
-# TODO
-#print.sgd <- function(x) {
-#  # What goes to standard output.
-#  #
-#  # Args:
-#  #   x:    sgd object
-#}
+#' Generic function for printing of \code{sgd} objects.
+#'
+#' @param x sgd object
+#'
+#' @export
+print.sgd <- function(x) {
+  # TODO
+  print(x)
+}
 
 #' Generic function for plotting of \code{sgd} objects.
 #'
@@ -529,6 +530,7 @@ fit_ee <- function(x, y,
   EMPTY <- d == 0
   if (EMPTY) {
     # TODO
+    stop("Data set has no features")
   } else {
     dataset <- list(X=x, Y=y, big=F)
     if ('big.matrix' %in% class(x)){

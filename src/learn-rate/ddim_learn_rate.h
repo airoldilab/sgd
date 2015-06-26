@@ -18,12 +18,13 @@ class ddim_learn_rate : public base_learn_rate {
    * rmsprop: a=gamma, b=1-gamma, c=1/2, eta=1, eps=1e-6
    */
 public:
-  ddim_learn_rate(unsigned d, double eta_, double a_, double b_,
-                      double c_, double eps_, const grad_func_type&
-                      gr) :
+  // Constructors
+  ddim_learn_rate(unsigned d, double eta_, double a_, double b_, double c_,
+                  double eps_, const grad_func_type& gr) :
     Idiag(ones<vec>(d)), eta(eta_), a(a_), b(b_), c(c_), eps(eps_),
     grad_func(gr), v(2, d) {}
 
+  // Operators
   virtual const learn_rate_value& learning_rate(const mat& theta_old, const
     data_point& data_pt, double offset, unsigned t, unsigned d) {
     mat Gi = grad_func(theta_old, data_pt, offset);
