@@ -9,7 +9,7 @@
 
 template<typename EXPERIMENT>
 mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  const EXPERIMENT& experiment, bool& good_gradient) {
+  EXPERIMENT& experiment, bool& good_gradient) {
   /* Return the new estimate of parameters, using SGD */
   data_point data_pt = data.get_data_point(t);
   unsigned idx = data.idxmap[t-1];

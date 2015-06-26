@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  const glm_experiment& experiment, bool& good_gradient) {
+  glm_experiment& experiment, bool& good_gradient) {
   /* return the new estimate of parameters, using implicit SGD */
   data_point data_pt = data.get_data_point(t);
   unsigned idx = data.idxmap[t-1];
@@ -94,7 +94,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
 }
 
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  const ee_experiment& experiment, bool& good_gradient) {
+  ee_experiment& experiment, bool& good_gradient) {
   //TODO
   Rcpp::Rcout << "error: implicit not implemented for EE yet " << t << std::endl;
   good_gradient = false;
