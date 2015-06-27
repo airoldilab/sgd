@@ -19,7 +19,7 @@ public:
   onedim_eigen_learn_rate(const grad_func_type& gr) : grad_func(gr), v(0, 1) {}
 
   // Operators
-  virtual const learn_rate_value& learning_rate(const mat& theta_old, const
+  virtual const learn_rate_value& operator()(const mat& theta_old, const
     data_point& data_pt, double offset, unsigned t, unsigned d) {
     mat Gi = grad_func(theta_old, data_pt, offset);
     double sum_eigen = 0;

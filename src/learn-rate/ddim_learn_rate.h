@@ -25,7 +25,7 @@ public:
     grad_func(gr), v(2, d) {}
 
   // Operators
-  virtual const learn_rate_value& learning_rate(const mat& theta_old, const
+  virtual const learn_rate_value& operator()(const mat& theta_old, const
     data_point& data_pt, double offset, unsigned t, unsigned d) {
     mat Gi = grad_func(theta_old, data_pt, offset);
     for (unsigned i = 0; i < d; ++i) {

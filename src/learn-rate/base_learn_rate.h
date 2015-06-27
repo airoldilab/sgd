@@ -24,7 +24,7 @@ public:
 #endif
 
   // Operators
-  virtual const learn_rate_value& learning_rate(const mat& theta_old, const
+  virtual const learn_rate_value& operator()(const mat& theta_old, const
     data_point& data_pt, double offset, unsigned t, unsigned d) = 0;
 };
 
