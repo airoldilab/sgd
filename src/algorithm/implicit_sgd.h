@@ -53,43 +53,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   } else {
     result = lower;
   }
-  theta_new = theta_old + result * data_pt.x.t();
-
-  // Check the correctness of SGD update in DEBUG mode.
-#if DEBUG
-  if (!(average_lr < 1)) {
-    Rcpp::Rcout << "learning rate larger than 1" <<
-      "at Iter: " << t << std::endl;
-    Rcpp::Rcout << "lr = " << average_lr <<std::endl;
-  }
-  mat theta_test;
-  if (experiment.model_name == "gaussian" ||
-      experiment.model_name == "poisson" ||
-      experiment.model_name == "binomial" ||
-      experiment.model_name == "gamma") {
-    theta_test = theta_new - average_lr * ((data_pt.y - experiment.h_transfer(
-      dot(data_pt.x, theta_new)))*data_pt.x).t();
-  } else {
-    theta_test = theta_old;
-  }
-  double error = max(max(abs(theta_test - theta_old)));
-  double scale = max(max(abs(theta_test)));
-  if (error/scale > 1e-5 && error > 1e-5) {
-    Rcpp::Rcout<< "Wrong SGD update at iter: " << t + 1 << std::endl;
-    Rcpp::Rcout<< "Max Error = " <<  max(max(abs(theta_test - theta_old))) << std::endl;
-    Rcpp::Rcout<< "test = " << theta_test << std::endl;
-    Rcpp::Rcout<< "new = " << theta_new << std::endl;
-    Rcpp::Rcout<< "old = " << theta_old << std::endl;
-    Rcpp::Rcout<< "result = " << result << std::endl;
-    Rcpp::Rcout<< "f(result) = " << implicit_fn(result) <<std::endl;
-    Rcpp::Rcout<< "lr = " << average_lr <<std::endl;
-    Rcpp::Rcout<< "data.x = " << data_pt.x <<std::endl;
-    Rcpp::Rcout<< "data.y = " << data_pt.y <<std::endl;
-    Rcpp::Rcout<< "normx = " << normx <<std::endl;
-  }
-#endif
-
-  return theta_new;
+  return theta_old + result * data_pt.x.t();
 }
 
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,

@@ -12,14 +12,6 @@ class logistic_transfer;
 class base_transfer {
   /* Base class from which all transfer function classes inherit from */
 public:
-#if DEBUG
-  virtual ~base_transfer() {
-    Rcpp::Rcout << "Transfer object released! " << std::endl;
-  }
-#else
-  virtual ~base_transfer() {}
-#endif
-
   virtual double transfer(double u) const = 0;
 
   virtual mat transfer(const mat& u) const {

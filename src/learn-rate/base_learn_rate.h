@@ -13,14 +13,6 @@ public:
   // Constructors
   base_learn_rate() {}
 
-#if DEBUG
-  ~base_learn_rate() {
-    Rcpp::Rcout << "Learning rate object released" << std::endl;
-  }
-#else
-  ~base_learn_rate() {}
-#endif
-
   // Operators
   virtual const learn_rate_value& operator()(const mat& theta_old, const
     data_point& data_pt, unsigned t, unsigned d) = 0;

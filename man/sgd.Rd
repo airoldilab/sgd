@@ -45,7 +45,8 @@ equation).}
     naming a family function, a family function or the result of a call to
     a family function.  (See \code{\link[stats]{family}} for details of
     family functions.)
-  \item rank logical. Should the rank of the design matrix be checked?
+  \item rank (\code{"glm"}): logical. Should the rank of the design matrix
+    be checked?
   \item fn (\code{"ee"}): function \eqn{g(\theta,x)} which returns a
     \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
     required argument if \code{gr} not specified

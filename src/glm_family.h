@@ -12,14 +12,6 @@ class gamma_family;
 class base_family {
   /* Base class from which all exponential family classes inherit from */
 public:
-#if DEBUG
-  virtual ~base_family() {
-    Rcpp::Rcout << "Family object released" << std::endl;
-  }
-#else
-  virtual ~base_family() {}
-#endif
-
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
 };

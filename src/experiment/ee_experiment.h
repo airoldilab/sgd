@@ -32,7 +32,6 @@ public:
   }
 
   // Gradient
-  #if 0
   mat gradient(const mat& theta_old, const data_point& data_pt) const {
     Rcpp::NumericVector r_theta_old =
       Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(theta_old));
@@ -44,11 +43,14 @@ public:
     return out;
   }
 
-  grad_func_type grad_func();
-  #endif
+  // Learning rates
+  grad_func_type grad_func() {
+    return boost::bind(&ee_experiment::gradient, this, _1, _2);
+  }
 
   // TODO
   bool rank;
+
 private:
   mat wmatrix_;
   Rcpp::Function gr_;

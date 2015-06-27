@@ -21,8 +21,10 @@
 // [[Rcpp::plugins(cpp11)]]
 
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
-  bool verbose, Rcpp::List Experiment);
+void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment);
+template<typename EXPERIMENT>
+Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
+  bool verbose);
 
 // [[Rcpp::export]]
 Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
@@ -54,21 +56,21 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
       model_name == "binomial" ||
       model_name == "gamma") {
     glm_experiment exprm(model_name, model_attrs);
-    return run_experiment(data, exprm, meth, verb, Experiment);
+    set_experiment(exprm, Experiment);
+    return run_experiment(data, exprm, meth, verb);
   } else if (model_name == "ee") {
     ee_experiment exprm(model_name, model_attrs, model_attrs["gr"]);
     //ee_experiment exprm(model_name, model_attrs);
-    return run_experiment(data, exprm, meth, verb, Experiment);
+    set_experiment(exprm, Experiment);
+    return run_experiment(data, exprm, meth, verb);
   } else {
     return Rcpp::List();
   }
 }
 
 template<typename EXPERIMENT>
-Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
-  bool verbose, Rcpp::List Experiment) {
-  /* Run experiment with templated argument */
-  // Put remaining attributes into experiment.
+void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment) {
+  /* Put attributes into experiment. */
   exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
   exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
   exprm.n_passes = Rcpp::as<unsigned>(Experiment["npasses"]);
@@ -84,7 +86,6 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
 
   // Set learning rate in experiment.
   vec lr_control= Rcpp::as<vec>(Experiment["lr.control"]);
-  #if 0
   if (exprm.lr == "one-dim") {
     exprm.set_learn_rate(new
       onedim_learn_rate(lr_control(0), lr_control(1),
@@ -111,16 +112,20 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
                       exprm.grad_func())
       );
   }
+}
 
+template<typename EXPERIMENT>
+Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
+  bool verbose) {
   unsigned nsamples = data.n_samples;
   unsigned nfeatures = data.n_features;
 
-  // Check if the number of observations is greater than the rank of X.
   unsigned X_rank = nfeatures;
   if (exprm.model_name == "gaussian" ||
       exprm.model_name == "poisson" ||
       exprm.model_name == "binomial" ||
       exprm.model_name == "gamma") {
+    // Check if the number of observations is greater than the rank of X.
     if (exprm.rank) {
       X_rank = arma::rank(data.X);
       if (X_rank > nsamples) {
@@ -131,11 +136,9 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
     }
   }
 
-#if DEBUG
-  Rcpp::Rcout << data;
-  Rcpp::Rcout << exprm;
-  Rcpp::Rcout << "    Method: " << method << std::endl;
-#endif
+  if (verbose) {
+    Rcpp::Rcout << "    Method: " << method << std::endl;
+  }
 
   // Initialize booleans.
   bool good_gradient = true;
@@ -153,9 +156,9 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
   mat theta_old_ave;
 
   // Run SGD!
-#if DEBUG
-  Rcpp::Rcout << "SGD Start! " <<std::endl;
-#endif
+  if (verbose) {
+    Rcpp::Rcout << "SGD Start! " <<std::endl;
+  }
   for (int t = 1; t <= nsamples; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {
@@ -197,6 +200,5 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
     Rcpp::Named("times") = out.get_times(),
     Rcpp::Named("pos") = out.get_pos(),
     Rcpp::Named("model.out") = model_out);
-  #endif
   return Rcpp::List::create();
 }
