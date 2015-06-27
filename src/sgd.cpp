@@ -82,18 +82,30 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
   // Set learning rate in experiment.
   vec lr_control= Rcpp::as<vec>(Experiment["lr.control"]);
   if (exprm.lr == "one-dim") {
-    exprm.init_one_dim_learning_rate(lr_control(0), lr_control(1),
-                                     lr_control(2), lr_control(3));
+    exprm.set_learn_rate(new
+      onedim_learn_rate(lr_control(0), lr_control(1),
+                        lr_control(2), lr_control(3))
+      );
   } else if (exprm.lr == "one-dim-eigen") {
-    exprm.init_one_dim_eigen_learning_rate();
+    exprm.set_learn_rate(new
+      onedim_eigen_learn_rate(exprm.grad_func())
+      );
   } else if (exprm.lr == "d-dim") {
-    exprm.init_ddim_learning_rate(1., 0., 1., 1., lr_control(0));
+    exprm.set_learn_rate(new
+      ddim_learn_rate(exprm.d, 1., 0., 1., 1.,
+                      lr_control(0), exprm.grad_func())
+      );
   } else if (exprm.lr == "adagrad") {
-    exprm.init_ddim_learning_rate(lr_control(0), 1., 1., .5,
-                                  lr_control(1));
+    exprm.set_learn_rate(new
+      ddim_learn_rate(exprm.d, lr_control(0), 1., 1., .5,
+                      lr_control(1), exprm.grad_func())
+      );
   } else if (exprm.lr == "rmsprop") {
-    exprm.init_ddim_learning_rate(lr_control(0), lr_control(1),
-                                  1-lr_control(1), .5, lr_control(2));
+    exprm.set_learn_rate(new
+      ddim_learn_rate(exprm.d, lr_control(0), lr_control(1),
+                      1-lr_control(1), .5, lr_control(2),
+                      exprm.grad_func())
+      );
   }
 
   unsigned nsamples = data.n_samples;
@@ -137,9 +149,9 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
   mat theta_old_ave;
 
   // Run SGD!
-  #if DEBUG
+#if DEBUG
   Rcpp::Rcout << "SGD Start! " <<std::endl;
-  #endif
+#endif
   for (int t = 1; t <= nsamples; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {

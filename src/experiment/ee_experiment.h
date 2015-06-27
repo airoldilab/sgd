@@ -15,6 +15,8 @@
 
 using namespace arma;
 
+typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
+
 class ee_experiment : public base_experiment {
   /**
    * Estimating equations
@@ -46,16 +48,13 @@ public:
     // TODO include weighting matrix
     return out;
   }
+
+  grad_func_type grad_func();
   #endif
 
   // TODO
   bool rank;
 private:
-  grad_func_type create_grad_func_instance() {
-    grad_func_type grad_func = boost::bind(&ee_experiment::gradient, this, _1, _2, _3);
-    return grad_func;
-  }
-
   mat wmatrix_;
   //Rcpp::Function gr_;
 };

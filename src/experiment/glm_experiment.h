@@ -17,6 +17,8 @@
 
 using namespace arma;
 
+typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
+
 class glm_experiment : public base_experiment {
   /**
    * Generalized linear models
@@ -25,20 +27,16 @@ public:
   glm_experiment(std::string m_name, Rcpp::List mp_attrs) :
     base_experiment(m_name, mp_attrs) {
     if (model_name == "gaussian") {
-      family_ptr_type fp(new gaussian_family());
-      family_obj_ = fp;
+      family_obj_ = new gaussian_family();
     }
     else if (model_name == "poisson") {
-      family_ptr_type fp(new poisson_family());
-      family_obj_ = fp;
+      family_obj_ = new poisson_family();
     }
     else if (model_name == "binomial") {
-      family_ptr_type fp(new binomial_family());
-      family_obj_ = fp;
+      family_obj_ = new binomial_family();
     }
     else if (model_name == "gamma") {
-      family_ptr_type fp(new gamma_family());
-      family_obj_ = fp;
+      family_obj_ = new gamma_family();
     }
 
     if (model_name == "gaussian" ||
@@ -47,25 +45,20 @@ public:
         model_name == "gamma") {
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
       rank = Rcpp::as<bool>(model_attrs["rank"]);
-
       if (transfer_name == "identity") {
-        transfer_ptr_type tp(new identity_transfer());
-        transfer_obj_ = tp;
+        transfer_obj_ = new identity_transfer();
       }
       else if (transfer_name == "exp") {
-        transfer_ptr_type tp(new exp_transfer());
-        transfer_obj_ = tp;
+        transfer_obj_ = new exp_transfer();
       }
       else if (transfer_name == "inverse") {
-        transfer_ptr_type tp(new inverse_transfer());
-        transfer_obj_ = tp;
+        transfer_obj_ = new inverse_transfer();
       }
       else if (transfer_name == "logistic") {
-        transfer_ptr_type tp(new logistic_transfer());
-        transfer_obj_ = tp;
+        transfer_obj_ = new logistic_transfer();
       }
-    } else if (model_name == "...") {
-      // code here
+    } else {
+      Rcpp::Rcout << "Model not implemented yet " << std::endl;
     }
   }
 
@@ -76,15 +69,17 @@ public:
       data_pt.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
   }
 
+  grad_func_type grad_func() {
+    return boost::bind(&glm_experiment::gradient, this, _1, _2, _3);
+  }
+
   // TODO not all models have these methods
   double h_transfer(double u) const {
     return transfer_obj_->transfer(u);
-    //return transfer_(u);
   }
 
   mat h_transfer(const mat& u) const {
     return transfer_obj_->transfer(u);
-    // return mat_transfer_(u);
   }
 
   double g_link(double u) const {
@@ -120,16 +115,8 @@ public:
   bool rank;
 
 private:
-  grad_func_type create_grad_func_instance() {
-    grad_func_type grad_func = boost::bind(&glm_experiment::gradient, this, _1, _2, _3);
-    return grad_func;
-  }
-
-  typedef boost::shared_ptr<base_transfer> transfer_ptr_type;
-  transfer_ptr_type transfer_obj_;
-
-  typedef boost::shared_ptr<base_family> family_ptr_type;
-  family_ptr_type family_obj_;
+  base_transfer* transfer_obj_;
+  base_family* family_obj_;
 };
 
 #endif

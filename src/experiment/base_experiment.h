@@ -3,9 +3,7 @@
 
 #include "basedef.h"
 #include "data/data_point.h"
-#include "learn-rate/onedim_learn_rate.h"
-#include "learn-rate/onedim_eigen_learn_rate.h"
-#include "learn-rate/ddim_learn_rate.h"
+#include "learn-rate/base_learn_rate.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>
@@ -13,6 +11,8 @@
 #include <iostream>
 
 using namespace arma;
+
+typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
 
 class base_experiment;
 //TODO
@@ -50,39 +50,18 @@ public:
   mat gradient(const mat& theta_old, const data_point& data_pt, double offset) const;
 
   // Learning rates
-  void init_one_dim_learning_rate(double gamma, double alpha, double c,
-    double scale) {
-    learnrate_ptr_type lp(new onedim_learn_rate(gamma, alpha, c, scale));
-    lr_obj_ = lp;
+  void set_learn_rate(base_learn_rate* lr) {
+    lr_ = lr;
   }
-
-  void init_one_dim_eigen_learning_rate() {
-    grad_func_type grad_func = create_grad_func_instance();
-    learnrate_ptr_type lp(new onedim_eigen_learn_rate(grad_func));
-    lr_obj_ = lp;
-  }
-
-  void init_ddim_learning_rate(double eta, double a, double b, double c,
-    double eps) {
-    grad_func_type grad_func = create_grad_func_instance();
-    learnrate_ptr_type lp(new ddim_learn_rate(d, eta, a, b, c, eps, grad_func));
-    lr_obj_ = lp;
-  }
+  grad_func_type grad_func();
 
   const learn_rate_value& learning_rate(const mat& theta_old, const
-    data_point& data_pt, double offset, unsigned t) const {
-    //return lr_(theta_old, data_pt, offset, t, d);
-    return (*lr_obj_)(theta_old, data_pt, offset, t, d);
+    data_point& data_pt, double offset, unsigned t) {
+    return (*lr_)(theta_old, data_pt, offset, t, d);
   }
 
 protected:
-  virtual grad_func_type create_grad_func_instance() {
-    grad_func_type grad_func;
-    return grad_func;
-  }
-
-  typedef boost::shared_ptr<base_learn_rate> learnrate_ptr_type;
-  learnrate_ptr_type lr_obj_;
+  base_learn_rate* lr_;
 };
 
 template<typename EXPERIMENT>
