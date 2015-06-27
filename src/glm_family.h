@@ -3,8 +3,6 @@
 
 #include "basedef.h"
 
-using namespace arma;
-
 class base_family;
 class gaussian_family;
 class poisson_family;

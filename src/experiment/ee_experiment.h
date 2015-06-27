@@ -13,8 +13,6 @@
 #include <boost/ref.hpp>
 #include <iostream>
 
-using namespace arma;
-
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class ee_experiment : public base_experiment {
@@ -22,11 +20,9 @@ class ee_experiment : public base_experiment {
    * Estimating equations
    */
 public:
-  ee_experiment(std::string m_name, Rcpp::List mp_attrs) :
-    base_experiment(m_name, mp_attrs) {
-    //gr_(mp_attrs["gr"]), base_experiment(m_name, mp_attrs) {
-      //gr_ = model_attrs["gr"];
-    // TODO
+  // TODO interface not consistent with other experiments
+  ee_experiment(std::string m_name, Rcpp::List mp_attrs, Rcpp::Function gr) :
+    gr_(gr), base_experiment(m_name, mp_attrs) {
     // if model_attrs["wmatrix"] == NULL {
       int k = 5;
       wmatrix_ = eye<mat>(k, k);
@@ -55,7 +51,7 @@ public:
   bool rank;
 private:
   mat wmatrix_;
-  //Rcpp::Function gr_;
+  Rcpp::Function gr_;
 };
 
 #endif

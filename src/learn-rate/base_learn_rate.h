@@ -5,8 +5,6 @@
 #include "data/data_point.h"
 #include "learn-rate/learn_rate_value.h"
 
-using namespace arma;
-
 class base_learn_rate {
   /**
    * Base class for learning rates

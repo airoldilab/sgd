@@ -6,8 +6,6 @@
 #include "basedef.h"
 #include "data/data_set.h"
 
-using namespace arma;
-
 class online_output {
   /* Collection of SGD-related values for the data set. */
 public:

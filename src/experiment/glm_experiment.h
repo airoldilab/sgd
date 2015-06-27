@@ -15,8 +15,6 @@
 #include <boost/ref.hpp>
 #include <iostream>
 
-using namespace arma;
-
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class glm_experiment : public base_experiment {

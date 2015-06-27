@@ -49,12 +49,16 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
   std::string meth = Rcpp::as<std::string>(method);
   bool verb = Rcpp::as<bool>(verbose);
 
-  if (model_name == "gaussian" || model_name == "poisson" || model_name == "binomial" || model_name == "gamma") {
+  if (model_name == "gaussian" ||
+      model_name == "poisson" ||
+      model_name == "binomial" ||
+      model_name == "gamma") {
     glm_experiment exprm(model_name, model_attrs);
     return run_experiment(data, exprm, meth, verb, Experiment);
-  //} else if (model_name == "ee") {
-  //  ee_experiment exprm(model_name, model_attrs);
-  //  return run_experiment(data, exprm, meth, verb, Experiment);
+  } else if (model_name == "ee") {
+    ee_experiment exprm(model_name, model_attrs, model_attrs["gr"]);
+    //ee_experiment exprm(model_name, model_attrs);
+    return run_experiment(data, exprm, meth, verb, Experiment);
   } else {
     return Rcpp::List();
   }
@@ -80,6 +84,7 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
 
   // Set learning rate in experiment.
   vec lr_control= Rcpp::as<vec>(Experiment["lr.control"]);
+  #if 0
   if (exprm.lr == "one-dim") {
     exprm.set_learn_rate(new
       onedim_learn_rate(lr_control(0), lr_control(1),
@@ -192,4 +197,6 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
     Rcpp::Named("times") = out.get_times(),
     Rcpp::Named("pos") = out.get_pos(),
     Rcpp::Named("model.out") = model_out);
+  #endif
+  return Rcpp::List::create();
 }

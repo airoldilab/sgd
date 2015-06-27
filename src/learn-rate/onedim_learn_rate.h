@@ -6,8 +6,6 @@
 #include "learn-rate/base_learn_rate.h"
 #include "learn-rate/learn_rate_value.h"
 
-using namespace arma;
-
 class onedim_learn_rate : public base_learn_rate {
   /**
    * One-dimensional (scalar) learning rate, following Xu

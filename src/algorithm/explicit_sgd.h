@@ -26,8 +26,10 @@ mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
       "at Iter: " << t << std::endl;
   }
   mat theta_test;
-  if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
-    || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
+  if (experiment.model_name == "gaussian" ||
+      experiment.model_name == "poisson" ||
+      experiment.model_name == "binomial" ||
+      experiment.model_name == "gamma") {
     theta_test = theta_old + at * ((data_pt.y - experiment.h_transfer(
       dot(data_pt.x, theta_old)))*data_pt.x).t();
   } else{

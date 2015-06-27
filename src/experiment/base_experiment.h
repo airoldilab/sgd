@@ -10,8 +10,6 @@
 #include <boost/ref.hpp>
 #include <iostream>
 
-using namespace arma;
-
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class base_experiment;
@@ -49,18 +47,18 @@ public:
   mat gradient(const mat& theta_old, const data_point& data_pt) const;
 
   // Learning rates
-  void set_learn_rate(base_learn_rate* lr) {
-    lr_ = lr;
+  void set_learn_rate(base_learn_rate* lr_obj) {
+    lr_obj_ = lr_obj;
   }
   grad_func_type grad_func();
 
   const learn_rate_value& learning_rate(const mat& theta_old, const
     data_point& data_pt, unsigned t) {
-    return (*lr_)(theta_old, data_pt, t, d);
+    return (*lr_obj_)(theta_old, data_pt, t, d);
   }
 
 protected:
-  base_learn_rate* lr_;
+  base_learn_rate* lr_obj_;
 };
 
 template<typename EXPERIMENT>

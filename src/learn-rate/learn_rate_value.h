@@ -3,8 +3,6 @@
 
 #include "basedef.h"
 
-using namespace arma;
-
 class learn_rate_value {
   /* Object to return for all learning rate classes; it collects the return
    * value which can be a scalar, vector, or matrix. */

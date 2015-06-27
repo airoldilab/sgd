@@ -3,8 +3,6 @@
 
 #include "basedef.h"
 
-using namespace arma;
-
 class base_transfer;
 class identity_transfer;
 class inverse_transfer;

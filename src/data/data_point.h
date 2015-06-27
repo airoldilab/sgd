@@ -5,8 +5,6 @@
 #include <vector>
 #include "basedef.h"
 
-using namespace arma;
-
 struct data_point {
   /* Collection for an individual observation and its response. */
   data_point() : x(mat()), y(0) {}

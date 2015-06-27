@@ -6,8 +6,6 @@
 #include "learn-rate/base_learn_rate.h"
 #include "learn-rate/learn_rate_value.h"
 
-using namespace arma;
-
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class ddim_learn_rate : public base_learn_rate {

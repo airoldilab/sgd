@@ -6,8 +6,6 @@
 #include "basedef.h"
 #include "data/data_point.h"
 
-using namespace arma;
-
 class data_set {
   /* Collection of all data points. */
 public:
