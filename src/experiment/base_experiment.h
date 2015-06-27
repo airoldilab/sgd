@@ -12,7 +12,7 @@
 
 using namespace arma;
 
-typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
+typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class base_experiment;
 //TODO
@@ -33,7 +33,6 @@ public:
   std::string lr;
   mat start;
   mat weights;
-  mat offset;
   double delta;
   double lambda1;
   double lambda2;
@@ -47,7 +46,7 @@ public:
     model_name(m_name), model_attrs(mp_attrs) {}
 
   // Gradient
-  mat gradient(const mat& theta_old, const data_point& data_pt, double offset) const;
+  mat gradient(const mat& theta_old, const data_point& data_pt) const;
 
   // Learning rates
   void set_learn_rate(base_learn_rate* lr) {
@@ -56,8 +55,8 @@ public:
   grad_func_type grad_func();
 
   const learn_rate_value& learning_rate(const mat& theta_old, const
-    data_point& data_pt, double offset, unsigned t) {
-    return (*lr_)(theta_old, data_pt, offset, t, d);
+    data_point& data_pt, unsigned t) {
+    return (*lr_)(theta_old, data_pt, t, d);
   }
 
 protected:
@@ -69,29 +68,28 @@ class Get_grad_coeff {
   // Compute gradient coeff and its derivative for Implicit-SGD update
 public:
   Get_grad_coeff(const EXPERIMENT& e, const data_point& d,
-    const mat& t, double n, double off) :
-    experiment(e), data_pt(d), theta_old(t), normx(n), offset(off) {}
+    const mat& t, double n) :
+    experiment(e), data_pt(d), theta_old(t), normx(n) {}
 
   double operator() (double ksi) const {
     return data_pt.y-experiment.h_transfer(dot(theta_old, data_pt.x)
-                     + normx * ksi +offset);
+                     + normx * ksi);
   }
 
   double first_derivative (double ksi) const {
     return experiment.h_first_derivative(dot(theta_old, data_pt.x)
-           + normx * ksi + offset)*normx;
+           + normx * ksi)*normx;
   }
 
   double second_derivative (double ksi) const {
     return experiment.h_second_derivative(dot(theta_old, data_pt.x)
-             + normx * ksi + offset)*normx*normx;
+             + normx * ksi)*normx*normx;
   }
 
   const EXPERIMENT& experiment;
   const data_point& data_pt;
   const mat& theta_old;
   double normx;
-  double offset;
 };
 
 template<typename EXPERIMENT>

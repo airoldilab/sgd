@@ -15,7 +15,7 @@
 
 using namespace arma;
 
-typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
+typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class ee_experiment : public base_experiment {
   /**
@@ -37,8 +37,7 @@ public:
 
   // Gradient
   #if 0
-  mat gradient(const mat& theta_old, const data_point& data_pt,
-    double offset) const {
+  mat gradient(const mat& theta_old, const data_point& data_pt) const {
     Rcpp::NumericVector r_theta_old =
       Rcpp::as<Rcpp::NumericVector>(Rcpp::wrap(theta_old));
     Rcpp::NumericVector r_data_pt =

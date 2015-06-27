@@ -71,12 +71,6 @@ equation).}
     random initialization around the mean.
   \item weights: an optional vector of "prior weights" to be used in the
     fitting process. Should be NULL or a numeric vector.
-  \item offset: this can be used to specify an a priori known component to
-    be included in the linear predictor during fitting. This should be NULL
-    or a numeric vector of length equal to the number of cases. One or more
-    offset terms can be included in the formula instead or as well, and if
-    more than one is specified their sum is used. See
-    \code{\link[stats]{offset}}
   \item npasses: the number of passes for sgd. Default is 1.
   \item lr.control: vector of scalar hyperparameters one can
     set dependent on the learning rate. For hyperparameters aimed
@@ -159,12 +153,6 @@ print(d.AD <- data.frame(treatment, outcome, counts))
 sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
                model.control=list(family = poisson()))
 sgd.D93
-
-## Venables & Ripley (2002, p.189): an example with offsets
-utils::data(anorexia, package="MASS")
-
-anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-                data=anorexia, model="lm")
 }
 \author{
 Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi

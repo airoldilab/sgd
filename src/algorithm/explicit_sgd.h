@@ -12,10 +12,8 @@ mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   EXPERIMENT& experiment, bool& good_gradient) {
   /* Return the new estimate of parameters, using SGD */
   data_point data_pt = data.get_data_point(t);
-  unsigned idx = data.idxmap[t-1];
-  learn_rate_value at = experiment.learning_rate(theta_old, data_pt,
-    experiment.offset[idx], t);
-  mat grad_t = experiment.gradient(theta_old, data_pt, experiment.offset[idx]);
+  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, t);
+  mat grad_t = experiment.gradient(theta_old, data_pt);
   if (!is_finite(grad_t)) {
     good_gradient = false;
   }
@@ -31,7 +29,7 @@ mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   if (experiment.model_name == "gaussian" || experiment.model_name == "poisson"
     || experiment.model_name == "binomial" || experiment.model_name == "gamma") {
     theta_test = theta_old + at * ((data_pt.y - experiment.h_transfer(
-      dot(data_pt.x, theta_old) + experiment.offset[idx]))*data_pt.x).t();
+      dot(data_pt.x, theta_old)))*data_pt.x).t();
   } else{
     theta_test = theta_new;
   }

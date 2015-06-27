@@ -12,7 +12,7 @@ Rcpp::List post_process(const online_output& out, const data_set& data,
   // Check the validity of eta for all observations.
   if (!data.big) {
     mat eta;
-    eta = data.X * out.get_last_estimate() + exprm.offset;
+    eta = data.X * out.get_last_estimate();
     mat mu;
     mu = exprm.h_transfer(eta);
     for (int i = 0; i < eta.n_rows; ++i) {
@@ -28,12 +28,15 @@ Rcpp::List post_process(const online_output& out, const data_set& data,
 
     // Check the validity of mu for Poisson and Binomial family.
     double eps = 10. * datum::eps;
-    if (exprm.model_name == "poisson")
-      if (any(vectorise(mu) < eps))
+    if (exprm.model_name == "poisson") {
+      if (any(vectorise(mu) < eps)) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
-    if (exprm.model_name == "binomial")
-        if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps)))
-          Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
+      }
+    } else if (exprm.model_name == "binomial") {
+      if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps))) {
+        Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
+      }
+    }
 
     // Calculate the deviance.
     double dev = exprm.deviance(data.Y, mu, exprm.weights);

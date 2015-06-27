@@ -8,8 +8,7 @@
 bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
   const glm_experiment& exprm) {
   // Check if eta is in the support.
-  unsigned idx = data.idxmap[t-1];
-  double eta = exprm.offset[idx] + dot(data.get_data_point(t).x, theta);
+  double eta = dot(data.get_data_point(t).x, theta);
   if (!exprm.valideta(eta)) {
     Rcpp::Rcout << "no valid set of coefficients has been found: please supply starting values" << t << std::endl;
     return false;
@@ -35,7 +34,7 @@ bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
 
   // Check the deviance.
   if (exprm.dev) {
-    eta_mat = data.X * theta + exprm.offset;
+    eta_mat = data.X * theta;
     mu = exprm.h_transfer(eta_mat);
     deviance = exprm.deviance(data.Y, mu, exprm.weights);
     if(!is_finite(deviance)) {
@@ -47,7 +46,7 @@ bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
   // Print if trace.
   if (exprm.trace) {
     if (!exprm.dev) {
-      eta_mat = data.X * theta + exprm.offset;
+      eta_mat = data.X * theta;
       mu = exprm.h_transfer(eta_mat);
       deviance = exprm.deviance(data.Y, mu, exprm.weights);
     }

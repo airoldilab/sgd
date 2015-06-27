@@ -45,12 +45,6 @@
 #'       random initialization around the mean.
 #'     \item weights: an optional vector of "prior weights" to be used in the
 #'       fitting process. Should be NULL or a numeric vector.
-#'     \item offset: this can be used to specify an a priori known component to
-#'       be included in the linear predictor during fitting. This should be NULL
-#'       or a numeric vector of length equal to the number of cases. One or more
-#'       offset terms can be included in the formula instead or as well, and if
-#'       more than one is specified their sum is used. See
-#'       \code{\link[stats]{offset}}
 #'     \item npasses: the number of passes for sgd. Default is 1.
 #'     \item lr.control: vector of scalar hyperparameters one can
 #'       set dependent on the learning rate. For hyperparameters aimed
@@ -152,12 +146,6 @@
 #' sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
 #'                model.control=list(family = poisson()))
 #' sgd.D93
-#'
-#' ## Venables & Ripley (2002, p.189): an example with offsets
-#' utils::data(anorexia, package="MASS")
-#'
-#' anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-#'                 data=anorexia, model="lm")
 #'
 #' @useDynLib sgd
 #' @import MASS
@@ -367,14 +355,14 @@ fit_glm <- function(x, y,
   lr <- sgd.control$lr
   start <- sgd.control$start
   weights <- sgd.control$weight
-  offset <- sgd.control$offset
 
   # model.control arguments
   family <- model.control$family
-  if ("(Intercept)" %in% xnames)
+  if ("(Intercept)" %in% xnames) {
     intercept <- TRUE
-  else
+  } else {
     intercept <- FALSE
+  }
 
   variance <- family$variance
   linkinv <- family$linkinv
@@ -397,7 +385,7 @@ fit_glm <- function(x, y,
 
   EMPTY <- d == 0
   if (EMPTY) {
-    eta <- rep.int(0, N) + offset
+    eta <- rep.int(0, N)
     if (!valideta(eta)) {
       stop("invalid linear predictor values in empty model",
            call.=FALSE)
@@ -416,13 +404,13 @@ fit_glm <- function(x, y,
     rank <- 0L
     converged <- FALSE
   } else {
-    eta <- sum(x[1, ] * start)+offset[1]
+    eta <- sum(x[1, ] * start)
     if (!valideta(eta)) {
       stop("cannot find valid starting values: please specify some", call.=FALSE)
     }
     y <- as.matrix(y)
 
-    # Select x, y with weights > 0; adjust for offsets.
+    # Select x, y with weights > 0.
     good <- weights > 0
 #     dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
     dataset <- list(X=x, Y=y, big=F)
@@ -442,7 +430,6 @@ fit_glm <- function(x, y,
     experiment$lambda2 <- sgd.control$lambda2
     experiment$start <- as.matrix(start)
     experiment$weights <- as.matrix(weights[good])
-    experiment$offset <- as.matrix(offset[good]) # TODO not implemented
     experiment$delta <- sgd.control$delta
     experiment$trace <- sgd.control$trace
     experiment$deviance <- sgd.control$deviance
@@ -479,7 +466,7 @@ fit_glm <- function(x, y,
   if (intercept == TRUE) {
     wtdmu <- sum(weights * y)/sum(weights)
   } else {
-    wtdmu <- linkinv(offset)
+    stop("TODO not implemented yet")
   }
   nulldev <- sum(dev.resids(y, wtdmu, weights))
   n.ok <- N - sum(weights == 0)
@@ -546,7 +533,6 @@ fit_ee <- function(x, y,
     experiment$lr <- sgd.control$lr
     experiment$start <- as.matrix(sgd.control$start)
     experiment$weights <- sgd.control$weights # TODO not implemented
-    experiment$offset <- sgd.control$offset # TODO not implemented
     experiment$delta <- sgd.control$delta
     experiment$trace <- sgd.control$trace
     experiment$deviance <- sgd.control$deviance
@@ -720,7 +706,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 
 valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               start=NULL, weights=NULL,
-                              offset=NULL, N, d, npasses=NULL,
+                              N, d, npasses=NULL,
                               lr.control=NULL,
                               lambda1=NULL, lambda2=NULL, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
@@ -765,15 +751,6 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     stop("'weights' must be numeric")
   } else if (length(weights) != N) {
     stop(gettextf("length of 'weights' should equal %d", N), domain=NA)
-  }
-
-  # Check validity of offset.
-  if (is.null(offset)) {
-    offset <- rep.int(0, N)
-  } else if (!is.numeric(offset)) {
-    stop("'offset' must be numeric")
-  } else if (length(offset) != N) {
-    stop(gettextf("length of 'offset' should equal %d", N), domain=NA)
   }
 
   # Check validity of npasses.
@@ -865,7 +842,6 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 lr=lr,
                 start=start,
                 weights=weights,
-                offset=offset,
                 npasses=npasses,
                 lr.control=lr.control,
                 lambda1=lambda1,

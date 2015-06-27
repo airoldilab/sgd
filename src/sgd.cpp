@@ -71,7 +71,6 @@ Rcpp::List run_experiment(data_set data, EXPERIMENT exprm, std::string method,
   exprm.lr = Rcpp::as<std::string>(Experiment["lr"]);
   exprm.start = Rcpp::as<mat>(Experiment["start"]);
   exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
-  exprm.offset = Rcpp::as<mat>(Experiment["offset"]);
   exprm.delta = Rcpp::as<double>(Experiment["delta"]);
   exprm.lambda1 = Rcpp::as<double>(Experiment["lambda1"]);
   exprm.lambda2 = Rcpp::as<double>(Experiment["lambda2"]);

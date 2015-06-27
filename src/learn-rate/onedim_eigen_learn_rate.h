@@ -8,7 +8,7 @@
 
 using namespace arma;
 
-typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
+typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class onedim_eigen_learn_rate : public base_learn_rate {
   /**
@@ -20,8 +20,8 @@ public:
 
   // Operators
   virtual const learn_rate_value& operator()(const mat& theta_old, const
-    data_point& data_pt, double offset, unsigned t, unsigned d) {
-    mat Gi = grad_func(theta_old, data_pt, offset);
+    data_point& data_pt, unsigned t, unsigned d) {
+    mat Gi = grad_func(theta_old, data_pt);
     double sum_eigen = 0;
     for (unsigned i = 0; i < d; ++i) {
       sum_eigen += pow(Gi.at(i, 0), 2);

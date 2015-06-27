@@ -17,7 +17,7 @@
 
 using namespace arma;
 
-typedef boost::function<mat(const mat&, const data_point&, double)> grad_func_type;
+typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class glm_experiment : public base_experiment {
   /**
@@ -63,14 +63,13 @@ public:
   }
 
   // Gradient
-  mat gradient(const mat& theta_old, const data_point& data_pt,
-    double offset) const {
-    return ((data_pt.y - h_transfer(dot(data_pt.x, theta_old) + offset)) *
+  mat gradient(const mat& theta_old, const data_point& data_pt) const {
+    return ((data_pt.y - h_transfer(dot(data_pt.x, theta_old))) *
       data_pt.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
   }
 
   grad_func_type grad_func() {
-    return boost::bind(&glm_experiment::gradient, this, _1, _2, _3);
+    return boost::bind(&glm_experiment::gradient, this, _1, _2);
   }
 
   // TODO not all models have these methods

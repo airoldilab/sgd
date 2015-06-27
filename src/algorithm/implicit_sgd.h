@@ -13,9 +13,8 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   glm_experiment& experiment, bool& good_gradient) {
   /* return the new estimate of parameters, using implicit SGD */
   data_point data_pt = data.get_data_point(t);
-  unsigned idx = data.idxmap[t-1];
   mat theta_new;
-  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, experiment.offset[idx], t);
+  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, t);
   double average_lr = 0;
   if (at.type == 0) {
     average_lr = at.lr_scalar;
@@ -30,7 +29,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   double normx = dot(data_pt.x, data_pt.x);
 
   Get_grad_coeff<glm_experiment> get_grad_coeff(experiment, data_pt, theta_old,
-    normx, experiment.offset[idx]);
+    normx);
   Implicit_fn<glm_experiment> implicit_fn(average_lr, get_grad_coeff);
 
   double rt = average_lr * get_grad_coeff(0);
@@ -69,7 +68,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
       experiment.model_name == "binomial" ||
       experiment.model_name == "gamma") {
     theta_test = theta_new - average_lr * ((data_pt.y - experiment.h_transfer(
-      dot(data_pt.x, theta_new) + experiment.offset[idx]))*data_pt.x).t();
+      dot(data_pt.x, theta_new)))*data_pt.x).t();
   } else {
     theta_test = theta_old;
   }

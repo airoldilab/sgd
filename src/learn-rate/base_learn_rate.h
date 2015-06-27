@@ -25,7 +25,7 @@ public:
 
   // Operators
   virtual const learn_rate_value& operator()(const mat& theta_old, const
-    data_point& data_pt, double offset, unsigned t, unsigned d) = 0;
+    data_point& data_pt, unsigned t, unsigned d) = 0;
 };
 
 #endif
