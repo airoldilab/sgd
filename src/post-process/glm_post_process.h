@@ -4,23 +4,23 @@
 #include "basedef.h"
 #include "data/data_set.h"
 #include "data/online_output.h"
-#include "experiment/glm_experiment.h"
+#include "model/glm_model.h"
 #include <stdlib.h>
 
 Rcpp::List post_process(const online_output& out, const data_set& data,
-  const glm_experiment& exprm, mat& coef, unsigned X_rank) {
+  const glm_model& model, mat& coef, unsigned X_rank) {
   // Check the validity of eta for all observations.
   if (!data.big) {
     mat eta;
     eta = data.X * out.get_last_estimate();
     mat mu;
-    mu = exprm.h_transfer(eta);
+    mu = model.h_transfer(eta);
     for (int i = 0; i < eta.n_rows; ++i) {
         if (!is_finite(eta[i])) {
           Rcpp::Rcout << "warning: NaN or non-finite eta" << std::endl;
           break;
         }
-        if (!exprm.valideta(eta[i])) {
+        if (!model.valideta(eta[i])) {
           Rcpp::Rcout << "warning: eta is not in the support" << std::endl;
           break;
         }
@@ -28,18 +28,18 @@ Rcpp::List post_process(const online_output& out, const data_set& data,
 
     // Check the validity of mu for Poisson and Binomial family.
     double eps = 10. * datum::eps;
-    if (exprm.model_name == "poisson") {
+    if (model.model_name == "poisson") {
       if (any(vectorise(mu) < eps)) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
       }
-    } else if (exprm.model_name == "binomial") {
+    } else if (model.model_name == "binomial") {
       if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps))) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
       }
     }
 
     // Calculate the deviance.
-    double dev = exprm.deviance(data.Y, mu, exprm.weights);
+    double dev = model.deviance(data.Y, mu, model.weights);
 
     // Check the number of features.
     if (X_rank < data.n_features) {

@@ -423,7 +423,6 @@ fit_glm <- function(x, y,
     }
     experiment <- list()
     experiment$name <- family$family
-    experiment$niters <- length(dataset$Y)
     experiment$d <- dim(dataset$X)[2]
     experiment$lr <- lr
     experiment$lr.control <- sgd.control$lr.control
@@ -529,7 +528,6 @@ fit_ee <- function(x, y,
     }
     experiment <- list()
     experiment$name <- "ee"
-    experiment$niters <- N
     experiment$d <- d
     experiment$lr <- sgd.control$lr
     experiment$start <- as.matrix(sgd.control$start)
@@ -855,7 +853,7 @@ valid_implicit_control <- function(delta=30L, trace=FALSE, deviance=FALSE,
   # Maintain control parameters for running implicit SGD.
   #
   # Args:
-  #   delta:     convergence criterion for the one-dimensional optimization
+  #   delta:       convergence criterion for the one-dimensional optimization
   #   trace:       logical indicating if output should be produced for each
   #                iteration
   #   deviance:    logical indicating if the validity of deviance should be

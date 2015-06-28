@@ -3,19 +3,19 @@
 
 #include "basedef.h"
 #include "data/data_set.h"
-#include "experiment/glm_experiment.h"
+#include "model/glm_model.h"
 
 bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
-  const glm_experiment& exprm) {
+  const glm_model& model) {
   // Check if eta is in the support.
   double eta = dot(data.get_data_point(t).x, theta);
-  if (!exprm.valideta(eta)) {
+  if (!model.valideta(eta)) {
     Rcpp::Rcout << "no valid set of coefficients has been found: please supply starting values" << t << std::endl;
     return false;
   }
 
   // Check the variance of the expectation of Y.
-  double mu_var = exprm.variance(exprm.h_transfer(eta));
+  double mu_var = model.variance(model.h_transfer(eta));
   if (!is_finite(mu_var)) {
     Rcpp::Rcout << "NA in V(mu) in iteration " << t << std::endl;
     Rcpp::Rcout << "current theta: " << theta << std::endl;
@@ -33,10 +33,10 @@ bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
   mat eta_mat;
 
   // Check the deviance.
-  if (exprm.dev) {
+  if (model.dev) {
     eta_mat = data.X * theta;
-    mu = exprm.h_transfer(eta_mat);
-    deviance = exprm.deviance(data.Y, mu, exprm.weights);
+    mu = model.h_transfer(eta_mat);
+    deviance = model.deviance(data.Y, mu, model.weights);
     if(!is_finite(deviance)) {
       Rcpp::Rcout << "Deviance is non-finite" << std::endl;
       return false;
@@ -44,11 +44,11 @@ bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
   }
 
   // Print if trace.
-  if (exprm.trace) {
-    if (!exprm.dev) {
+  if (model.trace) {
+    if (!model.dev) {
       eta_mat = data.X * theta;
-      mu = exprm.h_transfer(eta_mat);
-      deviance = exprm.deviance(data.Y, mu, exprm.weights);
+      mu = model.h_transfer(eta_mat);
+      deviance = model.deviance(data.Y, mu, model.weights);
     }
     Rcpp::Rcout << "Deviance = " << deviance << " , Iterations - " << t << std::endl;
   }

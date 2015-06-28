@@ -4,8 +4,8 @@
 #include "data/data_point.h"
 #include "data/data_set.h"
 #include "data/online_output.h"
-#include "experiment/ee_experiment.h"
-#include "experiment/glm_experiment.h"
+#include "model/ee_model.h"
+#include "model/glm_model.h"
 #include "post-process/glm_post_process.h"
 #include "post-process/ee_post_process.h"
 #include "validity-check/validity_check.h"
@@ -15,14 +15,12 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(cpp11)]]
 
-template<typename EXPERIMENT>
-void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment);
-template<typename EXPERIMENT>
-Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
+template<typename MODEL>
+Rcpp::List run_model(data_set& data, MODEL& model, std::string method,
   bool verbose, const boost::timer& ti);
 
 /**
- * Runs the proposed experiment (model) and method on the data set
+ * Runs the proposed model and method on the data set
  *
  * @param dataset    data set
  * @param experiment list of attributes about model
@@ -43,47 +41,47 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
   std::string meth = Rcpp::as<std::string>(method);
   bool verb = Rcpp::as<bool>(verbose);
 
-  // Run templated experiment based on the model.
+  // Run templated model.
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   if (model_name == "gaussian" ||
       model_name == "poisson" ||
       model_name == "binomial" ||
       model_name == "gamma") {
-    glm_experiment exprm(Experiment);
-    return run_experiment(data, exprm, meth, verb, ti);
+    glm_model model(Experiment);
+    return run_model(data, model, meth, verb, ti);
   } else if (model_name == "ee") {
     Rcpp::List model_attrs = Experiment["model.attrs"];
     Rcpp::Function gr = model_attrs["gr"];
-    ee_experiment exprm(Experiment, gr);
-    return run_experiment(data, exprm, meth, verb, ti);
+    ee_model model(Experiment, gr);
+    return run_model(data, model, meth, verb, ti);
   } else {
     return Rcpp::List();
   }
 }
 
 /**
- * Runs algorithm templated on the particular experiment type
+ * Runs algorithm templated on the particular model
  *
  * @param  data       data set
- * @tparam EXPERIMENT list of attributes about model
+ * @tparam MODEL      model class
  * @param  method     stochastic gradient method
  * @param  verbose    whether to print progress
  * @param  ti         timer to benchmark progress
  */
-template<typename EXPERIMENT>
-Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
+template<typename MODEL>
+Rcpp::List run_model(data_set& data, MODEL& model, std::string method,
   bool verbose, const boost::timer& ti) {
   unsigned n_samples = data.n_samples;
   unsigned n_features = data.n_features;
-  unsigned n_passes = exprm.n_passes;
+  unsigned n_passes = model.n_passes;
 
   unsigned X_rank = n_features;
-  if (exprm.model_name == "gaussian" ||
-      exprm.model_name == "poisson" ||
-      exprm.model_name == "binomial" ||
-      exprm.model_name == "gamma") {
+  if (model.model_name == "gaussian" ||
+      model.model_name == "poisson" ||
+      model.model_name == "binomial" ||
+      model.model_name == "gamma") {
     // Check if the number of observations is greater than the rank of X.
-    if (exprm.rank) {
+    if (model.rank) {
       X_rank = arma::rank(data.X);
       if (X_rank > n_samples) {
         Rcpp::Rcout << "X matrix has rank " << X_rank << ", but only "
@@ -102,7 +100,7 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
   }
 
   // Initialize estimates.
-  online_output out(data, exprm.start, ti, n_passes);
+  online_output out(data, model.start, ti, n_passes);
   mat theta_new;
   mat theta_old = out.get_last_estimate();
   mat theta_new_ave;
@@ -116,9 +114,9 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
   for (int t = 1; t <= n_samples*n_passes; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {
-      theta_new = explicit_sgd(t, theta_old, data, exprm, good_gradient);
+      theta_new = explicit_sgd(t, theta_old, data, model, good_gradient);
     } else if (method == "implicit" || method == "ai-sgd") {
-      theta_new = implicit_sgd(t, theta_old, data, exprm, good_gradient);
+      theta_new = implicit_sgd(t, theta_old, data, model, good_gradient);
     }
 
     // Whether to do averaging
@@ -137,7 +135,7 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
     theta_old = theta_new;
 
     // Validity check
-    good_validity = validity_check(data, theta_old, good_gradient, t, exprm);
+    good_validity = validity_check(data, theta_old, good_gradient, t, model);
     if (!good_validity) {
       return Rcpp::List();
     }
@@ -145,7 +143,7 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
 
   // Collect model-specific output.
   mat coef = out.get_last_estimate();
-  Rcpp::List model_out = post_process(out, data, exprm, coef, X_rank);
+  Rcpp::List model_out = post_process(out, data, model, coef, X_rank);
 
   return Rcpp::List::create(
     Rcpp::Named("coefficients") = coef,

@@ -13,15 +13,15 @@
  * @param  t             iteration
  * @param  theta_old     previous estimate
  * @param  data          data set
- * @tparam EXPERIMENT   experiment class dependent on model
+ * @tparam MODEL         model class
  * @param  good_gradient flag to store if gradient was computed okay
  */
-template<typename EXPERIMENT>
+template<typename MODEL>
 mat explicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  EXPERIMENT& experiment, bool& good_gradient) {
+  MODEL& model, bool& good_gradient) {
   data_point data_pt = data.get_data_point(t);
-  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, t);
-  mat grad_t = experiment.gradient(theta_old, data_pt);
+  learn_rate_value at = model.learning_rate(theta_old, data_pt, t);
+  mat grad_t = model.gradient(theta_old, data_pt);
   if (!is_finite(grad_t)) {
     good_gradient = false;
   }

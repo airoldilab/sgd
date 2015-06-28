@@ -4,8 +4,8 @@
 #include "basedef.h"
 #include "data/data_point.h"
 #include "data/data_set.h"
-#include "experiment/ee_experiment.h"
-#include "experiment/glm_experiment.h"
+#include "model/ee_model.h"
+#include "model/glm_model.h"
 #include "learn-rate/learn_rate_value.h"
 #include <stdlib.h>
 
@@ -15,15 +15,15 @@
  * @param t             iteration
  * @param theta_old     previous estimate
  * @param data          data set
- * @param experiment    values stored in experiment
+ * @param model         values stored in model
  * @param good_gradient flag to store if gradient was computed okay
  */
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  glm_experiment& experiment, bool& good_gradient) {
+  glm_model& model, bool& good_gradient) {
   /* return the new estimate of parameters, using implicit SGD */
   data_point data_pt = data.get_data_point(t);
   mat theta_new;
-  learn_rate_value at = experiment.learning_rate(theta_old, data_pt, t);
+  learn_rate_value at = model.learning_rate(theta_old, data_pt, t);
   double average_lr = 0;
   if (at.type == 0) {
     average_lr = at.lr_scalar;
@@ -37,9 +37,9 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
 
   double normx = dot(data_pt.x, data_pt.x);
 
-  Get_grad_coeff<glm_experiment> get_grad_coeff(experiment, data_pt, theta_old,
+  Get_grad_coeff<glm_model> get_grad_coeff(model, data_pt, theta_old,
     normx);
-  Implicit_fn<glm_experiment> implicit_fn(average_lr, get_grad_coeff);
+  Implicit_fn<glm_model> implicit_fn(average_lr, get_grad_coeff);
 
   double rt = average_lr * get_grad_coeff(0);
   double lower = 0;
@@ -49,7 +49,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
     lower = rt;
   } else {
     // double u = 0;
-    // u = (experiment.g_link(data_pt.y) - dot(theta_old,data_pt.x))/normx;
+    // u = (model.g_link(data_pt.y) - dot(theta_old,data_pt.x))/normx;
     // upper = std::min(rt, u);
     // lower = 0;
     upper = rt;
@@ -58,7 +58,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   double result;
   if (lower != upper) {
     result = boost::math::tools::schroeder_iterate(implicit_fn, (lower +
-      upper)/2, lower, upper, experiment.delta);
+      upper)/2, lower, upper, model.delta);
   } else {
     result = lower;
   }
@@ -66,7 +66,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
 }
 
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  ee_experiment& experiment, bool& good_gradient) {
+  ee_model& model, bool& good_gradient) {
   //TODO
   Rcpp::Rcout << "error: implicit not implemented for EE yet " << t << std::endl;
   good_gradient = false;

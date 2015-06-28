@@ -1,5 +1,5 @@
-#ifndef EXPERIMENT_BASE_EXPERIMENT_H
-#define EXPERIMENT_BASE_EXPERIMENT_H
+#ifndef MODEL_BASE_MODEL_H
+#define MODEL_BASE_MODEL_H
 
 #include "basedef.h"
 #include "data/data_point.h"
@@ -12,39 +12,37 @@
 
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
-class base_experiment;
+class base_model;
 //TODO
-template<typename EXPERIMENT>
+template<typename MODEL>
 class Get_grad_coeff;
-template<typename EXPERIMENT>
+template<typename MODEL>
 class Implicit_fn;
 
-class base_experiment {
+class base_model {
   /**
-   * Base class for experiments
+   * Base class for models
    *
    * @param experiment list of attributes to take from R type
    */
 public:
   std::string model_name;
-  unsigned n_iters;
   unsigned d;
-  unsigned n_passes;
-  std::string lr;
-  mat start;
-  mat weights;
-  double delta;
-  double lambda1;
-  double lambda2;
-  bool trace;
-  bool dev;
-  bool convergence;
-  Rcpp::List model_attrs;
+  unsigned n_passes; // sgd.control
+  std::string lr; // sgd.control
+  mat start; // sgd.control
+  double delta; // sgd.control
+  double lambda1; // sgd.control
+  double lambda2; // sgd.control
+  bool convergence; // sgd.control
+  Rcpp::List model_attrs; // this should be expanded per derived model, not here
+  mat weights; // TODO glm-specific
+  bool trace; // TODO glm-specific
+  bool dev; // TODO glm-specific
 
   // Constructors
-  base_experiment(Rcpp::List experiment) {
+  base_model(Rcpp::List experiment) {
     model_name = Rcpp::as<std::string>(experiment["name"]);
-    n_iters = Rcpp::as<unsigned>(experiment["niters"]);
     d = Rcpp::as<unsigned>(experiment["d"]);
     n_passes = Rcpp::as<unsigned>(experiment["npasses"]);
     lr = Rcpp::as<std::string>(experiment["lr"]);
@@ -62,12 +60,6 @@ public:
   // Gradient
   mat gradient(const mat& theta_old, const data_point& data_pt) const;
 
-  // Learning rates
-  void set_learn_rate(base_learn_rate* lr_obj) {
-    lr_obj_ = lr_obj;
-  }
-  grad_func_type grad_func();
-
   const learn_rate_value& learning_rate(const mat& theta_old, const
     data_point& data_pt, unsigned t) {
     return (*lr_obj_)(theta_old, data_pt, t);
@@ -77,42 +69,42 @@ protected:
   base_learn_rate* lr_obj_;
 };
 
-template<typename EXPERIMENT>
+template<typename MODEL>
 class Get_grad_coeff {
   // Compute gradient coeff and its derivative for Implicit-SGD update
 public:
-  Get_grad_coeff(const EXPERIMENT& e, const data_point& d,
+  Get_grad_coeff(const MODEL& e, const data_point& d,
     const mat& t, double n) :
-    experiment(e), data_pt(d), theta_old(t), normx(n) {}
+    model(e), data_pt(d), theta_old(t), normx(n) {}
 
   double operator() (double ksi) const {
-    return data_pt.y-experiment.h_transfer(dot(theta_old, data_pt.x)
+    return data_pt.y-model.h_transfer(dot(theta_old, data_pt.x)
                      + normx * ksi);
   }
 
   double first_derivative (double ksi) const {
-    return experiment.h_first_derivative(dot(theta_old, data_pt.x)
+    return model.h_first_derivative(dot(theta_old, data_pt.x)
            + normx * ksi)*normx;
   }
 
   double second_derivative (double ksi) const {
-    return experiment.h_second_derivative(dot(theta_old, data_pt.x)
+    return model.h_second_derivative(dot(theta_old, data_pt.x)
              + normx * ksi)*normx*normx;
   }
 
-  const EXPERIMENT& experiment;
+  const MODEL& model;
   const data_point& data_pt;
   const mat& theta_old;
   double normx;
 };
 
-template<typename EXPERIMENT>
+template<typename MODEL>
 class Implicit_fn {
   // Root finding functor for Implicit-SGD update
 public:
   typedef boost::math::tuple<double, double, double> tuple_type;
 
-  Implicit_fn(double a, const Get_grad_coeff<EXPERIMENT>& get_grad) :
+  Implicit_fn(double a, const Get_grad_coeff<MODEL>& get_grad) :
     at(a), g(get_grad) {}
 
   tuple_type operator() (double u) const {
@@ -124,7 +116,7 @@ public:
   }
 
   double at;
-  const Get_grad_coeff<EXPERIMENT>& g;
+  const Get_grad_coeff<MODEL>& g;
 };
 
 #endif

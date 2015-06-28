@@ -1,9 +1,9 @@
-#ifndef EXPERIMENT_EE_EXPERIMENT_H
-#define EXPERIMENT_EE_EXPERIMENT_H
+#ifndef MODEL_EE_MODEL_H
+#define MODEL_EE_MODEL_H
 
 #include "basedef.h"
 #include "data/data_point.h"
-#include "experiment/base_experiment.h"
+#include "model/base_model.h"
 #include "learn-rate/onedim_learn_rate.h"
 #include "learn-rate/onedim_eigen_learn_rate.h"
 #include "learn-rate/ddim_learn_rate.h"
@@ -15,16 +15,16 @@
 
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
-class ee_experiment : public base_experiment {
+class ee_model : public base_model {
   /**
    * Estimating equations
    *
    * @param experiment list of attributes to take from R type
    */
 public:
-  // TODO interface not consistent with other experiments
-  ee_experiment(Rcpp::List experiment, Rcpp::Function gr) :
-    base_experiment(experiment), gr_(gr) {
+  // TODO interface not consistent with other models
+  ee_model(Rcpp::List experiment, Rcpp::Function gr) :
+    base_model(experiment), gr_(gr) {
     vec lr_control= Rcpp::as<vec>(experiment["lr.control"]);
     if (lr == "one-dim") {
       lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
@@ -64,7 +64,7 @@ public:
 
   // Learning rates
   grad_func_type grad_func() {
-    return boost::bind(&ee_experiment::gradient, this, _1, _2);
+    return boost::bind(&ee_model::gradient, this, _1, _2);
   }
 
   // TODO

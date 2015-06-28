@@ -1,11 +1,11 @@
-#ifndef EXPERIMENT_GLM_EXPERIMENT_H
-#define EXPERIMENT_GLM_EXPERIMENT_H
+#ifndef MODEL_GLM_MODEL_H
+#define MODEL_GLM_MODEL_H
 
 #include "basedef.h"
 #include "data/data_point.h"
-#include "experiment/base_experiment.h"
-#include "glm_family.h"
-#include "glm_transfer.h"
+#include "model/base_model.h"
+#include "model/glm/glm_family.h"
+#include "model/glm/glm_transfer.h"
 #include "learn-rate/onedim_learn_rate.h"
 #include "learn-rate/onedim_eigen_learn_rate.h"
 #include "learn-rate/ddim_learn_rate.h"
@@ -17,15 +17,15 @@
 
 typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
-class glm_experiment : public base_experiment {
+class glm_model : public base_model {
   /**
    * Generalized linear models
    *
    * @param experiment list of attributes to take from R type
    */
 public:
-  glm_experiment(Rcpp::List experiment) :
-    base_experiment(experiment) {
+  glm_model(Rcpp::List experiment) :
+    base_model(experiment) {
     vec lr_control= Rcpp::as<vec>(experiment["lr.control"]);
     if (lr == "one-dim") {
       lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
@@ -86,7 +86,7 @@ public:
   }
 
   grad_func_type grad_func() {
-    return boost::bind(&glm_experiment::gradient, this, _1, _2);
+    return boost::bind(&glm_model::gradient, this, _1, _2);
   }
 
   // TODO not all models have these methods
@@ -122,8 +122,8 @@ public:
     return family_obj_->deviance(y, mu, wt);
   }
 
-  friend std::ostream& operator<<(std::ostream& os, const base_experiment& exprm) {
-    os << "  Experiment:\n" << "    Model: " << exprm.model_name << "\n" <<
+  friend std::ostream& operator<<(std::ostream& os, const base_model& exprm) {
+    os << "  Model:\n" << "    Model name: " << exprm.model_name << "\n" <<
           "    Learning rate: " << exprm.lr << std::endl;
     return os;
   }
