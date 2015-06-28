@@ -54,7 +54,7 @@ public:
 
   const learn_rate_value& learning_rate(const mat& theta_old, const
     data_point& data_pt, unsigned t) {
-    return (*lr_obj_)(theta_old, data_pt, t, d);
+    return (*lr_obj_)(theta_old, data_pt, t);
   }
 
 protected:

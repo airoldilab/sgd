@@ -4,17 +4,21 @@
 #include "basedef.h"
 
 class learn_rate_value {
-  /* Object to return for all learning rate classes; it collects the return
-   * value which can be a scalar, vector, or matrix. */
+  /**
+   * Object to return for all learning rate classes
+   *
+   * @param t type of the value; 0 is scalar, 1 is vector, 2 is matrix
+   * @param d dimension of parameters
+   */
 public:
   learn_rate_value(unsigned t, unsigned d) : type(t), dim(d) {
-    if (type == 0) { // scalar
+    if (type == 0) {
       lr_scalar = 1;
     }
-    else if (type == 1) { // vector
+    else if (type == 1) {
       lr_vec = ones<vec>(d);
     }
-    else { // matrix
+    else {
       lr_mat = eye<mat>(d, d);
     }
   }

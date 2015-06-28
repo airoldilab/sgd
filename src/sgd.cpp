@@ -88,7 +88,7 @@ void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment) {
       );
   } else if (exprm.lr == "one-dim-eigen") {
     exprm.set_learn_rate(new
-      onedim_eigen_learn_rate(exprm.grad_func())
+      onedim_eigen_learn_rate(exprm.d, exprm.grad_func())
       );
   } else if (exprm.lr == "d-dim") {
     exprm.set_learn_rate(new
