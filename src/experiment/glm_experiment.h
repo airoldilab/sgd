@@ -20,10 +20,29 @@ typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 class glm_experiment : public base_experiment {
   /**
    * Generalized linear models
+   *
+   * @param experiment list of attributes to take from R type
    */
 public:
-  glm_experiment(std::string m_name, Rcpp::List mp_attrs) :
-    base_experiment(m_name, mp_attrs) {
+  glm_experiment(Rcpp::List experiment) :
+    base_experiment(experiment) {
+    vec lr_control= Rcpp::as<vec>(experiment["lr.control"]);
+    if (lr == "one-dim") {
+      lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
+                                      lr_control(2), lr_control(3));
+    } else if (lr == "one-dim-eigen") {
+      lr_obj_ = new onedim_eigen_learn_rate(d, grad_func());
+    } else if (lr == "d-dim") {
+      lr_obj_ = new ddim_learn_rate(d, 1., 0., 1., 1.,
+                                    lr_control(0), grad_func());
+    } else if (lr == "adagrad") {
+      lr_obj_ = new ddim_learn_rate(d, lr_control(0), 1., 1., .5,
+                                    lr_control(1), grad_func());
+    } else if (lr == "rmsprop") {
+      lr_obj_ = new ddim_learn_rate(d, lr_control(0), lr_control(1),
+                                    1-lr_control(1), .5, lr_control(2),
+                                    grad_func());
+    }
     if (model_name == "gaussian") {
       family_obj_ = new gaussian_family();
     }

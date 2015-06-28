@@ -6,9 +6,6 @@
 #include "data/online_output.h"
 #include "experiment/ee_experiment.h"
 #include "experiment/glm_experiment.h"
-#include "learn-rate/onedim_learn_rate.h"
-#include "learn-rate/onedim_eigen_learn_rate.h"
-#include "learn-rate/ddim_learn_rate.h"
 #include "post-process/glm_post_process.h"
 #include "post-process/ee_post_process.h"
 #include "validity-check/validity_check.h"
@@ -24,91 +21,55 @@ template<typename EXPERIMENT>
 Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
   bool verbose, const boost::timer& ti);
 
+/**
+ * Runs the proposed experiment (model) and method on the data set
+ *
+ * @param dataset    data set
+ * @param experiment list of attributes about model
+ * @param method     stochastic gradient method
+ * @param verbose    whether to print progress
+ */
 // [[Rcpp::export]]
 Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
-  /**
-   * Runs the proposed experiment and method on the data set.
-   * This is the main interfacing function in R.
-   */
   boost::timer ti;
   // Convert all arguments from R to C++ types.
   Rcpp::List Experiment(experiment);
-  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
-  Rcpp::List model_attrs = Experiment["model.attrs"];
-
   Rcpp::List Data(dataset);
   data_set data(Data["bigmat"],
                 Rcpp::as<bool>(Data["big"]),
                 Rcpp::as<mat>(Data["X"]),
                 Rcpp::as<mat>(Data["Y"]),
                 Rcpp::as<unsigned>(Experiment["npasses"]));
-
   std::string meth = Rcpp::as<std::string>(method);
   bool verb = Rcpp::as<bool>(verbose);
 
+  // Run templated experiment based on the model.
+  std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   if (model_name == "gaussian" ||
       model_name == "poisson" ||
       model_name == "binomial" ||
       model_name == "gamma") {
-    glm_experiment exprm(model_name, model_attrs);
-    set_experiment(exprm, Experiment);
+    glm_experiment exprm(Experiment);
     return run_experiment(data, exprm, meth, verb, ti);
   } else if (model_name == "ee") {
-    ee_experiment exprm(model_name, model_attrs, model_attrs["gr"]);
-    //ee_experiment exprm(model_name, model_attrs);
-    set_experiment(exprm, Experiment);
+    Rcpp::List model_attrs = Experiment["model.attrs"];
+    Rcpp::Function gr = model_attrs["gr"];
+    ee_experiment exprm(Experiment, gr);
     return run_experiment(data, exprm, meth, verb, ti);
   } else {
     return Rcpp::List();
   }
 }
 
-template<typename EXPERIMENT>
-void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment) {
-  /* Put attributes into experiment. */
-  exprm.n_iters = Rcpp::as<unsigned>(Experiment["niters"]);
-  exprm.d = Rcpp::as<unsigned>(Experiment["d"]);
-  exprm.n_passes = Rcpp::as<unsigned>(Experiment["npasses"]);
-  exprm.lr = Rcpp::as<std::string>(Experiment["lr"]);
-  exprm.start = Rcpp::as<mat>(Experiment["start"]);
-  exprm.weights = Rcpp::as<mat>(Experiment["weights"]);
-  exprm.delta = Rcpp::as<double>(Experiment["delta"]);
-  exprm.lambda1 = Rcpp::as<double>(Experiment["lambda1"]);
-  exprm.lambda2 = Rcpp::as<double>(Experiment["lambda2"]);
-  exprm.trace = Rcpp::as<bool>(Experiment["trace"]);
-  exprm.dev = Rcpp::as<bool>(Experiment["deviance"]);
-  exprm.convergence = Rcpp::as<bool>(Experiment["convergence"]);
-
-  // Set learning rate in experiment.
-  vec lr_control= Rcpp::as<vec>(Experiment["lr.control"]);
-  if (exprm.lr == "one-dim") {
-    exprm.set_learn_rate(new
-      onedim_learn_rate(lr_control(0), lr_control(1),
-                        lr_control(2), lr_control(3))
-      );
-  } else if (exprm.lr == "one-dim-eigen") {
-    exprm.set_learn_rate(new
-      onedim_eigen_learn_rate(exprm.d, exprm.grad_func())
-      );
-  } else if (exprm.lr == "d-dim") {
-    exprm.set_learn_rate(new
-      ddim_learn_rate(exprm.d, 1., 0., 1., 1.,
-                      lr_control(0), exprm.grad_func())
-      );
-  } else if (exprm.lr == "adagrad") {
-    exprm.set_learn_rate(new
-      ddim_learn_rate(exprm.d, lr_control(0), 1., 1., .5,
-                      lr_control(1), exprm.grad_func())
-      );
-  } else if (exprm.lr == "rmsprop") {
-    exprm.set_learn_rate(new
-      ddim_learn_rate(exprm.d, lr_control(0), lr_control(1),
-                      1-lr_control(1), .5, lr_control(2),
-                      exprm.grad_func())
-      );
-  }
-}
-
+/**
+ * Runs algorithm templated on the particular experiment type
+ *
+ * @param  data       data set
+ * @tparam EXPERIMENT list of attributes about model
+ * @param  method     stochastic gradient method
+ * @param  verbose    whether to print progress
+ * @param  ti         timer to benchmark progress
+ */
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
   bool verbose, const boost::timer& ti) {

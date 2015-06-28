@@ -18,11 +18,30 @@ typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 class ee_experiment : public base_experiment {
   /**
    * Estimating equations
+   *
+   * @param experiment list of attributes to take from R type
    */
 public:
   // TODO interface not consistent with other experiments
-  ee_experiment(std::string m_name, Rcpp::List mp_attrs, Rcpp::Function gr) :
-    gr_(gr), base_experiment(m_name, mp_attrs) {
+  ee_experiment(Rcpp::List experiment, Rcpp::Function gr) :
+    base_experiment(experiment), gr_(gr) {
+    vec lr_control= Rcpp::as<vec>(experiment["lr.control"]);
+    if (lr == "one-dim") {
+      lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
+                                      lr_control(2), lr_control(3));
+    } else if (lr == "one-dim-eigen") {
+      lr_obj_ = new onedim_eigen_learn_rate(d, grad_func());
+    } else if (lr == "d-dim") {
+      lr_obj_ = new ddim_learn_rate(d, 1., 0., 1., 1.,
+                                    lr_control(0), grad_func());
+    } else if (lr == "adagrad") {
+      lr_obj_ = new ddim_learn_rate(d, lr_control(0), 1., 1., .5,
+                                    lr_control(1), grad_func());
+    } else if (lr == "rmsprop") {
+      lr_obj_ = new ddim_learn_rate(d, lr_control(0), lr_control(1),
+                                    1-lr_control(1), .5, lr_control(2),
+                                    grad_func());
+    }
     // if model_attrs["wmatrix"] == NULL {
       int k = 5;
       wmatrix_ = eye<mat>(k, k);

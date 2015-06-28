@@ -22,6 +22,8 @@ class Implicit_fn;
 class base_experiment {
   /**
    * Base class for experiments
+   *
+   * @param experiment list of attributes to take from R type
    */
 public:
   std::string model_name;
@@ -40,8 +42,22 @@ public:
   Rcpp::List model_attrs;
 
   // Constructors
-  base_experiment(std::string m_name, Rcpp::List mp_attrs) :
-    model_name(m_name), model_attrs(mp_attrs) {}
+  base_experiment(Rcpp::List experiment) {
+    model_name = Rcpp::as<std::string>(experiment["name"]);
+    n_iters = Rcpp::as<unsigned>(experiment["niters"]);
+    d = Rcpp::as<unsigned>(experiment["d"]);
+    n_passes = Rcpp::as<unsigned>(experiment["npasses"]);
+    lr = Rcpp::as<std::string>(experiment["lr"]);
+    start = Rcpp::as<mat>(experiment["start"]);
+    weights = Rcpp::as<mat>(experiment["weights"]);
+    delta = Rcpp::as<double>(experiment["delta"]);
+    lambda1 = Rcpp::as<double>(experiment["lambda1"]);
+    lambda2 = Rcpp::as<double>(experiment["lambda2"]);
+    trace = Rcpp::as<bool>(experiment["trace"]);
+    dev = Rcpp::as<bool>(experiment["deviance"]);
+    convergence = Rcpp::as<bool>(experiment["convergence"]);
+    model_attrs = experiment["model.attrs"];
+  }
 
   // Gradient
   mat gradient(const mat& theta_old, const data_point& data_pt) const;
