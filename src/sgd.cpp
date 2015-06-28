@@ -22,7 +22,7 @@ template<typename EXPERIMENT>
 void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment);
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
-  bool verbose);
+  bool verbose, const boost::timer& ti);
 
 // [[Rcpp::export]]
 Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
@@ -41,8 +41,7 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
                 Rcpp::as<bool>(Data["big"]),
                 Rcpp::as<mat>(Data["X"]),
                 Rcpp::as<mat>(Data["Y"]),
-                Rcpp::as<unsigned>(Experiment["npasses"]),
-                ti);
+                Rcpp::as<unsigned>(Experiment["npasses"]));
 
   std::string meth = Rcpp::as<std::string>(method);
   bool verb = Rcpp::as<bool>(verbose);
@@ -53,12 +52,12 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
       model_name == "gamma") {
     glm_experiment exprm(model_name, model_attrs);
     set_experiment(exprm, Experiment);
-    return run_experiment(data, exprm, meth, verb);
+    return run_experiment(data, exprm, meth, verb, ti);
   } else if (model_name == "ee") {
     ee_experiment exprm(model_name, model_attrs, model_attrs["gr"]);
     //ee_experiment exprm(model_name, model_attrs);
     set_experiment(exprm, Experiment);
-    return run_experiment(data, exprm, meth, verb);
+    return run_experiment(data, exprm, meth, verb, ti);
   } else {
     return Rcpp::List();
   }
@@ -112,7 +111,7 @@ void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment) {
 
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
-  bool verbose) {
+  bool verbose, const boost::timer& ti) {
   unsigned n_samples = data.n_samples;
   unsigned n_features = data.n_features;
   unsigned n_passes = exprm.n_passes;
@@ -142,7 +141,7 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
   }
 
   // Initialize estimates.
-  online_output out(data, exprm.start);
+  online_output out(data, exprm.start, ti, n_passes);
   mat theta_new;
   mat theta_old = out.get_last_estimate();
   mat theta_new_ave;

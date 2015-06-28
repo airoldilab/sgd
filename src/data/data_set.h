@@ -17,7 +17,7 @@ class data_set {
    * @param n_passes number of passes for data
    */
 private:
-  Rcpp::XPtr<BigMatrix> xpMat_; //
+  Rcpp::XPtr<BigMatrix> xpMat_;
   std::vector<unsigned> idxmap_; // index to data point for each iteration
 public:
   mat X;
@@ -25,12 +25,10 @@ public:
   bool big;
   unsigned n_samples;
   unsigned n_features;
-  // TODO move somewhere else
-  boost::timer ti;
 
-  // const &
-  data_set(SEXP xpMat, bool big, mat Xx, mat Yy, unsigned n_passes, const
-    boost::timer ti) : xpMat_(xpMat), big(big), Y(Yy), ti(ti) {
+  // TODO const &
+  data_set(SEXP xpMat, bool big, mat Xx, mat Yy, unsigned n_passes) :
+  xpMat_(xpMat), big(big), Y(Yy) {
     if (!big) {
       X = Xx;
       n_samples = X.n_rows;
