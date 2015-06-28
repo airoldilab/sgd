@@ -26,9 +26,8 @@ public:
   unsigned n_samples;
   unsigned n_features;
 
-  // TODO const &
-  data_set(SEXP xpMat, bool big, mat Xx, mat Yy, unsigned n_passes) :
-  xpMat_(xpMat), big(big), Y(Yy) {
+  data_set(const SEXP& xpMat, bool big, const mat& Xx, const mat& Yy,
+    unsigned n_passes) : xpMat_(xpMat), big(big), Y(Yy) {
     if (!big) {
       X = Xx;
       n_samples = X.n_rows;

@@ -13,7 +13,7 @@ struct data_point {
    * @param y response value for a single sample
    */
   data_point() : x(mat()), y(0) {}
-  data_point(mat xin, double yin) : x(xin), y(yin) {}
+  data_point(const mat& x, double y) : x(x), y(y) {}
 
   mat x;
   double y;

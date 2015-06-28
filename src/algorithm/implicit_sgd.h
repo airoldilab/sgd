@@ -1,5 +1,5 @@
-#ifndef ALGORITHM_EXPLICIT_SGD_H
-#define ALGORITHM_EXPLICIT_SGD_H
+#ifndef ALGORITHM_IMPLICIT_SGD_H
+#define ALGORITHM_IMPLICIT_SGD_H
 
 #include "basedef.h"
 #include "data/data_point.h"
@@ -9,6 +9,15 @@
 #include "learn-rate/learn_rate_value.h"
 #include <stdlib.h>
 
+/**
+ * Stochastic gradient descent (using an "implicit" update)
+ *
+ * @param t             iteration
+ * @param theta_old     previous estimate
+ * @param data          data set
+ * @param experiment    values stored in experiment
+ * @param good_gradient flag to store if gradient was computed okay
+ */
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   glm_experiment& experiment, bool& good_gradient) {
   /* return the new estimate of parameters, using implicit SGD */
