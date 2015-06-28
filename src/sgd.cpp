@@ -1,5 +1,3 @@
-// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
-
 #include "basedef.h"
 #include "algorithm/explicit_sgd.h"
 #include "algorithm/implicit_sgd.h"
@@ -32,21 +30,19 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
    * Runs the proposed experiment and method on the data set.
    * This is the main interfacing function in R.
    */
-  boost::timer t;
+  boost::timer ti;
   // Convert all arguments from R to C++ types.
   Rcpp::List Experiment(experiment);
   std::string model_name = Rcpp::as<std::string>(Experiment["name"]);
   Rcpp::List model_attrs = Experiment["model.attrs"];
 
   Rcpp::List Data(dataset);
-  data_set data(Data["bigmat"], 0, t);
-  bool big = Rcpp::as<bool>(Data["big"]);
-  data.big = big;
-  data.Y = Rcpp::as<mat>(Data["Y"]);
-  if (!big) {
-    data.X = Rcpp::as<mat>(Data["X"]);
-  }
-  data.init(Rcpp::as<unsigned>(Experiment["npasses"]));
+  data_set data(Data["bigmat"],
+                Rcpp::as<bool>(Data["big"]),
+                Rcpp::as<mat>(Data["X"]),
+                Rcpp::as<mat>(Data["Y"]),
+                Rcpp::as<unsigned>(Experiment["npasses"]),
+                ti);
 
   std::string meth = Rcpp::as<std::string>(method);
   bool verb = Rcpp::as<bool>(verbose);
@@ -117,10 +113,11 @@ void set_experiment(EXPERIMENT& exprm, const Rcpp::List& Experiment) {
 template<typename EXPERIMENT>
 Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
   bool verbose) {
-  unsigned nsamples = data.n_samples;
-  unsigned nfeatures = data.n_features;
+  unsigned n_samples = data.n_samples;
+  unsigned n_features = data.n_features;
+  unsigned n_passes = exprm.n_passes;
 
-  unsigned X_rank = nfeatures;
+  unsigned X_rank = n_features;
   if (exprm.model_name == "gaussian" ||
       exprm.model_name == "poisson" ||
       exprm.model_name == "binomial" ||
@@ -128,22 +125,18 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
     // Check if the number of observations is greater than the rank of X.
     if (exprm.rank) {
       X_rank = arma::rank(data.X);
-      if (X_rank > nsamples) {
+      if (X_rank > n_samples) {
         Rcpp::Rcout << "X matrix has rank " << X_rank << ", but only "
-          << nsamples << " observation" << std::endl;
+          << n_samples << " observation" << std::endl;
         return Rcpp::List();
       }
     }
   }
 
-  if (verbose) {
-    Rcpp::Rcout << "    Method: " << method << std::endl;
-  }
-
   // Initialize booleans.
   bool good_gradient = true;
   bool good_validity = true;
-  bool flag_ave;
+  bool flag_ave = false;
   if (method == "asgd" || method == "ai-sgd") {
     flag_ave = true;
   }
@@ -157,9 +150,10 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
 
   // Run SGD!
   if (verbose) {
+    Rcpp::Rcout << "Stochastic gradient method: " << method << std::endl;
     Rcpp::Rcout << "SGD Start! " <<std::endl;
   }
-  for (int t = 1; t <= nsamples; ++t) {
+  for (int t = 1; t <= n_samples*n_passes; ++t) {
     // SGD update
     if (method == "sgd" || method == "asgd") {
       theta_new = explicit_sgd(t, theta_old, data, exprm, good_gradient);
@@ -200,5 +194,4 @@ Rcpp::List run_experiment(data_set& data, EXPERIMENT& exprm, std::string method,
     Rcpp::Named("times") = out.get_times(),
     Rcpp::Named("pos") = out.get_pos(),
     Rcpp::Named("model.out") = model_out);
-  return Rcpp::List::create();
 }

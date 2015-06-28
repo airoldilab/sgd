@@ -11,7 +11,7 @@ class online_output {
 public:
   online_output(const data_set& data, const mat& init, unsigned s=100) :
     estimates(mat(data.n_features, s)), initial(init), last_estimate(init),
-    times(s), t(data.t), n_iter(data.n_samples), iter(0), size(s),
+    times(s), t(data.ti), n_iter(data.n_samples), iter(0), size(s),
     n_recorded(0), pos(Mat<unsigned>(1, s)) {
       for (unsigned i=0; i < size; ++i) {
         pos(0, i) = int(round(pow(10, i * log10(n_iter) / (size-1))));

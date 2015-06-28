@@ -7,41 +7,47 @@
 #include "data/data_point.h"
 
 class data_set {
-  /* Collection of all data points. */
+  /**
+   * Collection of all data points.
+   *
+   * @param xpMat    pointer to bigmat if using bigmatrix
+   * @param big      whether using bigmatrix or not
+   * @param Xx       design matrix if not using bigmatrix
+   * @param Yy       response values
+   * @param n_passes number of passes for data
+   */
+private:
+  Rcpp::XPtr<BigMatrix> xpMat_; //
+  std::vector<unsigned> idxmap_; // index to data point for each iteration
 public:
   mat X;
   mat Y;
-  std::vector<unsigned> idxmap;
+  bool big;
   unsigned n_samples;
   unsigned n_features;
-  bool big;
-  Rcpp::XPtr<BigMatrix> xpMat;
-  boost::timer t;
+  // TODO move somewhere else
+  boost::timer ti;
 
-  data_set(SEXP ptr, unsigned a, const boost::timer t) :
-    X(mat()), Y(mat()), xpMat(ptr), t(t) {}
-
-  void init(unsigned n_passes) {
-    // Initialize number of columns and samples.
-    unsigned nrow;
+  // const &
+  data_set(SEXP xpMat, bool big, mat Xx, mat Yy, unsigned n_passes, const
+    boost::timer ti) : xpMat_(xpMat), big(big), Y(Yy), ti(ti) {
     if (!big) {
-      nrow = X.n_rows;
+      X = Xx;
+      n_samples = X.n_rows;
       n_features = X.n_cols;
     } else {
-      nrow = xpMat->nrow();
-      n_features = xpMat->ncol();
+      n_samples = xpMat_->nrow();
+      n_features = xpMat_->ncol();
     }
-    n_samples = nrow * n_passes;
-    // Initialize index mapping.
-    idxmap = std::vector<unsigned>(n_samples);
+    idxmap_ = std::vector<unsigned>(n_samples*n_passes);
     // std::srand(unsigned(std::time(0)));
     std::srand(0);
-    for (unsigned i=0; i < n_passes; ++i) {
-      for (unsigned j=0; j < nrow; ++j) {
-        idxmap[i * nrow + j] = j;
+    for (unsigned i = 0; i < n_passes; ++i) {
+      for (unsigned j = 0; j < n_samples; ++j) {
+        idxmap_[i * n_samples + j] = j;
       }
-      std::random_shuffle(idxmap.begin() + i * nrow,
-                          idxmap.begin() + (i + 1) * nrow);
+      std::random_shuffle(idxmap_.begin() + i * n_samples,
+                          idxmap_.begin() + (i + 1) * n_samples);
     }
   }
 
@@ -50,20 +56,16 @@ public:
     t = t - 1;
     mat xt;
     if (!big) {
-      xt = mat(X.row(idxmap[t]));
+      xt = mat(X.row(idxmap_[t]));
     } else {
-      MatrixAccessor<double> matacess(*xpMat);
+      MatrixAccessor<double> matacess(*xpMat_);
       xt = mat(1, n_features);
       for (unsigned i=0; i < n_features; ++i) {
-        xt(0, i) = matacess[i][idxmap[t]];
+        xt(0, i) = matacess[i][idxmap_[t]];
       }
     }
-    double yt = Y(idxmap[t]);
+    double yt = Y(idxmap_[t]);
     return data_point(xt, yt);
-  }
-
-  mat covariance() const {
-    return cov(X);
   }
 
   friend std::ostream& operator<<(std::ostream& os, const data_set& data) {
