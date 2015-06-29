@@ -11,7 +11,7 @@ bool validity_check(const data_set& data, const mat& theta, bool good_gradient,
   unsigned t, const EXPERIMENT& exprm) {
   // Check if gradient is finite.
   if (!good_gradient) {
-    Rcpp::Rcout << "NA or infinite gradient" << std::endl;
+    Rcpp::Rcout << "error: NA or infinite gradient" << std::endl;
     return false;
   }
 

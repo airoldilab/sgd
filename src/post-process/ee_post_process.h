@@ -11,7 +11,7 @@
 Rcpp::List post_process(const sgd& sgd_out, const data_set& data,
   const ee_model& model, mat& coef, unsigned X_rank) {
   // TODO
-  Rcpp::Rcout << "post_process for EE not implemented yet" << std::endl;
+  Rcpp::Rcout << "warning: post_process for EE not implemented yet" << std::endl;
   return Rcpp::List::create();
 }
 

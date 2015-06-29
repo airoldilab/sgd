@@ -26,7 +26,7 @@ Imports:
     MASS,
     Rcpp (>= 0.11.3)
 LinkingTo:
-    bigmemory,
     BH,
+    bigmemory,
     Rcpp,
     RcppArmadillo

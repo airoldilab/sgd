@@ -72,6 +72,7 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
                            model.grad_func());
     return run_model(data, model, sgd_out, verb);
   } else {
+    Rcpp::Rcout << "error: model not implemented" << std::endl;
     return Rcpp::List();
   }
 }
@@ -101,7 +102,7 @@ Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out,
     if (model.rank) {
       X_rank = arma::rank(data.X);
       if (X_rank > n_samples) {
-        Rcpp::Rcout << "X matrix has rank " << X_rank << ", but only "
+        Rcpp::Rcout << "error: X matrix has rank " << X_rank << ", but only "
           << n_samples << " observation" << std::endl;
         return Rcpp::List();
       }
@@ -125,7 +126,7 @@ Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out,
   // Run SGD!
   if (verbose) {
     Rcpp::Rcout << "Stochastic gradient method: " << method << std::endl;
-    Rcpp::Rcout << "SGD Start! " <<std::endl;
+    Rcpp::Rcout << "SGD Start!" << std::endl;
   }
   for (int t = 1; t <= n_samples*n_passes; ++t) {
     // SGD update

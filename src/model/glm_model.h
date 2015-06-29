@@ -33,7 +33,7 @@ public:
     } else if (name == "gamma") {
       family_obj_ = new gamma_family();
     } else {
-      Rcpp::Rcout << "Model not implemented yet " << std::endl;
+      Rcpp::Rcout << "warning: model not implemented yet" << std::endl;
     }
     if (name == "gaussian" ||
         name == "poisson" ||

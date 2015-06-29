@@ -8,7 +8,7 @@
 bool validity_check_model(const data_set& data, const mat& theta, unsigned t,
   const ee_model& model) {
   // TODO
-  Rcpp::Rcout << "validity check for EE not implemented" << std::endl;
+  Rcpp::Rcout << "warning: validity check for EE not implemented yet" << std::endl;
   return true;
 }
 

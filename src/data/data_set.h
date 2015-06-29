@@ -57,14 +57,6 @@ public:
     return data_point(xt, yt);
   }
 
-  // Operators
-  friend std::ostream& operator<<(std::ostream& os, const data_set& data) {
-    os << "  Data set:\n"
-       << "    X has " << data.n_features << " features\n"
-       << "    Total of " << data.n_samples << " data points" << std::endl;
-    return os;
-  }
-
   // Members
   mat X;
   mat Y;

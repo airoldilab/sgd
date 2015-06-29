@@ -70,7 +70,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   ee_model& model, sgd& sgd_out, bool& good_gradient) {
   //TODO
-  Rcpp::Rcout << "error: implicit not implemented for EE yet " << t << std::endl;
+  Rcpp::Rcout << "error: implicit not implemented for EE yet" << std::endl;
   good_gradient = false;
   return theta_old;
 }
