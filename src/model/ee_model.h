@@ -23,12 +23,12 @@ public:
   // Constructors
   ee_model(Rcpp::List model, Rcpp::Function gr) :
     base_model(model), gr_(gr) {
-    // if model_attrs["wmatrix"] == NULL {
+    //if model_attrs["wmatrix"] == NULL {
       int k = 5;
       wmatrix_ = eye<mat>(k, k);
-    // } else {
-    // wmatrix_ = model_attrs["wmatrix"];
-    // }
+    //} else {
+    //  wmatrix_ = model_attrs["wmatrix"];
+    //}
   }
 
   // Gradient

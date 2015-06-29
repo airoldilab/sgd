@@ -4,15 +4,15 @@
 #include "basedef.h"
 #include "data/data_set.h"
 #include "model/glm_model.h"
-#include "sgd/sgd.h"
 #include <stdlib.h>
 
-Rcpp::List post_process(const sgd& sgd_out, const data_set& data,
+template <typename SGD>
+Rcpp::List post_process(const SGD& sgd, const data_set& data,
   const glm_model& model, mat& coef, unsigned X_rank) {
   // Check the validity of eta for all observations.
   if (!data.big) {
     mat eta;
-    eta = data.X * sgd_out.get_last_estimate();
+    eta = data.X * sgd.get_last_estimate();
     mat mu;
     mu = model.h_transfer(eta);
     for (int i = 0; i < eta.n_rows; ++i) {
@@ -28,11 +28,11 @@ Rcpp::List post_process(const sgd& sgd_out, const data_set& data,
 
     // Check the validity of mu for Poisson and Binomial family.
     double eps = 10. * datum::eps;
-    if (model.name == "poisson") {
+    if (model.name() == "poisson") {
       if (any(vectorise(mu) < eps)) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
       }
-    } else if (model.name == "binomial") {
+    } else if (model.name() == "binomial") {
       if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps))) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
       }

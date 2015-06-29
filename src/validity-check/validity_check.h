@@ -6,9 +6,9 @@
 #include "validity-check/glm_validity_check_model.h"
 #include "validity-check/ee_validity_check_model.h"
 
-template<typename EXPERIMENT>
+template<typename MODEL>
 bool validity_check(const data_set& data, const mat& theta, bool good_gradient,
-  unsigned t, const EXPERIMENT& exprm) {
+  unsigned t, const MODEL& model) {
   // Check if gradient is finite.
   if (!good_gradient) {
     Rcpp::Rcout << "error: NA or infinite gradient" << std::endl;
@@ -20,7 +20,7 @@ bool validity_check(const data_set& data, const mat& theta, bool good_gradient,
     Rcpp::Rcout << "warning: non-finite coefficients at iteration " << t << std::endl;
   }
 
-  return validity_check_model(data, theta, t, exprm);
+  return validity_check_model(data, theta, t, model);
 }
 
 #endif

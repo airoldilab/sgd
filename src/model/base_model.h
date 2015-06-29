@@ -27,19 +27,27 @@ class base_model {
 public:
   // Constructors
   base_model(Rcpp::List model) {
-    name = Rcpp::as<std::string>(model["name"]);
+    name_ = Rcpp::as<std::string>(model["name"]);
     lambda1 = Rcpp::as<double>(model["lambda1"]);
     lambda2 = Rcpp::as<double>(model["lambda2"]);
+  }
+
+  // Getters
+  std::string name() const {
+    return name_;
   }
 
   // Gradient
   grad_func_type grad_func();
   mat gradient(const mat& theta_old, const data_point& data_pt) const;
 
+  // TODO make private
   // Members
-  std::string name;
   double lambda1;
   double lambda2;
+
+protected:
+  std::string name_;
 };
 
 template<typename MODEL>

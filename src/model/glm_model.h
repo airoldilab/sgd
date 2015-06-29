@@ -24,21 +24,21 @@ public:
   // Constructors
   glm_model(Rcpp::List model) :
     base_model(model) {
-    if (name == "gaussian") {
+    if (name_ == "gaussian") {
       family_obj_ = new gaussian_family();
-    } else if (name == "poisson") {
+    } else if (name_ == "poisson") {
       family_obj_ = new poisson_family();
-    } else if (name == "binomial") {
+    } else if (name_ == "binomial") {
       family_obj_ = new binomial_family();
-    } else if (name == "gamma") {
+    } else if (name_ == "gamma") {
       family_obj_ = new gamma_family();
     } else {
       Rcpp::Rcout << "warning: model not implemented yet" << std::endl;
     }
-    if (name == "gaussian" ||
-        name == "poisson" ||
-        name == "binomial" ||
-        name == "gamma") {
+    if (name_ == "gaussian" ||
+        name_ == "poisson" ||
+        name_ == "binomial" ||
+        name_ == "gamma") {
       Rcpp::List model_attrs = model["model.attrs"];
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
       rank = Rcpp::as<bool>(model_attrs["rank"]);
@@ -98,11 +98,6 @@ public:
 
   double deviance(const mat& y, const mat& mu, const mat& wt) const {
     return family_obj_->deviance(y, mu, wt);
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, const base_model& exprm) {
-    os << "  Model:\n" << "    Model name: " << exprm.name << std::endl;
-    return os;
   }
 
   // Members
