@@ -26,16 +26,8 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   data_point data_pt = data.get_data_point(t);
   mat theta_new;
   learn_rate_value at = sgd_out.learning_rate(theta_old, data_pt, t);
-  double average_lr = 0;
-  if (at.type == 0) {
-    average_lr = at.lr_scalar;
-  } else {
-    vec diag_lr = at.lr_mat.diag();
-    for (unsigned i = 0; i < diag_lr.n_elem; ++i) {
-      average_lr += diag_lr[i];
-    }
-    average_lr /= diag_lr.n_elem;
-  }
+  // TODO
+  double average_lr = at.mean();
 
   double normx = dot(data_pt.x, data_pt.x);
 

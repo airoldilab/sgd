@@ -11,71 +11,136 @@ class learn_rate_value {
    * @param d dimension of parameters
    */
 public:
-  learn_rate_value(unsigned t, unsigned d) : type(t), dim(d) {
-    if (type == 0) {
-      lr_scalar = 1;
-    }
-    else if (type == 1) {
-      lr_vec = ones<vec>(d);
-    }
-    else {
-      lr_mat = eye<mat>(d, d);
+  learn_rate_value(unsigned type, unsigned d) : type_(type) {
+    if (type_ == 0) {
+      lr_scalar_ = 1;
+    } else if (type_ == 1) {
+      lr_vector_ = ones<vec>(d);
+    } else {
+      lr_matrix_ = eye<mat>(d, d);
     }
   }
 
-  mat lr_mat;
-  vec lr_vec;
-  double lr_scalar;
-  unsigned type;
-  unsigned dim;
+  // Getters
+  double& at(unsigned i) {
+    if (type_ == 1) {
+      return lr_vector_.at(i);
+    } else if (type_ == 2) {
+      return lr_matrix_.at(i);
+    } else {
+      Rcpp::Rcout <<
+        "Indexing vector/matrix entry when learning rate type is neither" <<
+        std::endl;
+      return lr_scalar_;
+    }
+  }
+
+  const double& at(unsigned i) const {
+    return at(i);
+  }
+
+  double& at(unsigned i, unsigned j) {
+    if (type_ == 2) {
+      return lr_matrix_.at(i, j);
+    } else {
+      Rcpp::Rcout <<
+        "Indexing matrix entry when learning rate type is not matrix" <<
+        std::endl;
+      return lr_scalar_;
+    }
+  }
+
+  const double& at(unsigned i, unsigned j) const {
+    return at(i, j);
+  }
+
+  // Take average for usage in implicit SGD
+  double mean() const {
+    double average = 0.0;
+    if (type_ == 0) {
+      return lr_scalar_;
+    } else if (type_ == 1) {
+      return arma::mean(lr_vector_);
+    } else {
+      //return arma::mean(arma::mean(lr_matrix_));
+      return arma::mean(lr_matrix_.diag());
+    }
+  }
+
+  // Operators
+  learn_rate_value operator=(double scalar) {
+    if (type_ == 0) {
+      lr_scalar_ = scalar;
+    } else {
+      Rcpp::Rcout <<
+        "Setting learning rate value to scalar when its type is not" <<
+        std::endl;
+    }
+    return *this;
+  }
+
+  learn_rate_value operator=(const vec& vector) {
+    if (type_ == 1) {
+      lr_vector_ = vector;
+    } else {
+      Rcpp::Rcout <<
+        "Setting learning rate value to vector when its type is not" <<
+        std::endl;
+    }
+    return *this;
+  }
+
+  learn_rate_value operator=(const mat& matrix) {
+    if (type_ == 2) {
+      lr_matrix_ = matrix;
+    } else {
+      Rcpp::Rcout <<
+        "Setting learning rate value to matrix when its type is not" <<
+        std::endl;
+    }
+    return *this;
+  }
+
+  mat operator*(const mat& matrix) {
+    if (type_ == 0) {
+      return lr_scalar_ * matrix;
+    } else if (type_ == 1) {
+      //int m = matrix.n_rows;
+      ////int n = matrix.n_cols;
+      //mat out = zeros<mat>(m, 1);
+      //for (unsigned i = 0; i < m; ++i) {
+      //  //for (unsigned j = 0; j < n; ++j) {
+      //    //out.at(i) += lr_vector_.at(i) * matrix.at(i, 0);
+      //  //}
+      //  out.at(i, 0) = lr_vector_.at(i) * matrix.at(i, 0);
+      //}
+      //return out;
+      //return diagmat(lr_vector_) * matrix;
+      return mat(lr_vector_) % matrix;
+    } else {
+      return lr_matrix_ * matrix;
+    }
+  }
+
+  bool operator<(const double thres) {
+    if (type_ == 0) {
+      return lr_scalar_ < thres;
+    } else if (type_ == 1) {
+      return all(lr_vector_ < thres);
+    } else{
+      return all(diagvec(lr_matrix_) < thres);
+    }
+  }
+
+  bool operator>(const double thres) {
+    return !(*this < thres);
+  }
+
+private:
+  unsigned type_;
+  double lr_scalar_;
+  vec lr_vector_;
+  mat lr_matrix_;
 };
-
-// Overload operators so as to work for arbitrary learning rate value.
-mat operator*(const learn_rate_value& lr, const mat& grad) {
-  if (lr.type == 0) {
-    return lr.lr_scalar * grad;
-  } else if (lr.type == 1) {
-    //int m = grad.n_rows;
-    ////int n = grad.n_cols;
-    //mat out = zeros<mat>(m, 1);
-    //for (unsigned i = 0; i < m; ++i) {
-    //  //for (unsigned j = 0; j < n; ++j) {
-    //    //out.at(i) += lr.lr_vec.at(i) * grad.at(i, 0);
-    //  //}
-    //  out.at(i, 0) = lr.lr_vec.at(i) * grad.at(i, 0);
-    //}
-    //return out;
-    //return diagmat(lr.lr_vec) * grad;
-    return mat(lr.lr_vec) % grad;
-  } else {
-    return lr.lr_mat * grad;
-  }
-}
-
-bool operator<(const learn_rate_value& lr, const double thres) {
-  if (lr.type == 0) {
-    return lr.lr_scalar < thres;
-  } else if (lr.type == 1) {
-    return all(lr.lr_vec < thres);
-  } else{
-    return all(diagvec(lr.lr_mat) < thres);
-  }
-}
-
-bool operator>(const learn_rate_value& lr, const double thres) {
-  return !(lr < thres);
-}
-
-std::ostream& operator<<(std::ostream& os, const learn_rate_value& lr) {
-  if (lr.type == 0) {
-    os << lr.lr_scalar;
-  } else if (lr.type == 1) {
-    os << lr.lr_vec;
-  }
-  else {
-    os << lr.lr_mat;
-  }
-  return os;
-}
 
 #endif

@@ -30,7 +30,7 @@ public:
     }
     // based on the bound of min_eigen <= d / trace(Fisher_matrix)
     double min_eigen_upper = sum_eigen / d_;
-    v_.lr_scalar = 1. / (min_eigen_upper * t);
+    v_ = 1. / (min_eigen_upper * t);
     return v_;
   }
 

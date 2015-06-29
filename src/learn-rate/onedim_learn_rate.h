@@ -23,7 +23,7 @@ public:
   // Operators
   virtual const learn_rate_value& operator()(const mat& theta_old, const
     data_point& data_pt, unsigned t) {
-    v_.lr_scalar = scale_ * gamma_ * pow(1 + alpha_ * gamma_ * t, -c_);
+    v_ = scale_ * gamma_ * pow(1 + alpha_ * gamma_ * t, -c_);
     return v_;
   }
 
