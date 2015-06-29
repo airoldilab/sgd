@@ -7,6 +7,7 @@
 #include "model/ee_model.h"
 #include "model/glm_model.h"
 #include "learn-rate/learn_rate_value.h"
+#include "sgd/sgd.h"
 #include <stdlib.h>
 
 /**
@@ -15,15 +16,16 @@
  * @param t             iteration
  * @param theta_old     previous estimate
  * @param data          data set
- * @param model         values stored in model
+ * @param model         values and functions affiliated with model
+ * @param sgd_out       values and functions affiliated with sgd
  * @param good_gradient flag to store if gradient was computed okay
  */
+// TODO these should be methods of the sgd class
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  glm_model& model, bool& good_gradient) {
-  /* return the new estimate of parameters, using implicit SGD */
+  glm_model& model, sgd& sgd_out, bool& good_gradient) {
   data_point data_pt = data.get_data_point(t);
   mat theta_new;
-  learn_rate_value at = model.learning_rate(theta_old, data_pt, t);
+  learn_rate_value at = sgd_out.learning_rate(theta_old, data_pt, t);
   double average_lr = 0;
   if (at.type == 0) {
     average_lr = at.lr_scalar;
@@ -58,7 +60,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
   double result;
   if (lower != upper) {
     result = boost::math::tools::schroeder_iterate(implicit_fn, (lower +
-      upper)/2, lower, upper, model.delta);
+      upper)/2, lower, upper, sgd_out.get_delta());
   } else {
     result = lower;
   }
@@ -66,7 +68,7 @@ mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
 }
 
 mat implicit_sgd(unsigned t, const mat& theta_old, const data_set& data,
-  ee_model& model, bool& good_gradient) {
+  ee_model& model, sgd& sgd_out, bool& good_gradient) {
   //TODO
   Rcpp::Rcout << "error: implicit not implemented for EE yet " << t << std::endl;
   good_gradient = false;

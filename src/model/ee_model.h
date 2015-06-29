@@ -4,9 +4,6 @@
 #include "basedef.h"
 #include "data/data_point.h"
 #include "model/base_model.h"
-#include "learn-rate/onedim_learn_rate.h"
-#include "learn-rate/onedim_eigen_learn_rate.h"
-#include "learn-rate/ddim_learn_rate.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>
@@ -23,25 +20,9 @@ class ee_model : public base_model {
    */
 public:
   // TODO interface not consistent with other models
+  // Constructors
   ee_model(Rcpp::List experiment, Rcpp::Function gr) :
     base_model(experiment), gr_(gr) {
-    vec lr_control= Rcpp::as<vec>(experiment["lr.control"]);
-    if (lr == "one-dim") {
-      lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
-                                      lr_control(2), lr_control(3));
-    } else if (lr == "one-dim-eigen") {
-      lr_obj_ = new onedim_eigen_learn_rate(d, grad_func());
-    } else if (lr == "d-dim") {
-      lr_obj_ = new ddim_learn_rate(d, 1., 0., 1., 1.,
-                                    lr_control(0), grad_func());
-    } else if (lr == "adagrad") {
-      lr_obj_ = new ddim_learn_rate(d, lr_control(0), 1., 1., .5,
-                                    lr_control(1), grad_func());
-    } else if (lr == "rmsprop") {
-      lr_obj_ = new ddim_learn_rate(d, lr_control(0), lr_control(1),
-                                    1-lr_control(1), .5, lr_control(2),
-                                    grad_func());
-    }
     // if model_attrs["wmatrix"] == NULL {
       int k = 5;
       wmatrix_ = eye<mat>(k, k);
@@ -71,6 +52,7 @@ public:
   bool rank;
 
 private:
+  // Members
   mat wmatrix_;
   Rcpp::Function gr_;
 };

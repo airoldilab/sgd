@@ -3,7 +3,6 @@
 
 #include "basedef.h"
 #include "data/data_point.h"
-#include "learn-rate/base_learn_rate.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>
@@ -26,47 +25,21 @@ class base_model {
    * @param experiment list of attributes to take from R type
    */
 public:
-  std::string model_name;
-  unsigned d;
-  unsigned n_passes; // sgd.control
-  std::string lr; // sgd.control
-  mat start; // sgd.control
-  double delta; // sgd.control
-  double lambda1; // sgd.control
-  double lambda2; // sgd.control
-  bool convergence; // sgd.control
-  Rcpp::List model_attrs; // this should be expanded per derived model, not here
-  mat weights; // TODO glm-specific
-  bool trace; // TODO glm-specific
-  bool dev; // TODO glm-specific
-
   // Constructors
   base_model(Rcpp::List experiment) {
-    model_name = Rcpp::as<std::string>(experiment["name"]);
-    d = Rcpp::as<unsigned>(experiment["d"]);
-    n_passes = Rcpp::as<unsigned>(experiment["npasses"]);
-    lr = Rcpp::as<std::string>(experiment["lr"]);
-    start = Rcpp::as<mat>(experiment["start"]);
-    weights = Rcpp::as<mat>(experiment["weights"]);
-    delta = Rcpp::as<double>(experiment["delta"]);
+    name = Rcpp::as<std::string>(experiment["name"]);
     lambda1 = Rcpp::as<double>(experiment["lambda1"]);
     lambda2 = Rcpp::as<double>(experiment["lambda2"]);
-    trace = Rcpp::as<bool>(experiment["trace"]);
-    dev = Rcpp::as<bool>(experiment["deviance"]);
-    convergence = Rcpp::as<bool>(experiment["convergence"]);
-    model_attrs = experiment["model.attrs"];
   }
 
   // Gradient
+  grad_func_type grad_func();
   mat gradient(const mat& theta_old, const data_point& data_pt) const;
 
-  const learn_rate_value& learning_rate(const mat& theta_old, const
-    data_point& data_pt, unsigned t) {
-    return (*lr_obj_)(theta_old, data_pt, t);
-  }
-
-protected:
-  base_learn_rate* lr_obj_;
+  // Members
+  std::string name;
+  double lambda1;
+  double lambda2;
 };
 
 template<typename MODEL>

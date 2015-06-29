@@ -6,9 +6,6 @@
 #include "model/base_model.h"
 #include "model/glm/glm_family.h"
 #include "model/glm/glm_transfer.h"
-#include "learn-rate/onedim_learn_rate.h"
-#include "learn-rate/onedim_eigen_learn_rate.h"
-#include "learn-rate/ddim_learn_rate.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
 #include <boost/bind/bind.hpp>
@@ -24,59 +21,40 @@ class glm_model : public base_model {
    * @param experiment list of attributes to take from R type
    */
 public:
+  // Constructors
   glm_model(Rcpp::List experiment) :
     base_model(experiment) {
-    vec lr_control= Rcpp::as<vec>(experiment["lr.control"]);
-    if (lr == "one-dim") {
-      lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
-                                      lr_control(2), lr_control(3));
-    } else if (lr == "one-dim-eigen") {
-      lr_obj_ = new onedim_eigen_learn_rate(d, grad_func());
-    } else if (lr == "d-dim") {
-      lr_obj_ = new ddim_learn_rate(d, 1., 0., 1., 1.,
-                                    lr_control(0), grad_func());
-    } else if (lr == "adagrad") {
-      lr_obj_ = new ddim_learn_rate(d, lr_control(0), 1., 1., .5,
-                                    lr_control(1), grad_func());
-    } else if (lr == "rmsprop") {
-      lr_obj_ = new ddim_learn_rate(d, lr_control(0), lr_control(1),
-                                    1-lr_control(1), .5, lr_control(2),
-                                    grad_func());
-    }
-    if (model_name == "gaussian") {
+    if (name == "gaussian") {
       family_obj_ = new gaussian_family();
-    }
-    else if (model_name == "poisson") {
+    } else if (name == "poisson") {
       family_obj_ = new poisson_family();
-    }
-    else if (model_name == "binomial") {
+    } else if (name == "binomial") {
       family_obj_ = new binomial_family();
-    }
-    else if (model_name == "gamma") {
+    } else if (name == "gamma") {
       family_obj_ = new gamma_family();
+    } else {
+      Rcpp::Rcout << "Model not implemented yet " << std::endl;
     }
-
-    if (model_name == "gaussian" ||
-        model_name == "poisson" ||
-        model_name == "binomial" ||
-        model_name == "gamma") {
+    if (name == "gaussian" ||
+        name == "poisson" ||
+        name == "binomial" ||
+        name == "gamma") {
+      Rcpp::List model_attrs = experiment["model.attrs"];
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
       rank = Rcpp::as<bool>(model_attrs["rank"]);
       if (transfer_name == "identity") {
         transfer_obj_ = new identity_transfer();
-      }
-      else if (transfer_name == "exp") {
+      } else if (transfer_name == "exp") {
         transfer_obj_ = new exp_transfer();
-      }
-      else if (transfer_name == "inverse") {
+      } else if (transfer_name == "inverse") {
         transfer_obj_ = new inverse_transfer();
-      }
-      else if (transfer_name == "logistic") {
+      } else if (transfer_name == "logistic") {
         transfer_obj_ = new logistic_transfer();
       }
-    } else {
-      Rcpp::Rcout << "Model not implemented yet " << std::endl;
     }
+    weights = Rcpp::as<mat>(experiment["weights"]);
+    trace = Rcpp::as<bool>(experiment["trace"]);
+    dev = Rcpp::as<bool>(experiment["deviance"]);
   }
 
   // Gradient
@@ -123,11 +101,14 @@ public:
   }
 
   friend std::ostream& operator<<(std::ostream& os, const base_model& exprm) {
-    os << "  Model:\n" << "    Model name: " << exprm.model_name << "\n" <<
-          "    Learning rate: " << exprm.lr << std::endl;
+    os << "  Model:\n" << "    Model name: " << exprm.name << std::endl;
     return os;
   }
 
+  // Members
+  mat weights;
+  bool trace;
+  bool dev;
   bool rank;
 
 private:

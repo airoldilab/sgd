@@ -16,16 +16,8 @@ class data_set {
    * @param Yy       response values
    * @param n_passes number of passes for data
    */
-private:
-  Rcpp::XPtr<BigMatrix> xpMat_;
-  std::vector<unsigned> idxmap_; // index to data point for each iteration
 public:
-  mat X;
-  mat Y;
-  bool big;
-  unsigned n_samples;
-  unsigned n_features;
-
+  // Constructors
   data_set(const SEXP& xpMat, bool big, const mat& Xx, const mat& Yy,
     unsigned n_passes) : xpMat_(xpMat), big(big), Y(Yy) {
     if (!big) {
@@ -48,8 +40,8 @@ public:
     }
   }
 
+  // Index to the @t th data point
   data_point get_data_point(unsigned t) const {
-    /* Return the @t th data point */
     t = t - 1;
     mat xt;
     if (!big) {
@@ -65,12 +57,24 @@ public:
     return data_point(xt, yt);
   }
 
+  // Operators
   friend std::ostream& operator<<(std::ostream& os, const data_set& data) {
     os << "  Data set:\n"
        << "    X has " << data.n_features << " features\n"
        << "    Total of " << data.n_samples << " data points" << std::endl;
     return os;
   }
+
+  // Members
+  mat X;
+  mat Y;
+  bool big;
+  unsigned n_samples;
+  unsigned n_features;
+
+private:
+  Rcpp::XPtr<BigMatrix> xpMat_;
+  std::vector<unsigned> idxmap_; // index to data point for each iteration
 };
 
 #endif
