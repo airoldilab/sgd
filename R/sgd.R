@@ -426,12 +426,11 @@ fit_glm <- function(x, y,
     }
 
     model.control$name <- family$family
-    model.control$model.attrs <- list()
-    model.control$model.attrs$weights <- as.matrix(weights[good])
-    model.control$model.attrs$trace <- sgd.control$trace
-    model.control$model.attrs$deviance <- sgd.control$deviance
-    model.control$model.attrs$transfer.name <- transfer_name(family$link)
-    model.control$model.attrs$rank <- model.control$rank
+    model.control$weights <- as.matrix(weights[good])
+    model.control$trace <- sgd.control$trace
+    model.control$deviance <- sgd.control$deviance
+    model.control$transfer.name <- transfer_name(family$link)
+    model.control$rank <- model.control$rank
     sgd.control$nparams <- dim(dataset$X)[2]
     sgd.control$start <- as.matrix(sgd.control$start)
 
@@ -527,9 +526,6 @@ fit_ee <- function(x, y,
     }
 
     model.control$name <- "ee"
-    model.control$model.attrs <- list()
-    model.control$model.attrs$gr <- model.control$gr
-    model.control$model.attrs$type <- model.control$type
     sgd.control$nparams <- d
     sgd.control$start <- as.matrix(sgd.control$start)
 

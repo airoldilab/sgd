@@ -62,9 +62,7 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
     }
     //
   } else if (model_name == "ee") {
-    Rcpp::List model_attrs = Model_control["model.attrs"];
-    Rcpp::Function gr = model_attrs["gr"];
-    ee_model model(Model_control, gr);
+    ee_model model(Model_control, Model_control["gr"]);
     // Construct stochastic gradient method.
     std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
     if (sgd_name == "sgd" || sgd_name == "asgd") {

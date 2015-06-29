@@ -60,14 +60,13 @@ public:
     return theta_old + result * data_pt.x.t();
   }
 
+  template <typename MODEL>
   mat update(unsigned t, const mat& theta_old, const data_set& data,
-    ee_model& model, bool& good_gradient) {
-    //TODO
-    Rcpp::Rcout << "error: implicit not implemented for EE yet" << std::endl;
+    MODEL& model, bool& good_gradient) {
+    Rcpp::Rcout << "error: implicit not implemented for model yet" << std::endl;
     good_gradient = false;
     return theta_old;
   }
-
 
   // Operators
   implicit_sgd& operator=(const mat& theta_new) {

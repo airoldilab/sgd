@@ -35,16 +35,11 @@ public:
     } else {
       Rcpp::Rcout << "warning: model not implemented yet" << std::endl;
     }
+    std::string transfer_name = Rcpp::as<std::string>(model["transfer.name"]);
     if (name_ == "gaussian" ||
         name_ == "poisson" ||
         name_ == "binomial" ||
         name_ == "gamma") {
-      Rcpp::List model_attrs = model["model.attrs"];
-      std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
-      rank = Rcpp::as<bool>(model_attrs["rank"]);
-      weights = Rcpp::as<mat>(model_attrs["weights"]);
-      trace = Rcpp::as<bool>(model_attrs["trace"]);
-      dev = Rcpp::as<bool>(model_attrs["deviance"]);
       if (transfer_name == "identity") {
         transfer_obj_ = new identity_transfer();
       } else if (transfer_name == "exp") {
@@ -55,6 +50,10 @@ public:
         transfer_obj_ = new logistic_transfer();
       }
     }
+    rank = Rcpp::as<bool>(model["rank"]);
+    weights = Rcpp::as<mat>(model["weights"]);
+    trace = Rcpp::as<bool>(model["trace"]);
+    dev = Rcpp::as<bool>(model["deviance"]);
   }
 
   // Gradient
