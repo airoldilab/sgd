@@ -29,7 +29,7 @@ public:
   ddim_learn_rate(unsigned d, double eta, double a, double b, double c,
                   double eps, const grad_func_type& gr) :
     d_(d), Idiag_(ones<vec>(d)), eta_(eta), a_(a), b_(b), c_(c), eps_(eps),
-    grad_func_(gr), v_(2, d) {} // TODO change to 1
+    grad_func_(gr), v_(1, d) {}
 
   // Operators
   virtual const learn_rate_value& operator()(const mat& theta_old, const
@@ -41,10 +41,10 @@ public:
 
     for (unsigned i = 0; i < d_; ++i) {
       if (std::abs(Idiag_.at(i)) > 1e-8) {
-        v_.at(i, i) = eta_ / pow(Idiag_.at(i) + eps_, c_);
+        v_.at(i) = eta_ / pow(Idiag_.at(i) + eps_, c_);
       }
       else {
-        v_.at(i, i) = Idiag_.at(i);
+        v_.at(i) = Idiag_.at(i);
       }
     }
     return v_;

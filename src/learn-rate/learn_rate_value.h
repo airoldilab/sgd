@@ -62,8 +62,7 @@ public:
     } else if (type_ == 1) {
       return arma::mean(lr_vector_);
     } else {
-      //return arma::mean(arma::mean(lr_matrix_));
-      return arma::mean(lr_matrix_.diag());
+      return arma::mean(arma::mean(lr_matrix_));
     }
   }
 
