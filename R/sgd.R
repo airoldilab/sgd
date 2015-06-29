@@ -111,7 +111,10 @@
 #' a list of model-specific output attributes
 #'
 #' \code{estimates}
-#' TODO
+#' estimates from algorithm stored at each iteration specified in \code{pos}
+
+#' \code{pos}
+#' vector of indices specifying the iteration number each estimate was stored for
 #'
 #' \code{times}
 #' vector of times in seconds it took to complete the number of iterations to
@@ -544,7 +547,9 @@ fit_ee <- function(x, y,
   return(list(
     coefficients=out$coef,
     converged=out$converged,
-    estimates=out$estimates
+    estimates=out$estimates,
+    pos=out$pos,
+    times=out$times
     ))
 }
 
