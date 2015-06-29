@@ -18,12 +18,12 @@ class glm_model : public base_model {
   /**
    * Generalized linear models
    *
-   * @param experiment list of attributes to take from R type
+   * @param model attributes affiliated with model as R type
    */
 public:
   // Constructors
-  glm_model(Rcpp::List experiment) :
-    base_model(experiment) {
+  glm_model(Rcpp::List model) :
+    base_model(model) {
     if (name == "gaussian") {
       family_obj_ = new gaussian_family();
     } else if (name == "poisson") {
@@ -39,9 +39,12 @@ public:
         name == "poisson" ||
         name == "binomial" ||
         name == "gamma") {
-      Rcpp::List model_attrs = experiment["model.attrs"];
+      Rcpp::List model_attrs = model["model.attrs"];
       std::string transfer_name = Rcpp::as<std::string>(model_attrs["transfer.name"]);
       rank = Rcpp::as<bool>(model_attrs["rank"]);
+      weights = Rcpp::as<mat>(model_attrs["weights"]);
+      trace = Rcpp::as<bool>(model_attrs["trace"]);
+      dev = Rcpp::as<bool>(model_attrs["deviance"]);
       if (transfer_name == "identity") {
         transfer_obj_ = new identity_transfer();
       } else if (transfer_name == "exp") {
@@ -52,9 +55,6 @@ public:
         transfer_obj_ = new logistic_transfer();
       }
     }
-    weights = Rcpp::as<mat>(experiment["weights"]);
-    trace = Rcpp::as<bool>(experiment["trace"]);
-    dev = Rcpp::as<bool>(experiment["deviance"]);
   }
 
   // Gradient

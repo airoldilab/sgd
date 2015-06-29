@@ -7,16 +7,15 @@
 using namespace Rcpp;
 
 // run
-Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose);
-RcppExport SEXP sgd_run(SEXP datasetSEXP, SEXP experimentSEXP, SEXP methodSEXP, SEXP verboseSEXP) {
+Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control);
+RcppExport SEXP sgd_run(SEXP datasetSEXP, SEXP model_controlSEXP, SEXP sgd_controlSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type dataset(datasetSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type experiment(experimentSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type method(methodSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(run(dataset, experiment, method, verbose));
+    Rcpp::traits::input_parameter< SEXP >::type model_control(model_controlSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sgd_control(sgd_controlSEXP);
+    __result = Rcpp::wrap(run(dataset, model_control, sgd_control));
     return __result;
 END_RCPP
 }

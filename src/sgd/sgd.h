@@ -14,8 +14,8 @@ class sgd {
   /**
    * Collection of values and functions for stochastic gradient descent.
    *
+   * @param n_params   number of parameters
    * @param n_samples  number of data samples
-   * @param n_features number of features
    * @param n_passes   number of passes of data
    * @param start      starting values for SGD
    * @param method     stochastic gradient method
@@ -26,29 +26,30 @@ class sgd {
    */
 public:
   // Constructors
-  sgd(unsigned n_samples, unsigned n_features, unsigned n_passes,
+  sgd(unsigned n_params, unsigned n_samples, unsigned n_passes,
     const mat& start, std::string method, double delta, bool convergence,
-    const boost::timer& ti, unsigned size=100) :
+    const boost::timer& ti, bool verbose, unsigned size=100) :
+    estimates_(mat(n_params, size)),
     n_passes_(n_passes),
-    estimates_(mat(n_features, size)),
+    n_iters_(n_samples*n_passes),
     last_estimate_(start),
-    times_(size),
     method_(method),
     delta_(delta),
     convergence_(convergence),
     ti_(ti),
-    n_iter_(n_samples*n_passes),
-    iter_(0),
+    verbose_(verbose),
+    times_(size),
     size_(size),
+    iter_(0),
     n_recorded_(0),
     pos_(Mat<unsigned>(1, size)) {
       for (unsigned i = 0; i < size_; ++i) {
-        pos_(0, i) = int(round(pow(10, i * log10(n_iter_) / (size_-1))));
+        pos_(0, i) = int(round(pow(10, i * log10(n_iters_) / (size_-1))));
       }
-      if (pos_(0, pos_.n_cols-1) != n_iter_) {
-        pos_(0, pos_.n_cols-1) = n_iter_;
+      if (pos_(0, pos_.n_cols-1) != n_iters_) {
+        pos_(0, pos_.n_cols-1) = n_iters_;
       }
-      if (n_iter_ < size_) {
+      if (n_iters_ < size_) {
         Rcpp::Rcout << "Warning: Too few data points for plotting!" << std::endl;
       }
     }
@@ -65,6 +66,9 @@ public:
   }
   std::string get_method() const {
     return method_;
+  }
+  bool get_verbose() const {
+    return verbose_;
   }
   double get_delta() const {
     return delta_;
@@ -129,8 +133,9 @@ private:
   double delta_;
   bool convergence_;
   boost::timer ti_;
+  bool verbose_;
   base_learn_rate* lr_obj_;
-  unsigned n_iter_;     // total number of iterations
+  unsigned n_iters_;    // total number of iterations
   unsigned iter_;       // current iteration
   unsigned size_;       // number of coefs to be recorded
   unsigned n_recorded_; // number of coefs that have been recorded

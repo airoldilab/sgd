@@ -22,14 +22,14 @@ class base_model {
   /**
    * Base class for models
    *
-   * @param experiment list of attributes to take from R type
+   * @param model attributes affiliated with model as R type
    */
 public:
   // Constructors
-  base_model(Rcpp::List experiment) {
-    name = Rcpp::as<std::string>(experiment["name"]);
-    lambda1 = Rcpp::as<double>(experiment["lambda1"]);
-    lambda2 = Rcpp::as<double>(experiment["lambda2"]);
+  base_model(Rcpp::List model) {
+    name = Rcpp::as<std::string>(model["name"]);
+    lambda1 = Rcpp::as<double>(model["lambda1"]);
+    lambda2 = Rcpp::as<double>(model["lambda2"]);
   }
 
   // Gradient

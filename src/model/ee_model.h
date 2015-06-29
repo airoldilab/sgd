@@ -16,13 +16,13 @@ class ee_model : public base_model {
   /**
    * Estimating equations
    *
-   * @param experiment list of attributes to take from R type
+   * @param model attributes affiliated with model as R type
    */
 public:
   // TODO interface not consistent with other models
   // Constructors
-  ee_model(Rcpp::List experiment, Rcpp::Function gr) :
-    base_model(experiment), gr_(gr) {
+  ee_model(Rcpp::List model, Rcpp::Function gr) :
+    base_model(model), gr_(gr) {
     // if model_attrs["wmatrix"] == NULL {
       int k = 5;
       wmatrix_ = eye<mat>(k, k);

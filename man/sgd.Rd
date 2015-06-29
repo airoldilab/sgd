@@ -79,12 +79,13 @@ equation).}
     set dependent on the learning rate. For hyperparameters aimed
     to be left as default, specify \code{NA} in the corresponding
     entries. See \sQuote{Details}.
+  \item verbose: character specifying whether to print progress
 }}
 
 \item{fn.control}{for \code{sgd.function}, it is a list of controls for the
 function.}
 
-\item{y}{for {sgd.matrix}, y is a vector of observations, with length equal
+\item{y}{for {sgd.matrix}, y is a vector of outcomes, with length equal
 to the number of rows in x.}
 
 \item{\dots}{arguments to be used to form the default \code{sgd.control}

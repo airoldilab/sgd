@@ -53,12 +53,13 @@
 #'       set dependent on the learning rate. For hyperparameters aimed
 #'       to be left as default, specify \code{NA} in the corresponding
 #'       entries. See \sQuote{Details}.
+#'     \item verbose: character specifying whether to print progress
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
 #' @param x for \code{sgd.function}, x is a function to minimize; for
 #' \code{sgd.matrix}, x is a design matrix.
-#' @param y for {sgd.matrix}, y is a vector of observations, with length equal
+#' @param y for {sgd.matrix}, y is a vector of outcomes, with length equal
 #' to the number of rows in x.
 #' @param fn.control for \code{sgd.function}, it is a list of controls for the
 #' function.
@@ -292,7 +293,7 @@ sgd.matrix <- function(x, y, model,
 sgd.big.matrix <- function(x, y, model,
                        model.control=list(),
                        sgd.control=list(...),
-                       ...){
+                       ...) {
   return(sgd.matrix(x, y, model, model.control, sgd.control))
 }
 
@@ -348,12 +349,10 @@ fit_glm <- function(x, y,
   } else {
     ynames <- names(y)
   }
-  N <- NROW(y) # number of observations
+  N <- NROW(y) # number of samples
   d <- ncol(x) # number of features
 
   # sgd.control arguments
-  method <- sgd.control$method
-  lr <- sgd.control$lr
   start <- sgd.control$start
   weights <- sgd.control$weight
 
@@ -401,7 +400,6 @@ fit_glm <- function(x, y,
     good <- rep_len(TRUE, length(residuals))
     boundary <- conv <- TRUE
     coef <- numeric()
-    iter <- 0L
     rank <- 0L
     converged <- FALSE
   } else {
@@ -421,25 +419,23 @@ fit_glm <- function(x, y,
     } else {
       dataset[["bigmat"]] <- big.matrix(1, 1)@address
     }
-    experiment <- list()
-    experiment$name <- family$family
-    experiment$d <- dim(dataset$X)[2]
-    experiment$lr <- lr
-    experiment$lr.control <- sgd.control$lr.control
-    experiment$lambda1 <- model.control$lambda1
-    experiment$lambda2 <- model.control$lambda2
-    experiment$start <- as.matrix(start)
-    experiment$weights <- as.matrix(weights[good])
-    experiment$delta <- sgd.control$delta
-    experiment$trace <- sgd.control$trace
-    experiment$deviance <- sgd.control$deviance
-    experiment$convergence <- sgd.control$convergence
-    experiment$npasses <- sgd.control$npasses
-    experiment$model.attrs <- list()
-    experiment$model.attrs$transfer.name <- transfer_name(family$link)
-    experiment$model.attrs$rank <- model.control$rank
 
-    out <- run(dataset, experiment, method, verbose=F)
+    model.control$name <- family$family
+    model.control$model.attrs <- list()
+    model.control$model.attrs$weights <- as.matrix(weights[good])
+    model.control$model.attrs$trace <- sgd.control$trace
+    model.control$model.attrs$deviance <- sgd.control$deviance
+    model.control$model.attrs$transfer.name <- transfer_name(family$link)
+    model.control$model.attrs$rank <- model.control$rank
+    sgd.control$nparams <- dim(dataset$X)[2]
+    sgd.control$start <- as.matrix(sgd.control$start)
+
+    if (sgd.control$verbose) {
+      print("Completed pre-processing attributes...")
+      print("Running C++ algorithm...")
+    }
+    out <- run(dataset, model.control, sgd.control)
+
     if (length(out) == 0) {
       stop("An error has occured, program stopped")
     }
@@ -454,7 +450,6 @@ fit_glm <- function(x, y,
     coef <- as.numeric(out$coefficients)
     dev <- out$model.out$deviance
     residuals <- as.numeric((y - mu)/mu.eta(eta))
-    iter <- experiment$p
     rank <- out$model.out$rank
     converged <- out$converged
   }
@@ -483,11 +478,10 @@ fit_glm <- function(x, y,
     linear.predictors=eta,
     deviance=dev,
     null.deviance=nulldev,
-    iter=iter,
     weights=weights,
     df.residual=resdf,
     df.null=nulldf,
-    converged=if(sgd.control$convergence) converged,
+    converged=if (sgd.control$convergence) converged,
     estimates=out$estimates,
     #times=out$times + (proc.time()[3] - time_start), # C++ time + R time
     times=out$times, #C++ time only
@@ -511,7 +505,7 @@ fit_ee <- function(x, y,
   } else {
     ynames <- names(y)
   }
-  N <- NROW(y) # number of observations
+  N <- NROW(y) # number of samples
   d <- ncol(x) # number of features
 
   EMPTY <- d == 0
@@ -526,21 +520,20 @@ fit_ee <- function(x, y,
     } else {
       dataset[["bigmat"]] <- big.matrix(1, 1)@address
     }
-    experiment <- list()
-    experiment$name <- "ee"
-    experiment$d <- d
-    experiment$lr <- sgd.control$lr
-    experiment$start <- as.matrix(sgd.control$start)
-    experiment$weights <- sgd.control$weights # TODO not implemented
-    experiment$delta <- sgd.control$delta
-    experiment$trace <- sgd.control$trace
-    experiment$deviance <- sgd.control$deviance
-    experiment$convergence <- sgd.control$convergence
-    experiment$model.attrs <- list()
-    experiment$model.attrs$gr <- model.control$gr
-    experiment$model.attrs$type <- model.control$type
 
-    out <- run(dataset, experiment, sgd.control$method, verbose=F)
+    model.control$name <- "ee"
+    model.control$model.attrs <- list()
+    model.control$model.attrs$gr <- model.control$gr
+    model.control$model.attrs$type <- model.control$type
+    sgd.control$nparams <- d
+    sgd.control$start <- as.matrix(sgd.control$start)
+
+    if (sgd.control$verbose) {
+      print("Completed pre-processing attributes...")
+      print("Running C++ algorithm...")
+    }
+    out <- run(dataset, model.control, sgd.control)
+
     if (length(out) == 0) {
       stop("An error has occured, program stopped")
     }
@@ -729,7 +722,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               start=NULL, weights=NULL,
                               N, d, npasses=NULL,
-                              lr.control=NULL, ...) {
+                              lr.control=NULL, verbose=F, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -833,6 +826,11 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     lr.control[missing] <- defaults[missing]
   }
 
+  # Check validity of verbose.
+  if (!is.logical(verbose)) {
+    stop("'verbose' must be logical")
+  }
+
   # Check validity of additional arguments if the method is implicit.
   if (method %in% c("implicit", "ai-sgd")) {
     call <- match.call()
@@ -849,13 +847,13 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 weights=weights,
                 npasses=npasses,
                 lr.control=lr.control,
-                lambda1=lambda1,
-                lambda2=lambda2),
+                verbose=verbose),
            implicit.control))
 }
 
 valid_implicit_control <- function(delta=30L, trace=FALSE, deviance=FALSE,
                                    convergence=FALSE, ...) {
+                                   # TODO trace, deviance are model controls
   # Maintain control parameters for running implicit SGD.
   #
   # Args:

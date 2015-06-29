@@ -16,61 +16,64 @@
 // [[Rcpp::plugins(cpp11)]]
 
 template<typename MODEL>
-Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out,
-  bool verbose);
+Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out);
 
 /**
- * Runs the proposed model and method on the data set
+ * Runs the proposed model and stochastic gradient method on the data set
  *
- * @param dataset    data set
- * @param experiment list of attributes about model/sgd
- * @param method     stochastic gradient method
- * @param verbose    whether to print progress
+ * @param dataset       data set
+ * @param model_control attributes affiliated with model
+ * @param sgd_control   attributes affiliated with sgd
  */
-// TODO split experiment into model and sgd attributes, have constructors wrap
-// around them
 // [[Rcpp::export]]
-Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
+Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
   boost::timer ti;
-  // Convert all arguments from R to C++ types.
-  Rcpp::List Experiment(experiment);
   Rcpp::List Data(dataset);
+  Rcpp::List Model_control(model_control);
+  Rcpp::List Sgd_control(sgd_control);
+  // Convert all arguments from R to C++ types.
+  if (Rcpp::as<bool>(Sgd_control["verbose"])) {
+    Rcpp::Rcout << "Converting arguments from R to C++ types..." << std::endl;
+  }
   data_set data(Data["bigmat"],
                 Rcpp::as<bool>(Data["big"]),
                 Rcpp::as<mat>(Data["X"]),
                 Rcpp::as<mat>(Data["Y"]),
-                Rcpp::as<unsigned>(Experiment["npasses"]));
-  sgd sgd_out(data.n_samples,
-              data.n_features,
-              Rcpp::as<unsigned>(Experiment["npasses"]),
-              Rcpp::as<mat>(Experiment["start"]),
-              Rcpp::as<std::string>(method),
-              Rcpp::as<double>(Experiment["delta"]),
-              Rcpp::as<bool>(Experiment["convergence"]),
-              ti);
-  bool verb = Rcpp::as<bool>(verbose);
+                Rcpp::as<unsigned>(Sgd_control["npasses"]));
+  sgd sgd_out(Rcpp::as<unsigned>(Sgd_control["nparams"]),
+              data.n_samples,
+              Rcpp::as<unsigned>(Sgd_control["npasses"]),
+              Rcpp::as<mat>(Sgd_control["start"]),
+              Rcpp::as<std::string>(Sgd_control["method"]),
+              Rcpp::as<double>(Sgd_control["delta"]),
+              Rcpp::as<bool>(Sgd_control["convergence"]),
+              ti,
+              Rcpp::as<bool>(Sgd_control["verbose"]));
 
   // Run templated model.
-  std::string name = Rcpp::as<std::string>(Experiment["name"]);
+  std::string name = Rcpp::as<std::string>(Model_control["name"]);
   if (name == "gaussian" ||
       name == "poisson" ||
       name == "binomial" ||
       name == "gamma") {
-    glm_model model(Experiment);
-    sgd_out.set_learn_rate(Rcpp::as<std::string>(Experiment["lr"]),
-                           Rcpp::as<vec>(Experiment["lr.control"]),
+    glm_model model(Model_control);
+    sgd_out.set_learn_rate(Rcpp::as<std::string>(Sgd_control["lr"]),
+                           Rcpp::as<vec>(Sgd_control["lr.control"]),
                            data.n_features,
                            model.grad_func());
-    return run_model(data, model, sgd_out, verb);
+    return run_model(data, model, sgd_out);
   } else if (name == "ee") {
-    Rcpp::List model_attrs = Experiment["model.attrs"];
+    Rcpp::List model_attrs = Model_control["model.attrs"];
     Rcpp::Function gr = model_attrs["gr"];
-    ee_model model(Experiment, gr);
-    sgd_out.set_learn_rate(Rcpp::as<std::string>(Experiment["lr"]),
-                           Rcpp::as<vec>(Experiment["lr.control"]),
+    ee_model model(Model_control, gr);
+    sgd_out.set_learn_rate(Rcpp::as<std::string>(Sgd_control["lr"]),
+                           Rcpp::as<vec>(Sgd_control["lr.control"]),
                            data.n_features,
                            model.grad_func());
-    return run_model(data, model, sgd_out, verb);
+    if (sgd_out.get_verbose()) {
+      Rcpp::Rcout << "Completed converting R to C++ types..." << std::endl;
+    }
+    return run_model(data, model, sgd_out);
   } else {
     Rcpp::Rcout << "error: model not implemented" << std::endl;
     return Rcpp::List();
@@ -83,11 +86,9 @@ Rcpp::List run(SEXP dataset, SEXP experiment, SEXP method, SEXP verbose) {
  * @param  data     data set
  * @tparam MODEL    model class
  * @param  sgd_out  values and functions affiliated with sgd
- * @param  verbose  whether to print progress
  */
 template<typename MODEL>
-Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out,
-  bool verbose) {
+Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out) {
   unsigned n_samples = data.n_samples;
   unsigned n_features = data.n_features;
   unsigned n_passes = sgd_out.get_n_passes();
@@ -124,7 +125,7 @@ Rcpp::List run_model(const data_set& data, MODEL& model, sgd& sgd_out,
   mat theta_old_ave;
 
   // Run SGD!
-  if (verbose) {
+  if (sgd_out.get_verbose()) {
     Rcpp::Rcout << "Stochastic gradient method: " << method << std::endl;
     Rcpp::Rcout << "SGD Start!" << std::endl;
   }
