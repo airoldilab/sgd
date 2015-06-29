@@ -27,6 +27,7 @@ theta <- matrix(c(log(2), log(4)), ncol=1)
 y <- matrix(rpois(N, exp(X %*% theta)), ncol=1)
 dat <- data.frame(y=y, x=X)
 
-sgd.theta <- sgd(y ~ .-1, data=dat, model="glm",
+sgd.theta <- sgd(y ~ ., data=dat, model="glm",
                  model.control=list(family=poisson()))
-mean((sgd.theta$coefficients - theta)^2) # MSE
+# 3 parameters including intercept
+mean((sgd.theta$coefficients - c(0, theta))^2) # MSE

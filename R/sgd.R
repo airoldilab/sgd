@@ -257,13 +257,13 @@ sgd.matrix <- function(x, y, model,
   if (!is.list(model.control)) {
     stop("'model.control' is not a list")
   }
-  model.control <- do.call("valid_model_control", c(model.control, model=model))
+  model.control <- do.call("valid_model_control",
+                           c(model.control, model=model))
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
-
-  sgd.control <- do.call("valid_sgd_control", c(sgd.control, N=NROW(y),
-    d=ncol(x)))
+  sgd.control <- do.call("valid_sgd_control",
+                         c(sgd.control, N=NROW(y), d=ncol(x)))
 
   # 2. Fit!
   if (model %in% c("lm", "glm")) {
@@ -276,7 +276,7 @@ sgd.matrix <- function(x, y, model,
   }
   out <- fit(x, y, model.control, sgd.control)
   if (nrow(x) > 200) {
-    samples <- sample(nrow(x), 200,replace = F)
+    samples <- sample(nrow(x), 200, replace=F)
   } else {
     samples <- 1:nrow(x)
   }
@@ -627,20 +627,11 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   } else if (length(lambda2) != 1) {
     stop(gettextf("length of 'lambda2' should equal %d", 1), domain=NA)
   }
+  # Set family to gaussian for linear model.
   if (model == "lm") {
-    control.rank <- model.control$rank
-    # Check validity of rank.
-    if (is.null(control.rank)){
-      control.rank <- FALSE
-    } else if (!is.logical(control.rank)) {
-      stop ("'rank' not logical")
-    }
-    return(list(
-      family=gaussian(),
-      rank=control.rank,
-      lambda1=lambda1,
-      lambda2=lambda2))
-  } else if (model == "glm") {
+    model.control$family <- gaussian()
+  }
+  if (model %in% c("lm", "glm")) {
     control.family <- model.control$family
     control.rank <- model.control$rank
     # Check validity of family.
