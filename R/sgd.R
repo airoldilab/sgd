@@ -46,6 +46,8 @@
 #'       See \sQuote{Details}.
 #'     \item start: starting values for the parameter estimates. Default is
 #'       random initialization around the mean.
+#'     \item size: number of SGD estimates to store for diagnostic purposes
+#'       (distributed log-uniformly over total number of iterations)
 #'     \item weights: an optional vector of "prior weights" to be used in the
 #'       fitting process. Should be NULL or a numeric vector.
 #'     \item npasses: the number of passes for sgd. Default is 1.
@@ -711,8 +713,8 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 }
 
 valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
-                              start=NULL, weights=NULL,
-                              N, d, npasses=NULL,
+                              start=rep(0, d), weights=rep.int(1, N),
+                              N, d, npasses=1, size=100,
                               lr.control=NULL, verbose=F, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
@@ -741,28 +743,27 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
   }
 
   # Check validity of start.
-  if (is.null(start)) {
-    start <- rep(0, d)
-  } else if (!is.numeric(start)) {
+  if (!is.numeric(start)) {
     stop("'start' must be numeric")
   } else if (length(start) != d) {
     stop(gettextf("length of 'start' should equal %d", d), domain=NA)
   }
 
   # Check validity of weights.
-  if (is.null(weights)) {
-    weights <- rep.int(1, N)
-  } else if (!is.numeric(weights)) {
+  if (!is.numeric(weights)) {
     stop("'weights' must be numeric")
   } else if (length(weights) != N) {
     stop(gettextf("length of 'weights' should equal %d", N), domain=NA)
   }
 
   # Check validity of npasses.
-  if (is.null(npasses)) {
-    npasses <- 1
-  } else if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
+  if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
     stop("'npasses' must be positive integer")
+  }
+
+  # Check validity of size.
+  if (!is.numeric(size) || size - as.integer(size) != 0 || size < 1) {
+    stop("'size' must be positive integer")
   }
 
   # Check validity of lr.control.
@@ -837,6 +838,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 start=start,
                 weights=weights,
                 npasses=npasses,
+                size=size,
                 lr.control=lr.control,
                 verbose=verbose),
            implicit.control))

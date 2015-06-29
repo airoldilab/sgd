@@ -22,12 +22,12 @@ class base_sgd {
 public:
   // Constructors
   base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
-    grad_func_type grad_func, unsigned size=100) : ti_(ti) {
-    name_ = Rcpp::as<std::string>(sgd["method"]); // TODO rename in sgd_control
+    grad_func_type grad_func) : ti_(ti) {
+    name_ = Rcpp::as<std::string>(sgd["method"]);
     n_params_ = Rcpp::as<unsigned>(sgd["nparams"]);
     n_passes_ = Rcpp::as<unsigned>(sgd["npasses"]);
     n_iters_ = n_samples*n_passes_;
-    size_ = size; // TODO size should be sgd_control argument
+    size_ = Rcpp::as<unsigned>(sgd["size"]);
     estimates_ = mat(n_params_, size_);
     last_estimate_ = Rcpp::as<mat>(sgd["start"]);
     times_ = vec(size_);

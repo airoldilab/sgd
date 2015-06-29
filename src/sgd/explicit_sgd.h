@@ -19,9 +19,7 @@ class explicit_sgd : public base_sgd {
 public:
   // Constructors
   explicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
-    grad_func_type grad_func, unsigned size=100) :
-    base_sgd(sgd, n_samples, ti, grad_func, size) {
-  }
+    grad_func_type grad_func) : base_sgd(sgd, n_samples, ti, grad_func) {}
 
   template<typename MODEL>
   mat update(unsigned t, const mat& theta_old, const data_set& data,

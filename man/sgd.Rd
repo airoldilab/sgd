@@ -72,6 +72,8 @@ equation).}
     See \sQuote{Details}.
   \item start: starting values for the parameter estimates. Default is
     random initialization around the mean.
+  \item size: number of SGD estimates to store for diagnostic purposes
+    (distributed log-uniformly over total number of iterations)
   \item weights: an optional vector of "prior weights" to be used in the
     fitting process. Should be NULL or a numeric vector.
   \item npasses: the number of passes for sgd. Default is 1.
