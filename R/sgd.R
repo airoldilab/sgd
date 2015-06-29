@@ -32,6 +32,8 @@
 #'       (Hansen et al., 1996). Defaults to \code{"iterative"}.
 #'     \item wmatrix (\code{"ee"}): weighting matrix to be used in the loss
 #'       function. Defaults to the identity matrix.
+#'     \item lambda1: L1 regularization parameter. Default is 0.
+#'     \item lambda2: L2 regularization parameter. Default is 0.
 #'   }
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
@@ -51,8 +53,6 @@
 #'       set dependent on the learning rate. For hyperparameters aimed
 #'       to be left as default, specify \code{NA} in the corresponding
 #'       entries. See \sQuote{Details}.
-#'     \item lambda1: L1 regularization parameter. Default is 0.
-#'     \item lambda2: L2 regularization parameter. Default is 0.
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
@@ -426,8 +426,8 @@ fit_glm <- function(x, y,
     experiment$d <- dim(dataset$X)[2]
     experiment$lr <- lr
     experiment$lr.control <- sgd.control$lr.control
-    experiment$lambda1 <- sgd.control$lambda1
-    experiment$lambda2 <- sgd.control$lambda2
+    experiment$lambda1 <- model.control$lambda1
+    experiment$lambda2 <- model.control$lambda2
     experiment$start <- as.matrix(start)
     experiment$weights <- as.matrix(weights[good])
     experiment$delta <- sgd.control$delta
@@ -617,6 +617,23 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   # Run validity check of arguments passed to model.control given model. It
   # passes defaults to those unspecified and converts to the correct type if
   # possible; otherwise it errors.
+  # Check validity of regularization parameters.
+  lambda1 <- model.control$lambda1
+  if (is.null(lambda1)) {
+    lambda1 <- 0
+  } else if (!is.numeric(lambda1)) {
+    stop("'lambda1' must be numeric")
+  } else if (length(lambda1) != 1) {
+    stop(gettextf("length of 'lambda1' should equal %d", 1), domain=NA)
+  }
+  lambda2 <- model.control$lambda2
+  if (is.null(lambda2)) {
+    lambda2 <- 0
+  } else if (!is.numeric(lambda2)) {
+    stop("'lambda2' must be numeric")
+  } else if (length(lambda2) != 1) {
+    stop(gettextf("length of 'lambda2' should equal %d", 1), domain=NA)
+  }
   if (model == "lm") {
     control.rank <- model.control$rank
     # Check validity of rank.
@@ -627,7 +644,9 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     }
     return(list(
       family=gaussian(),
-      rank=control.rank))
+      rank=control.rank,
+      lambda1=lambda1,
+      lambda2=lambda2))
   } else if (model == "glm") {
     control.family <- model.control$family
     control.rank <- model.control$rank
@@ -650,7 +669,9 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     }
     return(list(
       family=control.family,
-      rank=control.rank))
+      rank=control.rank,
+      lambda1=lambda1,
+      lambda2=lambda2))
   } else if (model == "ee") {
     control.fn <- model.control$fn
     control.gr <- model.control$gr
@@ -697,7 +718,9 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     }
     return(list(
       gr=control.gr,
-      type=control.type))
+      type=control.type,
+      lambda1=lambda1,
+      lambda2=lambda2))
   } else {
     stop("model not specified")
   }
@@ -706,8 +729,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               start=NULL, weights=NULL,
                               N, d, npasses=NULL,
-                              lr.control=NULL,
-                              lambda1=NULL, lambda2=NULL, ...) {
+                              lr.control=NULL, ...) {
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -809,22 +831,6 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     }
     missing <- which(is.na(lr.control))
     lr.control[missing] <- defaults[missing]
-  }
-
-  # Check validity of regularization parameters.
-  if (is.null(lambda1)) {
-    lambda1 <- 0
-  } else if (!is.numeric(lambda1)) {
-    stop("'lambda1' must be numeric")
-  } else if (length(lambda1) != 1) {
-    stop(gettextf("length of 'lambda1' should equal %d", 1), domain=NA)
-  }
-  if (is.null(lambda2)) {
-    lambda2 <- 0
-  } else if (!is.numeric(lambda2)) {
-    stop("'lambda2' must be numeric")
-  } else if (length(lambda2) != 1) {
-    stop(gettextf("length of 'lambda2' should equal %d", 1), domain=NA)
   }
 
   # Check validity of additional arguments if the method is implicit.

@@ -57,6 +57,8 @@ equation).}
     (Hansen et al., 1996). Defaults to \code{"iterative"}.
   \item wmatrix (\code{"ee"}): weighting matrix to be used in the loss
     function. Defaults to the identity matrix.
+  \item lambda1: L1 regularization parameter. Default is 0.
+  \item lambda2: L2 regularization parameter. Default is 0.
 }}
 
 \item{sgd.control}{a list of parameters for controlling the estimation
@@ -77,8 +79,6 @@ equation).}
     set dependent on the learning rate. For hyperparameters aimed
     to be left as default, specify \code{NA} in the corresponding
     entries. See \sQuote{Details}.
-  \item lambda1: L1 regularization parameter. Default is 0.
-  \item lambda2: L2 regularization parameter. Default is 0.
 }}
 
 \item{fn.control}{for \code{sgd.function}, it is a list of controls for the
