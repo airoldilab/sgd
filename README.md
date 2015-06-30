@@ -57,6 +57,7 @@ The following stochastic gradient methods exist:
 * Implicit stochastic gradient descent
 * Stochastic gradient descent with averaging
 * Implicit stochastic gradient descent with averaging
+* Classical momentum
 * Nesterov's accelerated gradient
 
 For more documentation, see `?sgd`.
