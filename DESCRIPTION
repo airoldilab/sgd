@@ -11,9 +11,9 @@ Authors@R: c(
     )
 Maintainer: Dustin Tran <dtran@g.harvard.edu>
 Description: A fast and flexible set of tools for large scale inference. It
-    features many different stochastic gradient methods, built-in models,
-    visualization tools, automated hyperparameter tuning, model checking,
-    interval estimation, and convergence diagnostics.
+    features many stochastic gradient methods, built-in models, visualization
+    tools, automated hyperparameter tuning, model checking, interval estimation,
+    and convergence diagnostics.
 URL: https://github.com/airoldilab/sgd
 BugReports: https://github.com/airoldilab/sgd/issues
 License: GPL-2
