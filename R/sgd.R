@@ -27,6 +27,8 @@
 #'       required argument if \code{gr} not specified
 #'     \item gr (\code{"ee"}): gradient of the moment function, which if not
 #'       passed in defaults to taking the numerical gradient of \code{fn}
+#'     \item nparams (\code{"ee"}): number of model parameters. This is
+#'       automatically inferred for \code{"glm"}.
 #'     \item type (\code{"ee"}): character specifying the generalized method of
 #'       moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
 #'       (Hansen et al., 1996). Defaults to \code{"iterative"}.
@@ -263,12 +265,12 @@ sgd.matrix <- function(x, y, model,
     stop("'model.control' is not a list")
   }
   model.control <- do.call("valid_model_control",
-                           c(model.control, model=model))
+                           c(model.control, model=model, d=ncol(x)))
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
   sgd.control <- do.call("valid_sgd_control",
-                         c(sgd.control, N=NROW(y), d=ncol(x)))
+                         c(sgd.control, N=NROW(y), nparams=model.control$nparams))
 
   # 2. Fit!
   if (model %in% c("lm", "glm")) {
@@ -280,16 +282,7 @@ sgd.matrix <- function(x, y, model,
     stop("'model' not recognized")
   }
   out <- fit(x, y, model.control, sgd.control)
-  if (nrow(x) > 200) {
-    samples <- sample(nrow(x), 200, replace=F)
-  } else {
-    samples <- 1:nrow(x)
-  }
-  sample.x <- x[samples, ]
-  sample.y <- y[samples]
-  classes <- c(class(out), "sgd")
-  out <- c(out, list(sample.x=sample.x, sample.y=sample.y, call=call))
-  class(out) <- classes
+  class(out) <- c(class(out), "sgd")
   return(out)
 }
 
@@ -412,12 +405,11 @@ fit_glm <- function(x, y,
     if (!valideta(eta)) {
       stop("cannot find valid starting values: please specify some", call.=FALSE)
     }
-    y <- as.matrix(y)
 
     # Select x, y with weights > 0.
     good <- weights > 0
-#     dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
-    dataset <- list(X=x, Y=y, big=F)
+    #dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
+    dataset <- list(X=x, Y=as.matrix(y), big=F)
     if ('big.matrix' %in% class(x)){
       dataset$big <- T
       dataset[["bigmat"]] <- x@address
@@ -430,8 +422,6 @@ fit_glm <- function(x, y,
     model.control$trace <- sgd.control$trace
     model.control$deviance <- sgd.control$deviance
     model.control$transfer.name <- transfer_name(family$link)
-    model.control$rank <- model.control$rank
-    sgd.control$nparams <- dim(dataset$X)[2]
     sgd.control$start <- as.matrix(sgd.control$start)
 
     if (sgd.control$verbose) {
@@ -491,13 +481,14 @@ fit_glm <- function(x, y,
     times=out$times, #C++ time only
     pos=out$pos,
     aic=aic.model)
-  class(result) <- c(class(result), "glm")
+  class(result) <- "glm"
   return(result)
 }
 
 fit_ee <- function(x, y,
                    model.control,
                    sgd.control) {
+  suppressMessages(library(bigmemory))
   # TODO
   if (sgd.control$method %in% c("implicit", "ai-sgd")) {
     stop("implicit methods not implemented yet")
@@ -517,7 +508,7 @@ fit_ee <- function(x, y,
     # TODO
     stop("Data set has no features")
   } else {
-    dataset <- list(X=x, Y=y, big=F)
+    dataset <- list(X=x, Y=as.matrix(y), big=F)
     if ('big.matrix' %in% class(x)){
       dataset$big <- T
       dataset[["bigmat"]] <- x@address
@@ -526,7 +517,6 @@ fit_ee <- function(x, y,
     }
 
     model.control$name <- "ee"
-    sgd.control$nparams <- d
     sgd.control$start <- as.matrix(sgd.control$start)
 
     if (sgd.control$verbose) {
@@ -553,15 +543,15 @@ fit_ee <- function(x, y,
 # Auxiliary functions: plots
 ################################################################################
 
-get_mse_glm <- function(x){
-  eta <- x$sample.x %*% x$estimates
+get_mse_glm <- function(x, x_test, y_test) {
+  eta <- x_test %*% x$estimates
   mu <- x$family$linkinv(eta)
-  mse <- colMeans((mu - x$sample.y)^2)
+  mse <- colMeans((mu - y_test)^2)
   return(mse)
 }
 
-plot_mse <- function(x, ...){
-  if (any(class(x) %in% "glm")){
+plot_mse <- function(x, x_test, y_test, ...) {
+  if (any(class(x) %in% "glm")) {
     get_mse <- get_mse_glm
   } else {
     stop("Model not recognized!")
@@ -569,8 +559,8 @@ plot_mse <- function(x, ...){
   sgds <- list(x, ...)
   dat <- data.frame()
   count <- 1
-  for (sgd in sgds){
-    mse <- get_mse(sgd)
+  for (sgd in sgds) {
+    mse <- get_mse(sgd, x_test, y_test)
     temp_dat <- data.frame(mse=mse, pos=sgd$pos[1, ])
     temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
     temp_dat[["label"]] <- as.factor(count)
@@ -657,11 +647,13 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     return(list(
       family=control.family,
       rank=control.rank,
+      nparams=model.control$d,
       lambda1=lambda1,
       lambda2=lambda2))
   } else if (model == "ee") {
     control.fn <- model.control$fn
     control.gr <- model.control$gr
+    control.nparams <- model.control$nparams
     control.type <- model.control$type
     control.wmatrix <- model.control$wmatrix
     # Check validify of moment function and its gradient.
@@ -686,6 +678,14 @@ valid_model_control <- function(model, model.control=list(...), ...) {
         return(out)
       }
     }
+    # Check validity of nparams.
+    if (is.null(control.nparams)) {
+      stop("'nparams' not specified")
+    } else if (!is.numeric(control.nparams) ||
+               control.nparams - as.integer(control.nparams) != 0 ||
+               control.nparams < 1) {
+      stop("'nparams' must be a positive integer")
+    }
     # Check validity of GMM type.
     if (is.null(control.type)) {
       control.type <- "iterative"
@@ -706,6 +706,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     return(list(
       gr=control.gr,
       type=control.type,
+      nparams=control.nparams,
       lambda1=lambda1,
       lambda2=lambda2))
   } else {
@@ -714,9 +715,14 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 }
 
 valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
-                              start=rep(0, d), weights=rep.int(1, N),
-                              N, d, npasses=1, size=100,
+                              start=rnorm(nparams, mean=0, sd=1e-5),
+                              weights=rep.int(1, N),
+                              N, nparams, npasses=1, size=100,
                               lr.control=NULL, verbose=F, ...) {
+                              # TODO allow specifying seed for both C++ and R
+                              # TODO there are two sorts of weights: the glm
+                              # argument of weights, and the weights declaring
+                              # probability weights for subsampling the data
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -746,8 +752,8 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
   # Check validity of start.
   if (!is.numeric(start)) {
     stop("'start' must be numeric")
-  } else if (length(start) != d) {
-    stop(gettextf("length of 'start' should equal %d", d), domain=NA)
+  } else if (length(start) != nparams) {
+    stop(gettextf("length of 'start' should equal %d", nparams), domain=NA)
   }
 
   # Check validity of weights.
@@ -839,6 +845,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 start=start,
                 weights=weights,
                 npasses=npasses,
+                nparams=nparams,
                 size=size,
                 lr.control=lr.control,
                 verbose=verbose),

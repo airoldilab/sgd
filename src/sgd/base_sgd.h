@@ -118,6 +118,7 @@ public:
   }
 
   // Stochastic gradient update
+  //TODO
   //template<typename MODEL>
   //mat update(const data_set& data, MODEL& model, bool& good_gradient);
 

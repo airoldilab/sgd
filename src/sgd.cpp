@@ -62,7 +62,7 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
     }
     //
   } else if (model_name == "ee") {
-    ee_model model(Model_control, Model_control["gr"]);
+    ee_model model(Model_control);
     // Construct stochastic gradient method.
     std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
     if (sgd_name == "sgd" || sgd_name == "asgd") {
@@ -149,11 +149,7 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   }
   for (int t = 1; t <= n_samples*n_passes; ++t) {
     // SGD update
-    if (sgd.name() == "sgd" || sgd.name() == "asgd") {
-      theta_new = sgd.update(t, theta_old, data, model, good_gradient);
-    } else if (sgd.name() == "implicit" || sgd.name() == "ai-sgd") {
-      theta_new = sgd.update(t, theta_old, data, model, good_gradient);
-    }
+    theta_new = sgd.update(t, theta_old, data, model, good_gradient);
 
     // Whether to do averaging
     if (flag_ave) {

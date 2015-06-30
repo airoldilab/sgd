@@ -22,8 +22,7 @@ class glm_model : public base_model {
    */
 public:
   // Constructors
-  glm_model(Rcpp::List model) :
-    base_model(model) {
+  glm_model(Rcpp::List model) : base_model(model) {
     if (name_ == "gaussian") {
       family_obj_ = new gaussian_family();
     } else if (name_ == "poisson") {

@@ -52,6 +52,8 @@ equation).}
     required argument if \code{gr} not specified
   \item gr (\code{"ee"}): gradient of the moment function, which if not
     passed in defaults to taking the numerical gradient of \code{fn}
+  \item nparams (\code{"ee"}): number of model parameters. This is
+    automatically inferred for \code{"glm"}.
   \item type (\code{"ee"}): character specifying the generalized method of
     moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
     (Hansen et al., 1996). Defaults to \code{"iterative"}.

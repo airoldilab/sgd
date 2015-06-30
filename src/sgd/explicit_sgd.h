@@ -21,6 +21,7 @@ public:
   explicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
     grad_func_type grad_func) : base_sgd(sgd, n_samples, ti, grad_func) {}
 
+  // Stochastic gradient update
   template<typename MODEL>
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     MODEL& model, bool& good_gradient) {
