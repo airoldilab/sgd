@@ -282,7 +282,6 @@ sgd.matrix <- function(x, y, model,
     stop("'model' not recognized")
   }
   out <- fit(x, y, model.control, sgd.control)
-  class(out) <- c(class(out), "sgd")
   return(out)
 }
 
@@ -306,7 +305,7 @@ sgd.big.matrix <- function(x, y, model,
 #' @export
 print.sgd <- function(x) {
   # TODO
-  print(x)
+  print(x$coefficients)
 }
 
 #' Generic function for plotting of \code{sgd} objects.
@@ -429,10 +428,13 @@ fit_glm <- function(x, y,
       print("Running C++ algorithm...")
     }
     out <- run(dataset, model.control, sgd.control)
-
+    if (sgd.control$verbose) {
+      print("Completed C++ algorithm...")
+    }
     if (length(out) == 0) {
       stop("An error has occured, program stopped")
     }
+
     temp.mu <- as.numeric(out$model.out$mu)
     mu <- rep(0, length(good))
     mu[good] <- temp.mu
@@ -481,7 +483,7 @@ fit_glm <- function(x, y,
     times=out$times, #C++ time only
     pos=out$pos,
     aic=aic.model)
-  class(result) <- "glm"
+  class(result) <- c("glm", "sgd")
   return(result)
 }
 
@@ -524,19 +526,15 @@ fit_ee <- function(x, y,
       print("Running C++ algorithm...")
     }
     out <- run(dataset, model.control, sgd.control)
-
+    if (sgd.control$verbose) {
+      print("Completed C++ algorithm...")
+    }
     if (length(out) == 0) {
       stop("An error has occured, program stopped")
     }
+    class(out) <- "sgd"
   }
-
-  return(list(
-    coefficients=out$coef,
-    converged=out$converged,
-    estimates=out$estimates,
-    pos=out$pos,
-    times=out$times
-    ))
+  return(out)
 }
 
 ################################################################################
