@@ -24,8 +24,9 @@ At the core of the package is the function
 ```{R}
 sgd(formula, data, model, model.control, sgd.control)
 ```
-It implements stochastic gradient descent in order to optimize the underlying
-loss function given the data and model; the user can also specify a loss function.
+It estimate parameters for a given data set and model using stochastic gradient
+descent. The optional arguments `model.control` and `sgd.control` specify
+attributes about the model and stochastic gradient method respectively.
 
 Example of large-scale linear regression:
 ```{R}
@@ -45,7 +46,8 @@ dat <- data.frame(y=y, x=X)
 sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 ```
 
-The following models are built-in:
+Any loss function may be specified, although for convenience the following
+models are built-in:
 * Linear models
 * Generalized linear models
 * Estimating equations and the generalized method of moments
