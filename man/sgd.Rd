@@ -66,8 +66,8 @@ equation).}
 \item{sgd.control}{a list of parameters for controlling the estimation
 \itemize{
   \item method: character specifying the method to be used: \code{"sgd"},
-  \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}, \code{"nesterov"}.
-  Default is \code{"ai-sgd"}. See \sQuote{Details}.
+    \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}, \code{"momentum"},
+    \code{"nesterov"}. Default is \code{"ai-sgd"}. See \sQuote{Details}.
   \item lr: character specifying the learning rate to be used:
     \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
     \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
@@ -131,6 +131,7 @@ Methods:
     1992)
   \item \code{ai-sgd}: implicit stochastic gradient with averaging (Toulis et
     al., 2015)
+  \item \code{momentum}: "classical" momentum (Polyak, 1964)
   \item \code{nesterov}: Nesterov's accelerated gradient (Nesterov, 1983)
 }
 
@@ -174,6 +175,10 @@ Learning Research}, 12:2121-2159, 2011.
 Yurii Nesterov. A method for solving a convex programming problem with
 convergence rate \eqn{O(1/k^2)}. \emph{Soviet Mathematics Doklady},
 27(2):372-376, 1983.
+
+Boris T. Polyak. Some methods of speeding up the convergence of iteration
+methods. \emph{USSR Computational Mathematics and Mathematical Physics},
+4(5):1–17, 1964.
 
 Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 approximation by averaging. \emph{SIAM Journal on Control and Optimization},

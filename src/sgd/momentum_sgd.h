@@ -1,5 +1,5 @@
-#ifndef SGD_EXPLICIT_SGD_H
-#define SGD_EXPLICIT_SGD_H
+#ifndef SGD_MOMENTUM_SGD_H
+#define SGD_MOMENTUM_SGD_H
 
 #include "basedef.h"
 #include "data/data_point.h"
@@ -8,10 +8,9 @@
 #include "sgd/base_sgd.h"
 #include <stdlib.h>
 
-class explicit_sgd : public base_sgd {
+class momentum_sgd : public base_sgd {
   /**
-   * Stochastic gradient descent in standard formulation, i.e., using an
-   * "explicit" update
+   * Stochastic gradient descent using classical momentum
    *
    * @param sgd       attributes affiliated with sgd as R type
    * @param n_samples number of data samples
@@ -19,8 +18,11 @@ class explicit_sgd : public base_sgd {
    */
 public:
   // Constructors
-  explicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
-    grad_func_type grad_func) : base_sgd(sgd, n_samples, ti, grad_func) {}
+  momentum_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
+    grad_func_type grad_func) : base_sgd(sgd, n_samples, ti, grad_func) {
+    mu_ = 0.9;
+    v_ = last_estimate_;
+  }
 
   // Stochastic gradient update
   template<typename MODEL>
@@ -32,14 +34,18 @@ public:
     if (!is_finite(grad_t)) {
       good_gradient = false;
     }
-    return theta_old + (at * grad_t);
+    v_ = mu_ * v_ + (at * grad_t);
+    return theta_old + v_;
   }
 
   // Operators
-  explicit_sgd& operator=(const mat& theta_new) {
+  momentum_sgd& operator=(const mat& theta_new) {
     base_sgd::operator=(theta_new);
     return *this;
   }
+private:
+  double mu_; // factor to weigh previous "velocity"
+  mat v_;     // "velocity"
 };
 
 #endif

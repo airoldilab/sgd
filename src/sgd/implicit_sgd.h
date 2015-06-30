@@ -12,7 +12,7 @@
 
 class implicit_sgd : public base_sgd {
   /**
-   * Stochastic gradient descent (using an "implicit" update)
+   * Stochastic gradient descent using an "implicit" update
    *
    * @param sgd       attributes affiliated with sgd as R type
    * @param n_samples number of data samples

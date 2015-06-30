@@ -7,6 +7,7 @@
 #include "post-process/ee_post_process.h"
 #include "sgd/explicit_sgd.h"
 #include "sgd/implicit_sgd.h"
+#include "sgd/momentum_sgd.h"
 #include "sgd/nesterov_sgd.h"
 #include "validity-check/validity_check.h"
 #include <stdlib.h>
@@ -57,6 +58,9 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
     } else if (sgd_name == "implicit" || sgd_name == "ai-sgd") {
       implicit_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
       return run(data, model, sgd);
+    } else if (sgd_name == "momentum") {
+      momentum_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
+      return run(data, model, sgd);
     } else if (sgd_name == "nesterov") {
       nesterov_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
       return run(data, model, sgd);
@@ -74,6 +78,9 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
       return run(data, model, sgd);
     } else if (sgd_name == "implicit" || sgd_name == "ai-sgd") {
       implicit_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
+      return run(data, model, sgd);
+    } else if (sgd_name == "momentum") {
+      momentum_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
       return run(data, model, sgd);
     } else if (sgd_name == "nesterov") {
       nesterov_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
@@ -97,6 +104,9 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
     return run(data, model, sgd);
   } else if (sgd_name == "implicit" || sgd_name == "ai-sgd") {
     implicit_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
+    return run(data, model, sgd);
+  } else if (sgd_name == "momentum") {
+    momentum_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
     return run(data, model, sgd);
   } else if (sgd_name == "nesterov") {
     nesterov_sgd sgd(Sgd_control, data.n_samples, ti, model.grad_func());
