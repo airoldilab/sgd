@@ -24,7 +24,7 @@ At the core of the package is the function
 ```{R}
 sgd(formula, data, model, model.control, sgd.control)
 ```
-It estimate parameters for a given data set and model using stochastic gradient
+It estimates parameters for a given data set and model using stochastic gradient
 descent. The optional arguments `model.control` and `sgd.control` specify
 attributes about the model and stochastic gradient method. Taking advantage of
 the bigmemory package, sgd also operates on data sets which are too large to fit
@@ -62,8 +62,8 @@ The following stochastic gradient methods exist:
 * Classical momentum
 * Nesterov's accelerated gradient
 
-For more examples, see the `demo/` directory. For more documentation, run `?sgd`
-or `library(help=sgd)` in R.
+For more examples, see the `demo/` directory, and for more documentation, run
+`?sgd` or `library(help=sgd)` in R.
 
 ## Authors
 sgd is written by [Dustin Tran](http://dustintran.com), [Tian
