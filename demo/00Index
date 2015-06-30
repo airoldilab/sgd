@@ -1,3 +1,4 @@
-bench-linear-regression   Benchmark linear regression on simulated normal data
-glm-poisson-regression   Demo generalized linear regression (Poisson) on simulated bivariate Poisson data
-linear-regression   Demo linear regression on simulated normal data
+bench-linear-regression  Benchmark linear regression on simulated normal data
+glm-poisson-regression   Demo generalized linear regression (Poisson) on simulated Poisson data
+linear-regression        Demo linear regression on simulated normal data
+normal-method-of-moments Demo estimating equations for estimating parameters of normal distribution
