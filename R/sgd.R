@@ -18,7 +18,7 @@
 #'     \item family (\code{"glm"}): a description of the error distribution and
 #'       link function to be used in the model. This can be a character string
 #'       naming a family function, a family function or the result of a call to
-#'       a family function.  (See \code{\link[stats]{family}} for details of
+#'       a family function. (See \code{\link[stats]{family}} for details of
 #'       family functions.)
 #'     \item rank (\code{"glm"}): logical. Should the rank of the design matrix
 #'       be checked?
@@ -40,8 +40,8 @@
 #' @param sgd.control a list of parameters for controlling the estimation
 #'   \itemize{
 #'     \item method: character specifying the method to be used: \code{"sgd"},
-#'     \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}. Default is
-#'     \code{"ai-sgd"}.  See \sQuote{Details}.
+#'     \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}, \code{"nesterov"}.
+#'     Default is \code{"ai-sgd"}. See \sQuote{Details}.
 #'     \item lr: character specifying the learning rate to be used:
 #'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
 #'       \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
@@ -74,16 +74,17 @@
 #'   \item \code{sgd}: stochastic gradient descent (Robbins and Monro, 1951)
 #'   \item \code{implicit}: implicit stochastic gradient descent (Toulis et al.,
 #'     2014)
-#'   \item \code{asgd} stochastic gradient with averaging (Polyak and Juditsky,
+#'   \item \code{asgd}: stochastic gradient with averaging (Polyak and Juditsky,
 #'     1992)
-#'   \item \code{ai-sgd} implicit stochastic gradient with averaging (Toulis et
+#'   \item \code{ai-sgd}: implicit stochastic gradient with averaging (Toulis et
 #'     al., 2015)
+#'   \item \code{nesterov}: Nesterov's accelerated gradient (Nesterov, 1983)
 #' }
 #'
 #' Learning rates and hyperparameters:
 #' \itemize{
 #'   \item \code{one-dim}: scalar value prescribed in Xu (2011) as
-#'     \code{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
+#'     \eqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
 #'     where the defaults are
 #'     \code{lr_control = (scale=1, gamma=1, alpha=1, c)}
 #'     where \code{c} is \code{1} if implemented without averaging,
@@ -127,6 +128,10 @@
 #' John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for
 #' online learning and stochastic optimization. \emph{Journal of Machine
 #' Learning Research}, 12:2121-2159, 2011.
+#'
+#' Yurii Nesterov. A method for solving a convex programming problem with
+#' convergence rate \eqn{O(1/k^2)}. \emph{Soviet Mathematics Doklady},
+#' 27(2):372-376, 1983.
 #'
 #' Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 #' approximation by averaging. \emph{SIAM Journal on Control and Optimization},
@@ -727,7 +732,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
   # Check validity of method.
   if (!is.character(method)) {
     stop("'method' must be a string")
-  } else if (!(method %in% c("sgd", "implicit", "asgd", "ai-sgd"))) {
+  } else if (!(method %in% c("sgd", "implicit", "asgd", "ai-sgd", "nesterov"))) {
     stop("'method' not recognized")
   }
 

@@ -26,6 +26,7 @@ test_that("MSE converges for linear models", {
   # TODO
   # one-dim-eigen is bugged
   # d-dim is bugged for explicit methods
+  # rmsprop is bugged
   expect_true(get.mse("sgd", "one-dim") < 1e-2)
   #expect_true(get.mse("sgd", "one-dim-eigen") < 1e-2)
   #expect_true(get.mse("sgd", "d-dim") < 1e-2)
@@ -46,4 +47,9 @@ test_that("MSE converges for linear models", {
   expect_true(get.mse("ai-sgd", "d-dim") < 1e-2)
   expect_true(get.mse("ai-sgd", "adagrad") < 1e-2)
   expect_true(get.mse("ai-sgd", "rmsprop") < 1e-2)
+  expect_true(get.mse("nesterov", "one-dim") < 1e-2)
+  #expect_true(get.mse("nesterov", "one-dim-eigen") < 1e-2)
+  expect_true(get.mse("nesterov", "d-dim") < 1e-2)
+  expect_true(get.mse("nesterov", "adagrad") < 1e-2)
+  expect_true(get.mse("nesterov", "rmsprop") < 1e-2)
 })
