@@ -73,7 +73,7 @@ equation).}
     \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
     See \sQuote{Details}.
   \item start: starting values for the parameter estimates. Default is
-    random initialization around the mean.
+    random initialization around zero.
   \item size: number of SGD estimates to store for diagnostic purposes
     (distributed log-uniformly over total number of iterations)
   \item weights: an optional vector of "prior weights" to be used in the
