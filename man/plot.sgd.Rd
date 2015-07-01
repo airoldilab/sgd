@@ -2,18 +2,18 @@
 % Please edit documentation in R/sgd.R
 \name{plot.sgd}
 \alias{plot.sgd}
-\title{Generic function for plotting of \code{sgd} objects.}
+\title{Method for plotting objects of class \code{sgd}.}
 \usage{
 \method{plot}{sgd}(x, type = "mse", ...)
 }
 \arguments{
-\item{x}{sgd object}
+\item{x}{object of class \code{sgd}.}
 
 \item{type}{character specifying the type of plot: \code{"mse"}}
 
 \item{\dots}{}
 }
 \description{
-Generic function for plotting of \code{sgd} objects.
+Method for plotting objects of class \code{sgd}.
 }
 

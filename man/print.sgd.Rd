@@ -2,14 +2,16 @@
 % Please edit documentation in R/sgd.R
 \name{print.sgd}
 \alias{print.sgd}
-\title{Generic function for printing of \code{sgd} objects.}
+\title{Method for printing objects of class \code{sgd}.}
 \usage{
-\method{print}{sgd}(x)
+\method{print}{sgd}(x, ...)
 }
 \arguments{
-\item{x}{sgd object}
+\item{x}{object of class \code{sgd}.}
+
+\item{\dots}{further arguments passed to or from other methods.}
 }
 \description{
-Generic function for printing of \code{sgd} objects.
+Method for printing objects of class \code{sgd}.
 }
 

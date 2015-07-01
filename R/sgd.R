@@ -1,7 +1,7 @@
 #' Stochastic gradient descent
 #'
-#' Run stochastic gradient descent on the underlying loss function for a given
-#' model and data, or a user-specified loss function.
+#' Run stochastic gradient descent in order to optimize the induced loss
+#' function given a model and data.
 #'
 #' @param formula an object of class \code{"\link{formula}"} (or one that can be
 #'   coerced to that class): a symbolic description of the model to be fitted.
@@ -14,115 +14,104 @@
 #'   model), \code{"glm"} (generalized linear model), \code{"ee"} (estimating
 #'   equation).
 #' @param model.control a list of parameters for controlling the model.
-#'   \itemize{
-#'     \item family (\code{"glm"}): a description of the error distribution and
+#'   \describe{
+#'     \item{\code{family} (\code{"glm"})}{a description of the error distribution and
 #'       link function to be used in the model. This can be a character string
 #'       naming a family function, a family function or the result of a call to
 #'       a family function. (See \code{\link[stats]{family}} for details of
-#'       family functions.)
-#'     \item rank (\code{"glm"}): logical. Should the rank of the design matrix
-#'       be checked?
-#'     \item fn (\code{"ee"}): function \eqn{g(\theta,x)} which returns a
+#'       family functions.)}
+#'     \item{\code{rank} (\code{"glm"})}{logical. Should the rank of the design matrix
+#'       be checked?}
+#'     \item{\code{fn} (\code{"ee"})}{a function \eqn{g(\theta,x)} which returns a
 #'       \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
-#'       required argument if \code{gr} not specified
-#'     \item gr (\code{"ee"}): gradient of the moment function, which if not
-#'       passed in defaults to taking the numerical gradient of \code{fn}
-#'     \item nparams (\code{"ee"}): number of model parameters. This is
-#'       automatically inferred for \code{"glm"}.
-#'     \item type (\code{"ee"}): character specifying the generalized method of
+#'       required argument if \code{gr} not specified.}
+#'     \item{\code{gr} (\code{"ee"})}{a function to return the gradient. If
+#'       unspecified, a finite-difference approximation will be used.}
+#'     \item{\code{nparams} (\code{"ee"})}{number of model parameters. This is
+#'       automatically inferred for \code{"glm"}.}
+#'     \item{\code{type} (\code{"ee"})}{character specifying the generalized method of
 #'       moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
-#'       (Hansen et al., 1996). Defaults to \code{"iterative"}.
-#'     \item wmatrix (\code{"ee"}): weighting matrix to be used in the loss
-#'       function. Defaults to the identity matrix.
-#'     \item lambda1: L1 regularization parameter. Default is 0.
-#'     \item lambda2: L2 regularization parameter. Default is 0.
+#'       (Hansen et al., 1996). Defaults to \code{"iterative"}.}
+#'     \item{\code{wmatrix} (\code{"ee"})}{weighting matrix to be used in the loss
+#'       function. Defaults to the identity matrix.}
+#'     \item{\code{lambda1}}{L1 regularization parameter. Default is 0.}
+#'     \item{\code{lambda2}}{L2 regularization parameter. Default is 0.}
 #'   }
-#' @param sgd.control a list of parameters for controlling the estimation
-#'   \itemize{
-#'     \item method: character specifying the method to be used: \code{"sgd"},
+#' @param sgd.control an optional list of parameters for controlling the estimation.
+#'   \describe{
+#'     \item{\code{method}}{character specifying the method to be used: \code{"sgd"},
 #'       \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}, \code{"momentum"},
-#'       \code{"nesterov"}. Default is \code{"ai-sgd"}. See \sQuote{Details}.
-#'     \item lr: character specifying the learning rate to be used:
+#'       \code{"nesterov"}. Default is \code{"ai-sgd"}. See \sQuote{Details}.}
+#'     \item{\code{lr}}{character specifying the learning rate to be used:
 #'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
 #'       \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
-#'       See \sQuote{Details}.
-#'     \item start: starting values for the parameter estimates. Default is
-#'       random initialization around zero.
-#'     \item size: number of SGD estimates to store for diagnostic purposes
-#'       (distributed log-uniformly over total number of iterations)
-#'     \item weights: an optional vector of "prior weights" to be used in the
-#'       fitting process. Should be NULL or a numeric vector.
-#'     \item npasses: the number of passes for sgd. Default is 1.
-#'     \item lr.control: vector of scalar hyperparameters one can
+#'       See \sQuote{Details}.}
+#'     \item{\code{start}}{starting values for the parameter estimates. Default is
+#'       random initialization around zero.}
+#'     \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
+#'       (distributed log-uniformly over total number of iterations)}
+#'     \item{\code{weights}}{an optional vector of "prior weights" to be used in the
+#'       fitting process. Should be NULL or a numeric vector.}
+#'     \item{\code{npasses}}{the number of passes over the data. Default is 1.}
+#'     \item{\code{lr.control}}{vector of scalar hyperparameters one can
 #'       set dependent on the learning rate. For hyperparameters aimed
 #'       to be left as default, specify \code{NA} in the corresponding
-#'       entries. See \sQuote{Details}.
-#'     \item verbose: character specifying whether to print progress
+#'       entries. See \sQuote{Details}.}
+#'     \item{\code{verbose}}{character specifying whether to print progress}
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
-#' @param x for \code{sgd.function}, x is a function to minimize; for
-#' \code{sgd.matrix}, x is a design matrix.
-#' @param y for {sgd.matrix}, y is a vector of outcomes, with length equal
-#' to the number of rows in x.
-#' @param fn.control for \code{sgd.function}, it is a list of controls for the
-#' function.
+#' @param fn a function \eqn{f(theta, x)} of parameters and data, which outputs
+#'   a real number to be minimized.
+#' @param gr a function to return the gradient. If it is \code{NULL}, a
+#'   finite-difference approximation will be used.
+#' @param x,y a design matrix and the respective vector of outcomes.
 #'
 #' @details
 #' Methods:
-#' \itemize{
-#'   \item \code{sgd}: stochastic gradient descent (Robbins and Monro, 1951)
-#'   \item \code{implicit}: implicit stochastic gradient descent (Toulis et al.,
-#'     2014)
-#'   \item \code{asgd}: stochastic gradient with averaging (Polyak and Juditsky,
-#'     1992)
-#'   \item \code{ai-sgd}: implicit stochastic gradient with averaging (Toulis et
-#'     al., 2015)
-#'   \item \code{momentum}: "classical" momentum (Polyak, 1964)
-#'   \item \code{nesterov}: Nesterov's accelerated gradient (Nesterov, 1983)
+#' \describe{
+#'   \item{\code{sgd}}{stochastic gradient descent (Robbins and Monro, 1951)}
+#'   \item{\code{implicit}}{implicit stochastic gradient descent (Toulis et al.,
+#'     2014)}
+#'   \item{\code{asgd}}{stochastic gradient with averaging (Polyak and Juditsky,
+#'     1992)}
+#'   \item{\code{ai-sgd}}{implicit stochastic gradient with averaging (Toulis et
+#'     al., 2015)}
+#'   \item{\code{momentum}}{"classical" momentum (Polyak, 1964)}
+#'   \item{\code{nesterov}}{Nesterov's accelerated gradient (Nesterov, 1983)}
 #' }
 #'
 #' Learning rates and hyperparameters:
-#' \itemize{
-#'   \item \code{one-dim}: scalar value prescribed in Xu (2011) as
-#'     \eqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
+#' \describe{
+#'   \item{\code{one-dim}}{scalar value prescribed in Xu (2011) as
+#'     \deqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
 #'     where the defaults are
 #'     \code{lr_control = (scale=1, gamma=1, alpha=1, c)}
 #'     where \code{c} is \code{1} if implemented without averaging,
-#'     \code{2/3} if with averaging
-#'   \item \code{one-dim-eigen}: diagonal matrix
-#'     \code{lr_control = NULL}
-#'   \item \code{d-dim}: diagonal matrix
-#'     \code{lr_control = (epsilon=1e-6)}
-#'   \item \code{adagrad}: diagonal matrix prescribed in Duchi et al. (2011) as
-#'     \code{lr_control = (eta=1, epsilon=1e-6)}
-#'   \item \code{rmsprop}: diagonal matrix prescribed in Tieleman and Hinton
+#'     \code{2/3} if with averaging}
+#'   \item{\code{one-dim-eigen}}{diagonal matrix
+#'     \code{lr_control = NULL}}
+#'   \item{\code{d-dim}}{diagonal matrix
+#'     \code{lr_control = (epsilon=1e-6)}}
+#'   \item{\code{adagrad}}{diagonal matrix prescribed in Duchi et al. (2011) as
+#'     \code{lr_control = (eta=1, epsilon=1e-6)}}
+#'   \item{\code{rmsprop}}{diagonal matrix prescribed in Tieleman and Hinton
 #'     (2012) as
-#'     \code{lr_control = (eta=1, gamma=0.9, epsilon=1e-6)}
+#'     \code{lr_control = (eta=1, gamma=0.9, epsilon=1e-6)}}
 #' }
 #'
 #' @return
-#' An object of class \code{"sgd"}, which is a list containing at least the
-#' following components:
-#'
-#' \code{coefficients}
-#' a named vector of coefficients
-#'
-#' \code{converged}
-#' logical. Was the algorithm judged to have converged?
-#'
-#' \code{model.out}
-#' a list of model-specific output attributes
-#'
-#' \code{estimates}
-#' estimates from algorithm stored at each iteration specified in \code{pos}
-
-#' \code{pos}
-#' vector of indices specifying the iteration number each estimate was stored for
-#'
-#' \code{times}
-#' vector of times in seconds it took to complete the number of iterations to
-#' achieve the corresponding estimate
+#' An object of class \code{"sgd"}, which is a list containing the following
+#' components:
+#' \item{coefficients}{a named vector of coefficients.}
+#' \item{converged}{logical. Was the algorithm judged to have converged?}
+#' \item{estimates}{estimates from algorithm stored at each iteration
+#'     specified in \code{pos}.}
+#' \item{times}{vector of times in seconds it took to complete the number of
+#'     iterations to achieve the corresponding estimate.}
+#' \item{pos}{vector of indices specifying the iteration number each estimate
+#'     was stored for.}
+#' \item{model.out}{a list of model-specific output attributes.}
 #'
 #' @author Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
 #' @references
@@ -240,16 +229,22 @@ sgd.formula <- function(formula, data, model,
 
 #' @export
 #' @rdname sgd
-sgd.function <- function(x,
-                        fn.control=list(),
-                        sgd.control=list(...),
-                        ...) {
-  # TODO run() will not work as it relies on data
-  # default args for fn.control
-  gr <- NULL
-  lower <- -Inf
-  upper <- Inf
-  stop("sgd.function not implemented yet")
+sgd.function <- function(fn, gr=NULL, x, y,
+                         sgd.control=list(...),
+                         ...) {
+  # TODO fn not actually used
+  suppressMessages(library(bigmemory))
+  dataset <- list(X=x, Y=as.matrix(y), big=F)
+  if ('big.matrix' %in% class(x)) {
+    dataset$big <- TRUE
+    dataset[["bigmat"]] <- x@address
+  } else {
+    dataset[["bigmat"]] <- big.matrix(1, 1)@address
+  }
+  call <- match.call()
+  model.control <- do.call("valid_model_control",
+                           list(model="ee", gr=gr, d=ncol(x)))
+  out <- run(dataset, model.control, sgd.control)
 }
 
 #' @export
@@ -297,6 +292,8 @@ sgd.matrix <- function(x, y, model,
 
 #' @export
 #' @rdname sgd
+# TODO y should be allowed to be a big matrix too; it should be any combination
+# (x is a big matrix, y is, etc.)
 sgd.big.matrix <- function(x, y, model,
                        model.control=list(),
                        sgd.control=list(...),
@@ -308,25 +305,26 @@ sgd.big.matrix <- function(x, y, model,
 # Generic methods
 ################################################################################
 
-#' Generic function for printing of \code{sgd} objects.
+#' Method for printing objects of class \code{sgd}.
 #'
-#' @param x sgd object
+#' @param x object of class \code{sgd}.
+#' @param \dots further arguments passed to or from other methods.
 #'
 #' @export
-print.sgd <- function(x) {
-  # TODO
-  print(x$coefficients)
+print.sgd <- function(x, ...) {
+  # TODO something more advanced than this, like a summary
+  print(x$coefficients, ...)
 }
 
-#' Generic function for plotting of \code{sgd} objects.
+#' Method for plotting objects of class \code{sgd}.
 #'
-#' @param x sgd object
+#' @param x object of class \code{sgd}.
 #' @param type character specifying the type of plot: \code{"mse"}
 #' @param \dots
 #'
 #' @export
 plot.sgd <- function(x, type="mse", ...) {
-  if ("sgd" %in% class(type)){
+  if ("sgd" %in% class(type)) {
     sgds <- list(x, type, ...)
     type <- "mse"
   } else{
@@ -419,8 +417,8 @@ fit_glm <- function(x, y,
     good <- weights > 0
     #dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
     dataset <- list(X=x, Y=as.matrix(y), big=F)
-    if ('big.matrix' %in% class(x)){
-      dataset$big <- T
+    if ('big.matrix' %in% class(x)) {
+      dataset$big <- TRUE
       dataset[["bigmat"]] <- x@address
     } else {
       dataset[["bigmat"]] <- big.matrix(1, 1)@address
@@ -428,8 +426,6 @@ fit_glm <- function(x, y,
 
     model.control$name <- family$family
     model.control$weights <- as.matrix(weights[good])
-    model.control$trace <- sgd.control$trace
-    model.control$deviance <- sgd.control$deviance
     model.control$transfer.name <- transfer_name(family$link)
     sgd.control$start <- as.matrix(sgd.control$start)
 
@@ -521,7 +517,7 @@ fit_ee <- function(x, y,
     stop("Data set has no features")
   } else {
     dataset <- list(X=x, Y=as.matrix(y), big=F)
-    if ('big.matrix' %in% class(x)){
+    if ('big.matrix' %in% class(x)) {
       dataset$big <- T
       dataset[["bigmat"]] <- x@address
     } else {
@@ -635,6 +631,8 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   if (model %in% c("lm", "glm")) {
     control.family <- model.control$family
     control.rank <- model.control$rank
+    control.trace <- model.control$trace
+    control.deviance <- model.control$deviance
     # Check validity of family.
     if (is.null(control.family)) {
       control.family <- gaussian()
@@ -647,14 +645,28 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       stop("'family' not recognized")
     }
     # Check validity of rank.
-    if (is.null(control.rank)){
+    if (is.null(control.rank)) {
       control.rank <- FALSE
     } else if (!is.logical(control.rank)) {
       stop ("'rank' not logical")
     }
+    # Check validity of trace.
+    if (is.null(control.trace)) {
+      control.trace <- FALSE
+    } else if (!is.logical(control.trace)) {
+      stop ("'trace' not logical")
+    }
+    # Check validity of deviance.
+    if (is.null(control.deviance)) {
+      control.deviance <- FALSE
+    } else if (!is.logical(control.deviance)) {
+      stop ("'deviance' not logical")
+    }
     return(list(
       family=control.family,
       rank=control.rank,
+      trace=control.trace,
+      deviance=control.deviance,
       nparams=model.control$d,
       lambda1=lambda1,
       lambda2=lambda2))
@@ -861,17 +873,11 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
            implicit.control))
 }
 
-valid_implicit_control <- function(delta=30L, trace=FALSE, deviance=FALSE,
-                                   convergence=FALSE, ...) {
-                                   # TODO trace, deviance are model controls
+valid_implicit_control <- function(delta=30L, convergence=FALSE, ...) {
   # Maintain control parameters for running implicit SGD.
   #
   # Args:
   #   delta:       convergence criterion for the one-dimensional optimization
-  #   trace:       logical indicating if output should be produced for each
-  #                iteration
-  #   deviance:    logical indicating if the validity of deviance should be
-  #                checked in each iteration
   #   convergence: logical indicating if the convergence of the algorithm should
   #                be checked
   #
@@ -881,8 +887,6 @@ valid_implicit_control <- function(delta=30L, trace=FALSE, deviance=FALSE,
     stop("value of 'delta' must be integer > 0")
   }
   return(list(delta=delta,
-              trace=trace,
-              deviance=deviance,
               convergence=convergence))
 }
 
