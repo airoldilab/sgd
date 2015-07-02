@@ -483,7 +483,7 @@ fit_glm <- function(x, y,
     weights=weights,
     df.residual=resdf,
     df.null=nulldf,
-    converged=if (sgd.control$convergence) converged,
+    converged=converged,
     estimates=out$estimates,
     #times=out$times + (proc.time()[3] - time_start), # C++ time + R time
     times=out$times, #C++ time only
@@ -873,21 +873,18 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
            implicit.control))
 }
 
-valid_implicit_control <- function(delta=30L, convergence=FALSE, ...) {
+valid_implicit_control <- function(delta=30L, ...) {
   # Maintain control parameters for running implicit SGD.
   #
   # Args:
   #   delta:       convergence criterion for the one-dimensional optimization
-  #   convergence: logical indicating if the convergence of the algorithm should
-  #                be checked
   #
   # Returns:
   #   A list of parameters according to user input, default otherwise.
   if (!is.numeric(delta) || delta - as.integer(delta) != 0 || delta <= 0) {
     stop("value of 'delta' must be integer > 0")
   }
-  return(list(delta=delta,
-              convergence=convergence))
+  return(list(delta=delta))
 }
 
 ################################################################################
