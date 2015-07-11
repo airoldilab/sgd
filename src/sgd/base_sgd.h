@@ -34,7 +34,6 @@ public:
     t_ = 0;
     n_recorded_ = 0;
     pos_ = Mat<unsigned>(1, size_);
-    convergence_ = Rcpp::as<bool>(sgd["convergence"]);
     verbose_ = Rcpp::as<bool>(sgd["verbose"]);
     delta_ = Rcpp::as<double>(sgd["delta"]); // implicit-only
 
@@ -136,7 +135,6 @@ protected:
   unsigned t_;              // current iteration
   unsigned n_recorded_;     // number of coefs that have been recorded
   Mat<unsigned> pos_;       // the iteration of recorded coefficients
-  bool convergence_;
   bool verbose_;
   double delta_;
 };
