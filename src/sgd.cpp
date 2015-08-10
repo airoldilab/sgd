@@ -68,7 +68,6 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
       Rcpp::Rcout << "error: stochastic gradient method not implemented" << std::endl;
       return Rcpp::List();
     }
-    //
   } else if (model_name == "ee") {
     ee_model model(Model_control);
     // Construct stochastic gradient method.
@@ -89,14 +88,13 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
       Rcpp::Rcout << "error: stochastic gradient method not implemented" << std::endl;
       return Rcpp::List();
     }
-    //
   } else {
     Rcpp::Rcout << "error: model not implemented" << std::endl;
     return Rcpp::List();
   }
 
   #if 0
-  // TODO
+  // TODO The above duplicates code within the if-else statement.
   // Construct stochastic gradient method.
   std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
   if (sgd_name == "sgd" || sgd_name == "asgd") {
@@ -115,7 +113,6 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
     Rcpp::Rcout << "error: stochastic gradient method not implemented" << std::endl;
     return Rcpp::List();
   }
-  //
   #endif
 }
 
@@ -148,7 +145,6 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
     }
   }
 
-  // Initialize booleans.
   bool good_gradient = true;
   bool good_validity = true;
   bool flag_ave = false;
@@ -156,22 +152,18 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
     flag_ave = true;
   }
 
-  // Initialize estimates.
   mat theta_new;
   mat theta_old = sgd.get_last_estimate();
   mat theta_new_ave;
   mat theta_old_ave;
 
-  // Run SGD!
   if (sgd.verbose()) {
     Rcpp::Rcout << "Stochastic gradient method: " << sgd.name() << std::endl;
     Rcpp::Rcout << "SGD Start!" << std::endl;
   }
   for (int t = 1; t <= n_samples*n_passes; ++t) {
-    // SGD update
     theta_new = sgd.update(t, theta_old, data, model, good_gradient);
 
-    // Whether to do averaging
     if (flag_ave) {
       if (t != 1) {
         theta_new_ave = (1. - 1./(double)t) * theta_old_ave +
@@ -186,14 +178,12 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
     }
     theta_old = theta_new;
 
-    // Validity check
     good_validity = validity_check(data, theta_old, good_gradient, t, model);
     if (!good_validity) {
       return Rcpp::List();
     }
   }
 
-  // Collect model-specific output.
   mat coef = sgd.get_last_estimate();
   Rcpp::List model_out = post_process(sgd, data, model, coef, X_rank);
 
