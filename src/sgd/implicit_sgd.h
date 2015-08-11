@@ -20,7 +20,9 @@ class implicit_sgd : public base_sgd {
    */
 public:
   implicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) :
-    base_sgd(sgd, n_samples, ti) {}
+    base_sgd(sgd, n_samples, ti) {
+    delta_ = Rcpp::as<double>(sgd["delta"]);
+  }
 
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     glm_model& model, bool& good_gradient) {
@@ -72,6 +74,8 @@ public:
     base_sgd::operator=(theta_new);
     return *this;
   }
+private:
+  double delta_;
 };
 
 #endif

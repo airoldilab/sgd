@@ -32,7 +32,6 @@ public:
     n_recorded_ = 0;
     pos_ = Mat<unsigned>(1, size_);
     verbose_ = Rcpp::as<bool>(sgd["verbose"]);
-    delta_ = Rcpp::as<double>(sgd["delta"]); // implicit-only
 
     // Set which iterations to store estimates
     for (unsigned i = 0; i < size_; ++i) {
@@ -92,6 +91,10 @@ public:
     return (*lr_obj_)(grad_t, t);
   }
 
+  //TODO declare update method
+  //template<typename MODEL>
+  //mat update(const data_set& data, MODEL& model, bool& good_gradient);
+
   base_sgd& operator=(const mat& theta_new) {
     last_estimate_ = theta_new;
     t_ += 1;
@@ -108,10 +111,6 @@ public:
     return *this;
   }
 
-  //TODO declare update method
-  //template<typename MODEL>
-  //mat update(const data_set& data, MODEL& model, bool& good_gradient);
-
 protected:
   std::string name_;        // name of stochastic gradient method
   unsigned n_params_;       // number of parameters
@@ -127,7 +126,6 @@ protected:
   unsigned n_recorded_;     // number of coefs that have been recorded
   Mat<unsigned> pos_;       // the iteration of recorded coefficients
   bool verbose_;
-  double delta_;
 };
 
 #endif
