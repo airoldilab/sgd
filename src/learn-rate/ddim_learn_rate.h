@@ -6,8 +6,6 @@
 #include "learn-rate/base_learn_rate.h"
 #include "learn-rate/learn_rate_value.h"
 
-typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
-
 class ddim_learn_rate : public base_learn_rate {
   /**
    * d-dimensional learning rate, which includes as special cases popular
@@ -22,21 +20,18 @@ class ddim_learn_rate : public base_learn_rate {
    * @param b   factor to weigh new gradient information
    * @param c   power to exponentiate by
    * @param eps value to prevent division by zero
-   * @param gr  gradient function
    */
 public:
   // Constructors
   ddim_learn_rate(unsigned d, double eta, double a, double b, double c,
-                  double eps, const grad_func_type& gr) :
+                  double eps) :
     d_(d), Idiag_(ones<vec>(d)), eta_(eta), a_(a), b_(b), c_(c), eps_(eps),
-    grad_func_(gr), v_(1, d) {}
+    v_(1, d) {}
 
   // Operators
-  virtual const learn_rate_value& operator()(const mat& theta_old, const
-    data_point& data_pt, unsigned t) {
-    mat Gi = grad_func_(theta_old, data_pt);
+  virtual const learn_rate_value& operator()(const mat& grad_t, unsigned t) {
     for (unsigned i = 0; i < d_; ++i) {
-      Idiag_.at(i) = a_ * Idiag_.at(i) + b_ * pow(Gi.at(i, 0), 2);
+      Idiag_.at(i) = a_ * Idiag_.at(i) + b_ * pow(grad_t.at(i, 0), 2);
     }
 
     for (unsigned i = 0; i < d_; ++i) {
@@ -58,7 +53,6 @@ private:
   double c_;
   double eta_;
   double eps_;
-  grad_func_type grad_func_;
   learn_rate_value v_;
 };
 

@@ -5,11 +5,8 @@
 #include "data/data_point.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
-#include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
 #include <iostream>
-
-typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class base_model;
 //TODO
@@ -25,24 +22,20 @@ class base_model {
    * @param model attributes affiliated with model as R type
    */
 public:
-  // Constructors
   base_model(Rcpp::List model) {
     name_ = Rcpp::as<std::string>(model["name"]);
     lambda1 = Rcpp::as<double>(model["lambda1"]);
     lambda2 = Rcpp::as<double>(model["lambda2"]);
   }
 
-  // Getters
   std::string name() const {
     return name_;
   }
 
-  // Gradient
-  grad_func_type grad_func();
-  mat gradient(const mat& theta_old, const data_point& data_pt) const;
+  mat gradient(const mat& theta_old, const data_point& data_pt, const
+    data_set& data) const;
 
   // TODO make private
-  // Members
   double lambda1;
   double lambda2;
 

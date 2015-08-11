@@ -8,11 +8,8 @@
 #include "model/glm/glm_transfer.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
-#include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
 #include <iostream>
-
-typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class glm_model : public base_model {
   /**
@@ -21,7 +18,6 @@ class glm_model : public base_model {
    * @param model attributes affiliated with model as R type
    */
 public:
-  // Constructors
   glm_model(Rcpp::List model) : base_model(model) {
     if (name_ == "gaussian") {
       family_obj_ = new gaussian_family();
@@ -55,14 +51,10 @@ public:
     dev = Rcpp::as<bool>(model["deviance"]);
   }
 
-  // Gradient
-  mat gradient(const mat& theta_old, const data_point& data_pt) const {
+  mat gradient(const mat& theta_old, const data_point& data_pt, const
+    data_set& data) const {
     return ((data_pt.y - h_transfer(dot(data_pt.x, theta_old))) *
       data_pt.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
-  }
-
-  grad_func_type grad_func() {
-    return boost::bind(&glm_model::gradient, this, _1, _2);
   }
 
   // TODO not all models have these methods
@@ -98,7 +90,6 @@ public:
     return family_obj_->deviance(y, mu, wt);
   }
 
-  // Members
   mat weights;
   bool trace;
   bool dev;

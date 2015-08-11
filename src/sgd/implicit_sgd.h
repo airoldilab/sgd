@@ -19,16 +19,14 @@ class implicit_sgd : public base_sgd {
    * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  // Constructors
-  implicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
-    grad_func_type grad_func) : base_sgd(sgd, n_samples, ti, grad_func) {}
+  implicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) :
+    base_sgd(sgd, n_samples, ti) {}
 
-  // Stochastic gradient update
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     glm_model& model, bool& good_gradient) {
     data_point data_pt = data.get_data_point(t);
     mat theta_new;
-    learn_rate_value at = learning_rate(theta_old, data_pt, t);
+    learn_rate_value at = learning_rate(model.gradient(theta_old, data_pt, data), t);
     // TODO
     double average_lr = at.mean();
 
@@ -70,7 +68,6 @@ public:
     return theta_old;
   }
 
-  // Operators
   implicit_sgd& operator=(const mat& theta_new) {
     base_sgd::operator=(theta_new);
     return *this;

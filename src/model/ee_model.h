@@ -6,11 +6,8 @@
 #include "model/base_model.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/math/tools/roots.hpp>
-#include <boost/bind/bind.hpp>
 #include <boost/ref.hpp>
 #include <iostream>
-
-typedef boost::function<mat(const mat&, const data_point&)> grad_func_type;
 
 class ee_model : public base_model {
   /**
@@ -19,7 +16,6 @@ class ee_model : public base_model {
    * @param model attributes affiliated with model as R type
    */
 public:
-  // Constructors
   ee_model(Rcpp::List model) :
     base_model(model), gr_(Rcpp::as<Rcpp::Function>(model["gr"])) {
     //if model["wmatrix"] == NULL {
@@ -30,8 +26,8 @@ public:
     //}
   }
 
-  // Gradient
-  mat gradient(const mat& theta_old, const data_point& data_pt) const {
+  mat gradient(const mat& theta_old, const data_point& data_pt, const
+    data_set& data) const {
     // TODO y isn't necessary
     // TODO include weighting matrix
     Rcpp::NumericVector r_theta_old =
@@ -43,16 +39,10 @@ public:
     return -1. * out; // maximize the negative moment function
   }
 
-  // Learning rates
-  grad_func_type grad_func() {
-    return boost::bind(&ee_model::gradient, this, _1, _2);
-  }
-
   // TODO
   bool rank;
 
 private:
-  // Members
   mat wmatrix_;
   Rcpp::Function gr_;
 };

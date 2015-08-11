@@ -17,12 +17,9 @@ class base_sgd {
    * @param sgd       attributes affiliated with sgd as R type
    * @param n_samples number of data samples
    * @param ti        timer for benchmarking how long to get each estimate
-   * @param grad_func gradient function to bind to for the learning rate
    */
 public:
-  // Constructors
-  base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti,
-    grad_func_type grad_func) : ti_(ti) {
+  base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) : ti_(ti) {
     name_ = Rcpp::as<std::string>(sgd["method"]);
     n_params_ = Rcpp::as<unsigned>(sgd["nparams"]);
     n_passes_ = Rcpp::as<unsigned>(sgd["npasses"]);
@@ -55,21 +52,19 @@ public:
       lr_obj_ = new onedim_learn_rate(lr_control(0), lr_control(1),
                                       lr_control(2), lr_control(3));
     } else if (lr == "one-dim-eigen") {
-      lr_obj_ = new onedim_eigen_learn_rate(n_params_, grad_func);
+      lr_obj_ = new onedim_eigen_learn_rate(n_params_);
     } else if (lr == "d-dim") {
       lr_obj_ = new ddim_learn_rate(n_params_, 1., 0., 1., 1.,
-                                    lr_control(0), grad_func);
+                                    lr_control(0));
     } else if (lr == "adagrad") {
       lr_obj_ = new ddim_learn_rate(n_params_, lr_control(0), 1., 1., .5,
-                                    lr_control(1), grad_func);
+                                    lr_control(1));
     } else if (lr == "rmsprop") {
       lr_obj_ = new ddim_learn_rate(n_params_, lr_control(0), lr_control(1),
-                                    1-lr_control(1), .5, lr_control(2),
-                                    grad_func);
+                                    1-lr_control(1), .5, lr_control(2));
     }
   }
 
-  // Getters
   std::string name() const {
     return name_;
   }
@@ -93,13 +88,10 @@ public:
     return pos_;
   }
 
-  // Learning rate
-  const learn_rate_value& learning_rate(const mat& theta_old, const
-    data_point& data_pt, unsigned t) {
-    return (*lr_obj_)(theta_old, data_pt, t);
+  const learn_rate_value& learning_rate(const mat& grad_t, unsigned t) {
+    return (*lr_obj_)(grad_t, t);
   }
 
-  // Operators
   base_sgd& operator=(const mat& theta_new) {
     last_estimate_ = theta_new;
     t_ += 1;
@@ -116,8 +108,7 @@ public:
     return *this;
   }
 
-  // Stochastic gradient update
-  //TODO
+  //TODO declare update method
   //template<typename MODEL>
   //mat update(const data_set& data, MODEL& model, bool& good_gradient);
 

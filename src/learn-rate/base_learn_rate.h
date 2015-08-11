@@ -14,8 +14,7 @@ public:
   base_learn_rate() {}
 
   // Operators
-  virtual const learn_rate_value& operator()(const mat& theta_old, const
-    data_point& data_pt, unsigned t) = 0;
+  virtual const learn_rate_value& operator()(const mat& grad_t, unsigned t) = 0;
 };
 
 #endif
