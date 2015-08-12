@@ -30,7 +30,6 @@ public:
 };
 
 class identity_transfer : public base_transfer {
-  // Identity transfer function
 public:
   virtual double transfer(double u) const {
     return u;
@@ -54,7 +53,6 @@ public:
 };
 
 class inverse_transfer : public base_transfer {
-  // Inverse transfer function
 public:
   virtual double transfer(double u) const {
     if (valideta(u)) {
@@ -90,7 +88,6 @@ public:
 };
 
 class exp_transfer : public base_transfer {
-  // Exponentional transfer function
 public:
   virtual double transfer(double u) const {
     return exp(u);
@@ -117,7 +114,6 @@ public:
 };
 
 class logistic_transfer : public base_transfer {
-  // Logistic transfer function
 public:
   virtual double transfer(double u) const {
     return sigmoid(u);

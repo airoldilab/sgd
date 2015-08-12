@@ -9,10 +9,8 @@ class base_learn_rate {
    * Base class for learning rates
    */
 public:
-  // Constructors
   base_learn_rate() {}
 
-  // Operators
   virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) = 0;
 };
 

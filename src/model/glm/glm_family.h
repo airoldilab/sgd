@@ -17,7 +17,6 @@ public:
 };
 
 class gaussian_family : public base_family {
-  // gaussian model family
 public:
   virtual double variance(double u) const {
     return 1.;
@@ -29,7 +28,6 @@ public:
 };
 
 class poisson_family : public base_family {
-  // poisson model family
 public:
   virtual double variance(double u) const {
     return u;
@@ -47,7 +45,6 @@ public:
 };
 
 class binomial_family : public base_family {
-  // binomial model family
 public:
   virtual double variance(double u) const {
     return u * (1. - u);
@@ -70,7 +67,6 @@ private:
 };
 
 class gamma_family : public base_family {
-  // gamma model family
 public:
   virtual double variance(double u) const {
     return pow(u, 2);

@@ -21,13 +21,11 @@ class ddim_learn_rate : public base_learn_rate {
    * @param eps value to prevent division by zero
    */
 public:
-  // Constructors
   ddim_learn_rate(unsigned d, double eta, double a, double b, double c,
                   double eps) :
     d_(d), Idiag_(ones<vec>(d)), eta_(eta), a_(a), b_(b), c_(c), eps_(eps),
     v_(1, d) {}
 
-  // Operators
   virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) {
     for (unsigned i = 0; i < d_; ++i) {
       Idiag_.at(i) = a_ * Idiag_.at(i) + b_ * pow(grad_t.at(i, 0), 2);

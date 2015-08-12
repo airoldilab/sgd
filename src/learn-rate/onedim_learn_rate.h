@@ -15,11 +15,9 @@ class onedim_learn_rate : public base_learn_rate {
    * @param scale scale factor in numerator
    */
 public:
-  // Constructors
   onedim_learn_rate(double gamma, double alpha, double c, double scale) :
     gamma_(gamma), alpha_(alpha), c_(c), scale_(scale), v_(0, 1) {}
 
-  // Operators
   virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) {
     v_ = scale_ * gamma_ * pow(1 + alpha_ * gamma_ * t, -c_);
     return v_;

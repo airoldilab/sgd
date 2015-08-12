@@ -17,7 +17,6 @@ class data_set {
    * @param n_passes number of passes for data
    */
 public:
-  // Constructors
   data_set(const SEXP& xpMat, bool big, const mat& Xx, const mat& Yy,
     unsigned n_passes) : xpMat_(xpMat), big(big), Y(Yy) {
     if (!big) {
@@ -57,7 +56,6 @@ public:
     return data_point(xt, yt);
   }
 
-  // Members
   mat X;
   mat Y;
   bool big;

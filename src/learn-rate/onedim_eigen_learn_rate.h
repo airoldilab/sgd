@@ -12,11 +12,9 @@ class onedim_eigen_learn_rate : public base_learn_rate {
    * @param d  dimension of learning rate
    */
 public:
-  // Constructors
   onedim_eigen_learn_rate(unsigned d) :
     d_(d), v_(0, 1) {}
 
-  // Operators
   virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) {
     double sum_eigen = 0;
     for (unsigned i = 0; i < d_; ++i) {

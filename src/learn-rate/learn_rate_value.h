@@ -21,7 +21,6 @@ public:
     }
   }
 
-  // Getters
   double& at(unsigned i) {
     if (type_ == 1) {
       return lr_vector_.at(i);
@@ -66,7 +65,6 @@ public:
     }
   }
 
-  // Operators
   learn_rate_value operator=(double scalar) {
     if (type_ == 0) {
       lr_scalar_ = scalar;
