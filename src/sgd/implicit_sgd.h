@@ -27,7 +27,7 @@ public:
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     glm_model& model, bool& good_gradient) {
     mat theta_new;
-    learn_rate_value at = learning_rate(model.gradient(t, theta_old, data), t);
+    learn_rate_value at = learning_rate(t, model.gradient(t, theta_old, data));
     // TODO how to deal with non-scalar learning rates?
     double average_lr = at.mean();
 

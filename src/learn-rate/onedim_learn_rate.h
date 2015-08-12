@@ -20,7 +20,7 @@ public:
     gamma_(gamma), alpha_(alpha), c_(c), scale_(scale), v_(0, 1) {}
 
   // Operators
-  virtual const learn_rate_value& operator()(const mat& grad_t, unsigned t) {
+  virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) {
     v_ = scale_ * gamma_ * pow(1 + alpha_ * gamma_ * t, -c_);
     return v_;
   }

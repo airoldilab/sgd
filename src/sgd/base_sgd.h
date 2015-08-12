@@ -87,8 +87,8 @@ public:
     return pos_;
   }
 
-  const learn_rate_value& learning_rate(const mat& grad_t, unsigned t) {
-    return (*lr_obj_)(grad_t, t);
+  const learn_rate_value& learning_rate(unsigned t, const mat& grad_t) {
+    return (*lr_obj_)(t, grad_t);
   }
 
   //TODO declare update method

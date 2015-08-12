@@ -28,7 +28,7 @@ public:
     v_(1, d) {}
 
   // Operators
-  virtual const learn_rate_value& operator()(const mat& grad_t, unsigned t) {
+  virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) {
     for (unsigned i = 0; i < d_; ++i) {
       Idiag_.at(i) = a_ * Idiag_.at(i) + b_ * pow(grad_t.at(i, 0), 2);
     }

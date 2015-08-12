@@ -29,7 +29,7 @@ public:
     if (!is_finite(grad_t)) {
       good_gradient = false;
     }
-    learn_rate_value at = learning_rate(model.gradient(t, theta_old, data), t);
+    learn_rate_value at = learning_rate(t, model.gradient(t, theta_old, data));
     v_ = mu_ * v_ + (at * grad_t);
     return theta_old + v_;
   }

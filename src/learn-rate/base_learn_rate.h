@@ -13,7 +13,7 @@ public:
   base_learn_rate() {}
 
   // Operators
-  virtual const learn_rate_value& operator()(const mat& grad_t, unsigned t) = 0;
+  virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) = 0;
 };
 
 #endif

@@ -27,7 +27,7 @@ public:
     if (!is_finite(grad_t)) {
       good_gradient = false;
     }
-    learn_rate_value at = learning_rate(grad_t, t);
+    learn_rate_value at = learning_rate(t, grad_t);
     return theta_old + (at * grad_t);
   }
 

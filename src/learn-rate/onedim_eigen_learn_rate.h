@@ -17,7 +17,7 @@ public:
     d_(d), v_(0, 1) {}
 
   // Operators
-  virtual const learn_rate_value& operator()(const mat& grad_t, unsigned t) {
+  virtual const learn_rate_value& operator()(unsigned t, const mat& grad_t) {
     double sum_eigen = 0;
     for (unsigned i = 0; i < d_; ++i) {
       sum_eigen += pow(grad_t.at(i, 0), 2);
