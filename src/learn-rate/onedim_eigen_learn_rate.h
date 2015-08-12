@@ -2,7 +2,6 @@
 #define LEARN_RATE_ONEDIM_EIGEN_LEARN_RATE_H
 
 #include "basedef.h"
-#include "data/data_point.h"
 #include "learn-rate/base_learn_rate.h"
 #include "learn-rate/learn_rate_value.h"
 

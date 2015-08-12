@@ -2,7 +2,6 @@
 #define LEARN_RATE_BASE_LEARN_RATE_H
 
 #include "basedef.h"
-#include "data/data_point.h"
 #include "learn-rate/learn_rate_value.h"
 
 class base_learn_rate {
