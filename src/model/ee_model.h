@@ -26,8 +26,9 @@ public:
     //}
   }
 
-  mat gradient(const mat& theta_old, const data_point& data_pt, const
-    data_set& data) const {
+  mat gradient(unsigned t, const mat& theta_old, const data_set& data)
+    const {
+    data_point data_pt = data.get_data_point(t);
     // TODO y isn't necessary
     // TODO include weighting matrix
     Rcpp::NumericVector r_theta_old =

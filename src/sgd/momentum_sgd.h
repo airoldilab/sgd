@@ -2,7 +2,6 @@
 #define SGD_MOMENTUM_SGD_H
 
 #include "basedef.h"
-#include "data/data_point.h"
 #include "data/data_set.h"
 #include "learn-rate/learn_rate_value.h"
 #include "sgd/base_sgd.h"
@@ -26,12 +25,11 @@ public:
   template<typename MODEL>
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     MODEL& model, bool& good_gradient) {
-    data_point data_pt = data.get_data_point(t);
-    mat grad_t = model.gradient(theta_old, data_pt, data);
-    learn_rate_value at = learning_rate(grad_t, t);
+    mat grad_t = model.gradient(t, theta_old, data);
     if (!is_finite(grad_t)) {
       good_gradient = false;
     }
+    learn_rate_value at = learning_rate(grad_t, t);
     v_ = mu_ * v_ + (at * grad_t);
     return theta_old + v_;
   }

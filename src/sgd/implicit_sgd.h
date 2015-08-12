@@ -26,12 +26,12 @@ public:
 
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     glm_model& model, bool& good_gradient) {
-    data_point data_pt = data.get_data_point(t);
     mat theta_new;
-    learn_rate_value at = learning_rate(model.gradient(theta_old, data_pt, data), t);
-    // TODO
+    learn_rate_value at = learning_rate(model.gradient(t, theta_old, data), t);
+    // TODO how to deal with non-scalar learning rates?
     double average_lr = at.mean();
 
+    data_point data_pt = data.get_data_point(t);
     double normx = dot(data_pt.x, data_pt.x);
 
     Get_grad_coeff<glm_model> get_grad_coeff(model, data_pt, theta_old,

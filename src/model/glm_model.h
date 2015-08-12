@@ -51,8 +51,9 @@ public:
     dev = Rcpp::as<bool>(model["deviance"]);
   }
 
-  mat gradient(const mat& theta_old, const data_point& data_pt, const
-    data_set& data) const {
+  mat gradient(unsigned t, const mat& theta_old, const data_set& data)
+    const {
+    data_point data_pt = data.get_data_point(t);
     return ((data_pt.y - h_transfer(dot(data_pt.x, theta_old))) *
       data_pt.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
   }

@@ -32,8 +32,7 @@ public:
     return name_;
   }
 
-  mat gradient(const mat& theta_old, const data_point& data_pt, const
-    data_set& data) const;
+  mat gradient(unsigned t, const mat& theta_old, const data_set& data) const;
 
   // TODO make private
   double lambda1;
@@ -47,16 +46,15 @@ template<typename MODEL>
 class Get_grad_coeff {
   // Compute gradient coeff and its derivative for Implicit-SGD update
 public:
-  Get_grad_coeff(const MODEL& e, const data_point& d,
-    const mat& t, double n) :
-    model(e), data_pt(d), theta_old(t), normx(n) {}
+  Get_grad_coeff(const MODEL& e, const data_point& d, const mat& t,
+    double n) : model(e), data_pt(d), theta_old(t), normx(n) {}
 
-  double operator() (double ksi) const {
+  double operator()(double ksi) const {
     return data_pt.y-model.h_transfer(dot(theta_old, data_pt.x)
                      + normx * ksi);
   }
 
-  double first_derivative (double ksi) const {
+  double first_derivative(double ksi) const {
     return model.h_first_derivative(dot(theta_old, data_pt.x)
            + normx * ksi)*normx;
   }
@@ -81,7 +79,7 @@ public:
   Implicit_fn(double a, const Get_grad_coeff<MODEL>& get_grad) :
     at(a), g(get_grad) {}
 
-  tuple_type operator() (double u) const {
+  tuple_type operator()(double u) const {
     double value = u - at * g(u);
     double first = 1 + at * g.first_derivative(u);
     double second = at * g.second_derivative(u);
