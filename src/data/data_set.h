@@ -53,7 +53,7 @@ public:
       }
     }
     double yt = Y(idxmap_[t]);
-    return data_point(xt, yt);
+    return data_point(xt, yt, idxmap_[t]);
   }
 
   mat X;

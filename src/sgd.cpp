@@ -1,10 +1,9 @@
 #include "basedef.h"
-#include "data/data_point.h"
 #include "data/data_set.h"
 #include "model/ee_model.h"
 #include "model/glm_model.h"
-#include "post-process/glm_post_process.h"
 #include "post-process/ee_post_process.h"
+#include "post-process/glm_post_process.h"
 #include "sgd/explicit_sgd.h"
 #include "sgd/implicit_sgd.h"
 #include "sgd/momentum_sgd.h"
@@ -129,6 +128,7 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   unsigned n_features = data.n_features;
   unsigned n_passes = sgd.get_n_passes();
 
+  // TODO this shouldn't be placed here
   unsigned X_rank = n_features;
   if (model.name() == "gaussian" ||
       model.name() == "poisson" ||
