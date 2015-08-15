@@ -1,7 +1,9 @@
 #include "basedef.h"
 #include "data/data_set.h"
+#include "model/cox_model.h"
 #include "model/ee_model.h"
 #include "model/glm_model.h"
+#include "post-process/cox_post_process.h"
 #include "post-process/ee_post_process.h"
 #include "post-process/glm_post_process.h"
 #include "sgd/explicit_sgd.h"
@@ -44,11 +46,8 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
 
   // Construct model.
   std::string model_name = Rcpp::as<std::string>(Model_control["name"]);
-  if (model_name == "gaussian" ||
-      model_name == "poisson" ||
-      model_name == "binomial" ||
-      model_name == "gamma") {
-    glm_model model(Model_control);
+  if (model_name == "cox") {
+    cox_model model(Model_control);
     // Construct stochastic gradient method.
     std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
     if (sgd_name == "sgd" || sgd_name == "asgd") {
@@ -69,6 +68,29 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
     }
   } else if (model_name == "ee") {
     ee_model model(Model_control);
+    // Construct stochastic gradient method.
+    std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
+    if (sgd_name == "sgd" || sgd_name == "asgd") {
+      explicit_sgd sgd(Sgd_control, data.n_samples, ti);
+      return run(data, model, sgd);
+    } else if (sgd_name == "implicit" || sgd_name == "ai-sgd") {
+      implicit_sgd sgd(Sgd_control, data.n_samples, ti);
+      return run(data, model, sgd);
+    } else if (sgd_name == "momentum") {
+      momentum_sgd sgd(Sgd_control, data.n_samples, ti);
+      return run(data, model, sgd);
+    } else if (sgd_name == "nesterov") {
+      nesterov_sgd sgd(Sgd_control, data.n_samples, ti);
+      return run(data, model, sgd);
+    } else {
+      Rcpp::Rcout << "error: stochastic gradient method not implemented" << std::endl;
+      return Rcpp::List();
+    }
+  } else if (model_name == "gaussian" ||
+      model_name == "poisson" ||
+      model_name == "binomial" ||
+      model_name == "gamma") {
+    glm_model model(Model_control);
     // Construct stochastic gradient method.
     std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
     if (sgd_name == "sgd" || sgd_name == "asgd") {

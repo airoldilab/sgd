@@ -34,8 +34,9 @@ variables in the model. If not found in data, the variables are taken from
 environment(formula), typically the environment from which glm is called.}
 
 \item{model}{character specifying the model to be used: \code{"lm"} (linear
-model), \code{"glm"} (generalized linear model), \code{"ee"} (estimating
-equation).}
+model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
+proportional hazards model), \code{"ee"} (estimating equation). See
+\sQuote{Details}.}
 
 \item{model.control}{a list of parameters for controlling the model.
 \describe{
@@ -52,7 +53,7 @@ equation).}
   \item{\code{gr} (\code{"ee"})}{a function to return the gradient. If
     unspecified, a finite-difference approximation will be used.}
   \item{\code{nparams} (\code{"ee"})}{number of model parameters. This is
-    automatically inferred for \code{"glm"}.}
+    automatically determined for other models.}
   \item{\code{type} (\code{"ee"})}{character specifying the generalized method of
     moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
     (Hansen et al., 1996). Defaults to \code{"iterative"}.}
@@ -112,6 +113,11 @@ Run stochastic gradient descent in order to optimize the induced loss
 function given a model and data.
 }
 \details{
+Models:
+The Cox model assumes that the survival data is ordered when passed
+in, i.e., such that the risk set of an observation i is all data points after
+it.
+
 Methods:
 \describe{
   \item{\code{sgd}}{stochastic gradient descent (Robbins and Monro, 1951)}

@@ -1,4 +1,6 @@
 bench-linear-regression  Benchmark linear regression on simulated normal data
+cox-regression           Demo Cox regression on simulated data
 glm-poisson-regression   Demo generalized linear regression (Poisson) on simulated Poisson data
+glm-logistic-regression  Demo generalized linear regression (logistic) on simulated Bernoulli data
 linear-regression        Demo linear regression on simulated normal data
 normal-method-of-moments Demo estimating equations for estimating parameters of normal distribution

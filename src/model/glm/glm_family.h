@@ -1,5 +1,5 @@
-#ifndef GLM_FAMILY_H
-#define GLM_FAMILY_H
+#ifndef MODEL_GLM_FAMILY_H
+#define MODEL_GLM_FAMILY_H
 
 #include "basedef.h"
 

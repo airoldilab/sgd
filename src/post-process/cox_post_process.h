@@ -1,0 +1,17 @@
+#ifndef POST_PROCESS_COX_POST_PROCESS_H
+#define POST_PROCESS_COX_POST_PROCESS_H
+
+#include "basedef.h"
+#include "data/data_set.h"
+#include "model/ee_model.h"
+#include <stdlib.h>
+
+template <typename SGD>
+Rcpp::List post_process(const SGD& sgd, const data_set& data,
+  const cox_model& model, mat& coef, unsigned X_rank) {
+  // TODO
+  Rcpp::Rcout << "warning: post_process for Cox not implemented yet" << std::endl;
+  return Rcpp::List();
+}
+
+#endif

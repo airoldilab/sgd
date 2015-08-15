@@ -1,5 +1,5 @@
-#ifndef GLM_TRANSFER_H
-#define GLM_TRANSFER_H
+#ifndef MODEL_GLM_TRANSFER_H
+#define MODEL_GLM_TRANSFER_H
 
 #include "basedef.h"
 

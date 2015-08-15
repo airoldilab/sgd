@@ -11,8 +11,9 @@
 #'   variables in the model. If not found in data, the variables are taken from
 #'   environment(formula), typically the environment from which glm is called.
 #' @param model character specifying the model to be used: \code{"lm"} (linear
-#'   model), \code{"glm"} (generalized linear model), \code{"ee"} (estimating
-#'   equation).
+#'   model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
+#'   proportional hazards model), \code{"ee"} (estimating equation). See
+#'   \sQuote{Details}.
 #' @param model.control a list of parameters for controlling the model.
 #'   \describe{
 #'     \item{\code{family} (\code{"glm"})}{a description of the error distribution and
@@ -28,7 +29,7 @@
 #'     \item{\code{gr} (\code{"ee"})}{a function to return the gradient. If
 #'       unspecified, a finite-difference approximation will be used.}
 #'     \item{\code{nparams} (\code{"ee"})}{number of model parameters. This is
-#'       automatically inferred for \code{"glm"}.}
+#'       automatically determined for other models.}
 #'     \item{\code{type} (\code{"ee"})}{character specifying the generalized method of
 #'       moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
 #'       (Hansen et al., 1996). Defaults to \code{"iterative"}.}
@@ -68,6 +69,11 @@
 #' @param x,y a design matrix and the respective vector of outcomes.
 #'
 #' @details
+#' Models:
+#' The Cox model assumes that the survival data is ordered when passed
+#' in, i.e., such that the risk set of an observation i is all data points after
+#' it.
+#'
 #' Methods:
 #' \describe{
 #'   \item{\code{sgd}}{stochastic gradient descent (Robbins and Monro, 1951)}
@@ -176,28 +182,26 @@ sgd.default <- function(x, ...) {
 
 #' @export
 #' @rdname sgd
+# TODO
+# subset: a subset of data points; can be a parameter in sgd.control
+# na.action: how to deal when data has NA; can be a parameter in sgd.control
+# model: logical value determining whether to output the X data frame
+# x,y: logical value determining whether to output the x and/or y
+# contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
 sgd.formula <- function(formula, data, model,
                         model.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # TODO
-  # subset: a subset of data points; can be a parameter in sgd.control
-  # na.action: how to deal when data has NA; can be a parameter in sgd.control
-  # model: logical value determining whether to output the X data frame
-  # x,y: logical value determining whether to output the x and/or y
-  # contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
-  # Set call function to match on arguments
-  call <- match.call()
-
   # 1. Validity check.
-  if (missing(model)) {
-    stop("model not specified")
-  }
+  call <- match.call() # set call function to match on arguments
   if (missing(data)) {
     data <- environment(formula)
   }
+  if (missing(model)) {
+    stop("model not specified")
+  }
 
-  # 2. Build dataframe according to the formula.
+  # 2. Build X and Y according to the formula.
   mf <- match.call(expand.dots=FALSE)
   m <- match(c("formula", "data"), names(mf), 0L)
   mf <- mf[c(1L, m)]
@@ -222,9 +226,7 @@ sgd.formula <- function(formula, data, model,
   }
 
   # 3. Pass into sgd.matrix().
-  out <- sgd.matrix(X, Y, model, model.control, sgd.control)
-  out$call <- call
-  return(out)
+  return(sgd.matrix(X, Y, model, model.control, sgd.control))
 }
 
 #' @export
@@ -253,10 +255,7 @@ sgd.matrix <- function(x, y, model,
                        model.control=list(),
                        sgd.control=list(...),
                        ...) {
-  # Set call function to match on arguments
-  call <- match.call()
-
-  # 1. Validity check.
+  call <- match.call() # set call function to match on arguments
   if (missing(x)) {
     stop("x not specified")
   }
@@ -277,16 +276,7 @@ sgd.matrix <- function(x, y, model,
   sgd.control <- do.call("valid_sgd_control",
                          c(sgd.control, N=NROW(y), nparams=model.control$nparams))
 
-  # 2. Fit!
-  if (model %in% c("lm", "glm")) {
-    fit <- fit_glm
-  } else if (model == "ee") {
-    fit <- fit_ee
-  } else {
-    print(model)
-    stop("'model' not recognized")
-  }
-  out <- fit(x, y, model.control, sgd.control)
+  out <- fit(x, y, model, model.control, sgd.control)
   return(out)
 }
 
@@ -343,10 +333,51 @@ plot.sgd <- function(x, type="mse", ...) {
 # Auxiliary functions: model fitting
 ################################################################################
 
+fit <- function(x, y, model,
+                model.control,
+                sgd.control) {
+  suppressMessages(library(bigmemory))
+  if (model %in% c("lm", "glm")) {
+    out <- fit_glm(x, y, model.control, sgd.control)
+    return(out)
+  }
+
+  # TODO
+  if (model == "ee") {
+    if (sgd.control$method %in% c("implicit", "ai-sgd")) {
+      stop("implicit methods not implemented yet")
+    }
+  }
+
+  dataset <- list(X=x, Y=as.matrix(y), big=F)
+  if ('big.matrix' %in% class(x)) {
+    dataset$big <- T
+    dataset[["bigmat"]] <- x@address
+  } else {
+    dataset[["bigmat"]] <- big.matrix(1, 1)@address
+  }
+
+  model.control$name <- model
+  sgd.control$start <- as.matrix(sgd.control$start)
+
+  if (sgd.control$verbose) {
+    print("Completed pre-processing attributes...")
+    print("Running C++ algorithm...")
+  }
+  out <- run(dataset, model.control, sgd.control)
+  if (sgd.control$verbose) {
+    print("Completed C++ algorithm...")
+  }
+  if (length(out) == 0) {
+    stop("An error has occured, program stopped")
+  }
+  class(out) <- "sgd"
+  return(out)
+}
+
 fit_glm <- function(x, y,
                     model.control,
                     sgd.control) {
-  suppressMessages(library(bigmemory))
   time_start <- proc.time()[3] # TODO timer only starts here
   xnames <- dimnames(x)[[2L]]
   if (is.matrix(y)) {
@@ -493,56 +524,6 @@ fit_glm <- function(x, y,
   return(result)
 }
 
-fit_ee <- function(x, y,
-                   model.control,
-                   sgd.control) {
-  suppressMessages(library(bigmemory))
-  # TODO
-  if (sgd.control$method %in% c("implicit", "ai-sgd")) {
-    stop("implicit methods not implemented yet")
-  }
-
-  xnames <- dimnames(x)[[2L]]
-  if (is.matrix(y)) {
-    ynames <- rownames(y)
-  } else {
-    ynames <- names(y)
-  }
-  N <- NROW(y) # number of samples
-  d <- ncol(x) # number of features
-
-  EMPTY <- d == 0
-  if (EMPTY) {
-    # TODO
-    stop("Data set has no features")
-  } else {
-    dataset <- list(X=x, Y=as.matrix(y), big=F)
-    if ('big.matrix' %in% class(x)) {
-      dataset$big <- T
-      dataset[["bigmat"]] <- x@address
-    } else {
-      dataset[["bigmat"]] <- big.matrix(1, 1)@address
-    }
-
-    model.control$name <- "ee"
-    sgd.control$start <- as.matrix(sgd.control$start)
-
-    if (sgd.control$verbose) {
-      print("Completed pre-processing attributes...")
-      print("Running C++ algorithm...")
-    }
-    out <- run(dataset, model.control, sgd.control)
-    if (sgd.control$verbose) {
-      print("Completed C++ algorithm...")
-    }
-    if (length(out) == 0) {
-      stop("An error has occured, program stopped")
-    }
-    class(out) <- "sgd"
-  }
-  return(out)
-}
-
 ################################################################################
 # Auxiliary functions: plots
 ################################################################################
@@ -633,6 +614,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     control.rank <- model.control$rank
     control.trace <- model.control$trace
     control.deviance <- model.control$deviance
+    control.nparams <-  model.control$d
     # Check validity of family.
     if (is.null(control.family)) {
       control.family <- gaussian()
@@ -667,7 +649,13 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       rank=control.rank,
       trace=control.trace,
       deviance=control.deviance,
-      nparams=model.control$d,
+      nparams=control.nparams,
+      lambda1=lambda1,
+      lambda2=lambda2))
+  } else if (model == "cox") {
+    control.nparams <-  model.control$d
+    return(list(
+      nparams=control.nparams,
       lambda1=lambda1,
       lambda2=lambda2))
   } else if (model == "ee") {
@@ -874,13 +862,11 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
 }
 
 valid_implicit_control <- function(delta=30L, ...) {
-  # Maintain control parameters for running implicit SGD.
+  # Maintain control parameters for running implicit SGD. Pass defaults
+  # if unspecified.
   #
   # Args:
-  #   delta:       convergence criterion for the one-dimensional optimization
-  #
-  # Returns:
-  #   A list of parameters according to user input, default otherwise.
+  #   delta: convergence criterion for the one-dimensional optimization
   if (!is.numeric(delta) || delta - as.integer(delta) != 0 || delta <= 0) {
     stop("value of 'delta' must be integer > 0")
   }

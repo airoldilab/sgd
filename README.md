@@ -52,6 +52,7 @@ Any loss function may be specified, although for convenience the following
 models are built-in:
 * Linear models
 * Generalized linear models
+* Cox proportional hazards model
 * Estimating equations and the generalized method of moments
 
 The following stochastic gradient methods exist:
