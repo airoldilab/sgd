@@ -114,10 +114,10 @@
 #' \item{converged}{logical. Was the algorithm judged to have converged?}
 #' \item{estimates}{estimates from algorithm stored at each iteration
 #'     specified in \code{pos}}
-#' \item{times}{vector of times in seconds it took to complete the number of
-#'     iterations specified in \code{pos}}
 #' \item{pos}{vector of indices specifying the iteration number each estimate
 #'     was stored for}
+#' \item{times}{vector of times in seconds it took to complete the number of
+#'     iterations specified in \code{pos}}
 #' \item{model.out}{a list of model-specific output attributes}
 #'
 #' @author Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
@@ -310,8 +310,8 @@ print.sgd <- function(x, ...) {
 #' Plot objects of class \code{sgd}.
 #'
 #' @param x object of class \code{sgd}.
-#' @param type character specifying the type of plot: \code{"mse"}
 #' @param \dots
+#' @param type character specifying the type of plot: \code{"mse"}
 #'
 #' @export
 plot.sgd <- function(x, ..., type="mse") {
@@ -322,6 +322,28 @@ plot.sgd <- function(x, ..., type="mse") {
     stop("'type' not recognized")
   }
   return(plot(x, ...))
+}
+
+#' Form predictions using the estimated model parameters from stochastic
+#' gradient descent.
+#'
+#' @param x object of class \code{sgd}.
+#' @param x_test design matrix to form predictions on
+#' @param \dots further arguments passed to or from other methods.
+#'
+#' @export
+predict.sgd <- function(x, x_test, ...) {
+  # TODO
+  #if (x$model == "cox") {
+  #} else if (x$model == "ee") {
+  #} else if (x$model %in% c("lm", "glm")) {
+  if (x$model %in% c("lm", "glm")) {
+    eta <- x_test %*% x$coefficients # assuming intercepts in X
+    y <- x$model.out$family$linkinv(eta)
+  } else {
+    stop("'model' not recognized")
+  }
+  return(y)
 }
 
 ################################################################################
@@ -366,6 +388,8 @@ fit <- function(x, y, model,
     stop("An error has occured, program stopped")
   }
   class(out) <- "sgd"
+  out$pos <- as.vector(out$pos) # TODO this should be done in C++, not here
+  out$times <- as.vector(out$times)
   return(out)
 }
 
@@ -499,23 +523,24 @@ fit_glm <- function(x, y,
   result <- list(
     model=out$model,
     coefficients=coef,
-    residuals=residuals,
-    fitted.values=mu,
-    rank=rank,
-    family=family,
-    linear.predictors=eta,
-    deviance=dev,
-    null.deviance=nulldev,
-    weights=weights,
-    df.residual=resdf,
-    df.null=nulldf,
     converged=converged,
     estimates=out$estimates,
-    #times=out$times + (proc.time()[3] - time_start), # C++ time + R time
-    times=out$times, #C++ time only
-    pos=out$pos,
-    aic=aic.model)
-  class(result) <- c("glm", "sgd")
+    #times=as.vector(out$times) + (proc.time()[3] - time_start), # C++ time + R time
+    pos=as.vector(out$pos),
+    times=as.vector(out$times), #C++ time only
+    model.out=list(residuals=residuals,
+                  fitted.values=mu,
+                  rank=rank,
+                  family=family,
+                  linear.predictors=eta,
+                  deviance=dev,
+                  null.deviance=nulldev,
+                  weights=weights,
+                  df.residual=resdf,
+                  df.null=nulldf,
+                  aic=aic.model)
+  )
+  class(result) <- "sgd"
   return(result)
 }
 
@@ -526,7 +551,7 @@ fit_glm <- function(x, y,
 get_mse_glm <- function(x, x_test, y_test) {
   nests <- ncol(x$estimates)
   eta <- x_test %*% x$estimates # assuming intercepts in X
-  mu <- x$family$linkinv(eta)
+  mu <- x$model.out$family$linkinv(eta)
   mse <- rep(NA, nests)
   for (j in 1:nests) {
     mse[j] <- colMeans((mu[, j] - y_test)^2)
@@ -534,9 +559,11 @@ get_mse_glm <- function(x, x_test, y_test) {
   return(mse)
 }
 
-plot_mse <- function(x, x_test, y_test) {
+# TODO in the same way as plot.R, allow for a list of sgd objects
+plot_mse <- function(x, x_test, y_test, xaxis="iter") {
   if (x$model %in% c("lm", "glm")) {
     get_mse <- get_mse_glm
+  # TODO
   } else {
     stop("Model not recognized!")
   }
@@ -547,7 +574,7 @@ plot_mse <- function(x, x_test, y_test) {
   sgd <- x
     mse <- get_mse(sgd, x_test, y_test)
     temp_dat <- data.frame(mse=mse,
-                           pos=sgd$pos[1, ],
+                           pos=sgd$pos,
                            label=count) # TODO vectorize pos, times
     temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
     dat <- rbind(dat, temp_dat)
@@ -570,7 +597,7 @@ plot_mse <- function(x, x_test, y_test) {
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_log10(breaks=10^(1:log(sgd.theta$pos[ncol(sgd.theta$pos)],
+    ggplot2::scale_x_log10(breaks=10^(1:log(sgd.theta$pos[length(sgd.theta$pos)],
       base=10))) +
     ggplot2::scale_y_log10() +
     ggplot2::labs(

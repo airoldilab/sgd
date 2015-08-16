@@ -103,10 +103,10 @@ components:
 \item{converged}{logical. Was the algorithm judged to have converged?}
 \item{estimates}{estimates from algorithm stored at each iteration
     specified in \code{pos}}
-\item{times}{vector of times in seconds it took to complete the number of
-    iterations specified in \code{pos}}
 \item{pos}{vector of indices specifying the iteration number each estimate
     was stored for}
+\item{times}{vector of times in seconds it took to complete the number of
+    iterations specified in \code{pos}}
 \item{model.out}{a list of model-specific output attributes}
 }
 \description{
