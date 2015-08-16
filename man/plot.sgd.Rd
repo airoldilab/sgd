@@ -2,9 +2,9 @@
 % Please edit documentation in R/sgd.R
 \name{plot.sgd}
 \alias{plot.sgd}
-\title{Method for plotting objects of class \code{sgd}.}
+\title{Plot objects of class \code{sgd}.}
 \usage{
-\method{plot}{sgd}(x, type = "mse", ...)
+\method{plot}{sgd}(x, ..., type = "mse")
 }
 \arguments{
 \item{x}{object of class \code{sgd}.}
@@ -14,6 +14,6 @@
 \item{\dots}{}
 }
 \description{
-Method for plotting objects of class \code{sgd}.
+Plot objects of class \code{sgd}.
 }
 

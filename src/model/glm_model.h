@@ -19,31 +19,27 @@ class glm_model : public base_model {
    */
 public:
   glm_model(Rcpp::List model) : base_model(model) {
-    if (name_ == "gaussian") {
+    family_ = Rcpp::as<std::string>(model["family"]);
+    if (family_ == "gaussian") {
       family_obj_ = new gaussian_family();
-    } else if (name_ == "poisson") {
+    } else if (family_ == "poisson") {
       family_obj_ = new poisson_family();
-    } else if (name_ == "binomial") {
+    } else if (family_ == "binomial") {
       family_obj_ = new binomial_family();
-    } else if (name_ == "gamma") {
+    } else if (family_ == "gamma") {
       family_obj_ = new gamma_family();
     } else {
       Rcpp::Rcout << "warning: model not implemented yet" << std::endl;
     }
-    std::string transfer_name = Rcpp::as<std::string>(model["transfer.name"]);
-    if (name_ == "gaussian" ||
-        name_ == "poisson" ||
-        name_ == "binomial" ||
-        name_ == "gamma") {
-      if (transfer_name == "identity") {
-        transfer_obj_ = new identity_transfer();
-      } else if (transfer_name == "exp") {
-        transfer_obj_ = new exp_transfer();
-      } else if (transfer_name == "inverse") {
-        transfer_obj_ = new inverse_transfer();
-      } else if (transfer_name == "logistic") {
-        transfer_obj_ = new logistic_transfer();
-      }
+    transfer_ = Rcpp::as<std::string>(model["transfer"]);
+    if (transfer_ == "identity") {
+      transfer_obj_ = new identity_transfer();
+    } else if (transfer_ == "exp") {
+      transfer_obj_ = new exp_transfer();
+    } else if (transfer_ == "inverse") {
+      transfer_obj_ = new inverse_transfer();
+    } else if (transfer_ == "logistic") {
+      transfer_obj_ = new logistic_transfer();
     }
     rank = Rcpp::as<bool>(model["rank"]);
     weights = Rcpp::as<mat>(model["weights"]);
@@ -91,14 +87,24 @@ public:
     return family_obj_->deviance(y, mu, wt);
   }
 
+  std::string family() const {
+    return family_;
+  }
+
+  std::string transfer() const {
+    return transfer_;
+  }
+
   mat weights;
   bool trace;
   bool dev;
   bool rank;
 
 private:
-  base_transfer* transfer_obj_;
+  std::string family_;
+  std::string transfer_;
   base_family* family_obj_;
+  base_transfer* transfer_obj_;
 };
 
 #endif

@@ -109,15 +109,16 @@
 #' @return
 #' An object of class \code{"sgd"}, which is a list containing the following
 #' components:
-#' \item{coefficients}{a named vector of coefficients.}
+#' \item{model}{name of the model}
+#' \item{coefficients}{a named vector of coefficients}
 #' \item{converged}{logical. Was the algorithm judged to have converged?}
 #' \item{estimates}{estimates from algorithm stored at each iteration
-#'     specified in \code{pos}.}
+#'     specified in \code{pos}}
 #' \item{times}{vector of times in seconds it took to complete the number of
-#'     iterations to achieve the corresponding estimate.}
+#'     iterations specified in \code{pos}}
 #' \item{pos}{vector of indices specifying the iteration number each estimate
-#'     was stored for.}
-#' \item{model.out}{a list of model-specific output attributes.}
+#'     was stored for}
+#' \item{model.out}{a list of model-specific output attributes}
 #'
 #' @author Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
 #' @references
@@ -295,7 +296,7 @@ sgd.big.matrix <- function(x, y, model,
 # Generic methods
 ################################################################################
 
-#' Method for printing objects of class \code{sgd}.
+#' Print objects of class \code{sgd}.
 #'
 #' @param x object of class \code{sgd}.
 #' @param \dots further arguments passed to or from other methods.
@@ -306,27 +307,21 @@ print.sgd <- function(x, ...) {
   print(x$coefficients, ...)
 }
 
-#' Method for plotting objects of class \code{sgd}.
+#' Plot objects of class \code{sgd}.
 #'
 #' @param x object of class \code{sgd}.
 #' @param type character specifying the type of plot: \code{"mse"}
 #' @param \dots
 #'
 #' @export
-plot.sgd <- function(x, type="mse", ...) {
-  if ("sgd" %in% class(type)) {
-    sgds <- list(x, type, ...)
-    type <- "mse"
-  } else{
-    sgds <- list(x, ...)
-  }
+plot.sgd <- function(x, ..., type="mse") {
   if (type == "mse") {
     plot <- plot_mse
   } else {
     print(type)
     stop("'type' not recognized")
   }
-  return(do.call(plot, sgds))
+  return(plot(x, ...))
 }
 
 ################################################################################
@@ -357,7 +352,6 @@ fit <- function(x, y, model,
     dataset[["bigmat"]] <- big.matrix(1, 1)@address
   }
 
-  model.control$name <- model
   sgd.control$start <- as.matrix(sgd.control$start)
 
   if (sgd.control$verbose) {
@@ -455,9 +449,9 @@ fit_glm <- function(x, y,
       dataset[["bigmat"]] <- big.matrix(1, 1)@address
     }
 
-    model.control$name <- family$family
+    model.control$family <- family$family
     model.control$weights <- as.matrix(weights[good])
-    model.control$transfer.name <- transfer_name(family$link)
+    model.control$transfer <- transfer_name(family$link)
     sgd.control$start <- as.matrix(sgd.control$start)
 
     if (sgd.control$verbose) {
@@ -503,6 +497,7 @@ fit_glm <- function(x, y,
   names(coef) <- xnames
   aic.model <- family$aic(y, 0, mu, weights, dev) + 2 * rank
   result <- list(
+    model=out$model,
     coefficients=coef,
     residuals=residuals,
     fitted.values=mu,
@@ -529,32 +524,37 @@ fit_glm <- function(x, y,
 ################################################################################
 
 get_mse_glm <- function(x, x_test, y_test) {
-  eta <- x_test %*% x$estimates
+  nests <- ncol(x$estimates)
+  eta <- x_test %*% x$estimates # assuming intercepts in X
   mu <- x$family$linkinv(eta)
-  mse <- colMeans((mu - y_test)^2)
+  mse <- rep(NA, nests)
+  for (j in 1:nests) {
+    mse[j] <- colMeans((mu[, j] - y_test)^2)
+  }
   return(mse)
 }
 
-plot_mse <- function(x, x_test, y_test, ...) {
-  if (any(class(x) %in% "glm")) {
+plot_mse <- function(x, x_test, y_test) {
+  if (x$model %in% c("lm", "glm")) {
     get_mse <- get_mse_glm
   } else {
     stop("Model not recognized!")
   }
-  sgds <- list(x, ...)
+  #sgds <- list(x, ...)
   dat <- data.frame()
   count <- 1
-  for (sgd in sgds) {
+  #for (sgd in sgds) {
+  sgd <- x
     mse <- get_mse(sgd, x_test, y_test)
-    temp_dat <- data.frame(mse=mse, pos=sgd$pos[1, ])
+    temp_dat <- data.frame(mse=mse,
+                           pos=sgd$pos[1, ],
+                           label=count) # TODO vectorize pos, times
     temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
-    temp_dat[["label"]] <- as.factor(count)
     dat <- rbind(dat, temp_dat)
     count <- count + 1
-  }
+  #}
+  dat$label <- as.factor(dat$label)
 
-  pos <- 0
-  label <- 0
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
@@ -570,7 +570,8 @@ plot_mse <- function(x, x_test, y_test, ...) {
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_log10() +
+    ggplot2::scale_x_log10(breaks=10^(1:log(sgd.theta$pos[ncol(sgd.theta$pos)],
+      base=10))) +
     ggplot2::scale_y_log10() +
     ggplot2::labs(
       title="Mean Squared Error",
@@ -645,6 +646,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       stop ("'deviance' not logical")
     }
     return(list(
+      name=model,
       family=control.family,
       rank=control.rank,
       trace=control.trace,
@@ -655,6 +657,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   } else if (model == "cox") {
     control.nparams <-  model.control$d
     return(list(
+      name=model,
       nparams=control.nparams,
       lambda1=lambda1,
       lambda2=lambda2))
@@ -712,6 +715,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     #} else if (identical(dim(control.wmatrix), c(k,k))) {
     }
     return(list(
+      name=model,
       gr=control.gr,
       type=control.type,
       nparams=control.nparams,

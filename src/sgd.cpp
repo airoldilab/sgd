@@ -86,10 +86,7 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
       Rcpp::Rcout << "error: stochastic gradient method not implemented" << std::endl;
       return Rcpp::List();
     }
-  } else if (model_name == "gaussian" ||
-      model_name == "poisson" ||
-      model_name == "binomial" ||
-      model_name == "gamma") {
+  } else if (model_name == "lm" || model_name == "glm") {
     glm_model model(Model_control);
     // Construct stochastic gradient method.
     std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
@@ -152,10 +149,7 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
 
   // TODO this shouldn't be placed here
   unsigned X_rank = n_features;
-  if (model.name() == "gaussian" ||
-      model.name() == "poisson" ||
-      model.name() == "binomial" ||
-      model.name() == "gamma") {
+  if (model.name() == "lm" || model.name() == "glm") {
     // Check if the number of observations is greater than the rank of X.
     if (model.rank) {
       X_rank = arma::rank(data.X);
@@ -210,10 +204,11 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   Rcpp::List model_out = post_process(sgd, data, model, coef, X_rank);
 
   return Rcpp::List::create(
+    Rcpp::Named("model") = model.name(),
     Rcpp::Named("coefficients") = coef,
     Rcpp::Named("converged") = true,
     Rcpp::Named("estimates") = sgd.get_estimates(),
-    Rcpp::Named("times") = sgd.get_times(),
     Rcpp::Named("pos") = sgd.get_pos(),
+    Rcpp::Named("times") = sgd.get_times(),
     Rcpp::Named("model.out") = model_out);
 }

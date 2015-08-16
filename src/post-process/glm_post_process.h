@@ -28,11 +28,11 @@ Rcpp::List post_process(const SGD& sgd, const data_set& data,
 
     // Check the validity of mu for Poisson and Binomial family.
     double eps = 10. * datum::eps;
-    if (model.name() == "poisson") {
+    if (model.family() == "poisson") {
       if (any(vectorise(mu) < eps)) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
       }
-    } else if (model.name() == "binomial") {
+    } else if (model.family() == "binomial") {
       if (any(vectorise(mu) < eps) or any(vectorise(mu) > (1-eps))) {
         Rcpp::Rcout << "warning: sgd.fit: fitted rates numerically 0 occurred" << std::endl;
       }

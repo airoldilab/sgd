@@ -2,7 +2,7 @@
 % Please edit documentation in R/sgd.R
 \name{print.sgd}
 \alias{print.sgd}
-\title{Method for printing objects of class \code{sgd}.}
+\title{Print objects of class \code{sgd}.}
 \usage{
 \method{print}{sgd}(x, ...)
 }
@@ -12,6 +12,6 @@
 \item{\dots}{further arguments passed to or from other methods.}
 }
 \description{
-Method for printing objects of class \code{sgd}.
+Print objects of class \code{sgd}.
 }
 

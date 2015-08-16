@@ -98,15 +98,16 @@ arguments if it is not supplied directly.}
 \value{
 An object of class \code{"sgd"}, which is a list containing the following
 components:
-\item{coefficients}{a named vector of coefficients.}
+\item{model}{name of the model}
+\item{coefficients}{a named vector of coefficients}
 \item{converged}{logical. Was the algorithm judged to have converged?}
 \item{estimates}{estimates from algorithm stored at each iteration
-    specified in \code{pos}.}
+    specified in \code{pos}}
 \item{times}{vector of times in seconds it took to complete the number of
-    iterations to achieve the corresponding estimate.}
+    iterations specified in \code{pos}}
 \item{pos}{vector of indices specifying the iteration number each estimate
-    was stored for.}
-\item{model.out}{a list of model-specific output attributes.}
+    was stored for}
+\item{model.out}{a list of model-specific output attributes}
 }
 \description{
 Run stochastic gradient descent in order to optimize the induced loss
