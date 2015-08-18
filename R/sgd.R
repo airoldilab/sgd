@@ -183,23 +183,14 @@ sgd.default <- function(x, ...) {
 
 #' @export
 #' @rdname sgd
-# TODO
-# subset: a subset of data points; can be a parameter in sgd.control
-# na.action: how to deal when data has NA; can be a parameter in sgd.control
-# model: logical value determining whether to output the X data frame
-# x,y: logical value determining whether to output the x and/or y
-# contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
 sgd.formula <- function(formula, data, model,
                         model.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # 1. Validity check.
   call <- match.call() # set call function to match on arguments
+  # 1. Validity check.
   if (missing(data)) {
     data <- environment(formula)
-  }
-  if (missing(model)) {
-    stop("model not specified")
   }
 
   # 2. Build X and Y according to the formula.
@@ -233,21 +224,12 @@ sgd.formula <- function(formula, data, model,
 #' @export
 #' @rdname sgd
 sgd.function <- function(fn, gr=NULL, x, y,
+                         nparams,
                          sgd.control=list(...),
                          ...) {
-  # TODO fn not actually used
-  suppressMessages(library(bigmemory))
-  dataset <- list(X=x, Y=as.matrix(y), big=F)
-  if ('big.matrix' %in% class(x)) {
-    dataset$big <- TRUE
-    dataset[["bigmat"]] <- x@address
-  } else {
-    dataset[["bigmat"]] <- big.matrix(1, 1)@address
-  }
-  call <- match.call()
-  model.control <- do.call("valid_model_control",
-                           list(model="ee", gr=gr, d=ncol(x)))
-  out <- run(dataset, model.control, sgd.control)
+  model <- "ee"
+  model.control <- list(model="ee", fn=fn, gr=gr, d=ncol(x), nparams=nparams)
+  return(sgd.matrix(x, y, model, model.control, sgd.control))
 }
 
 #' @export
@@ -258,13 +240,13 @@ sgd.matrix <- function(x, y, model,
                        ...) {
   call <- match.call() # set call function to match on arguments
   if (missing(x)) {
-    stop("x not specified")
+    stop("'x' not specified")
   }
   if (missing(y)) {
-    stop("y not specified")
+    stop("'y' not specified")
   }
   if (missing(model)) {
-    stop("model not specified")
+    stop("'model' not specified")
   }
   if (!is.list(model.control)) {
     stop("'model.control' is not a list")
@@ -303,7 +285,6 @@ sgd.big.matrix <- function(x, y, model,
 #'
 #' @export
 print.sgd <- function(x, ...) {
-  # TODO something more advanced than this, like a summary
   print(x$coefficients, ...)
 }
 
