@@ -9,7 +9,8 @@
 \arguments{
 \item{x}{object of class \code{sgd}.}
 
-\item{type}{character specifying the type of plot: \code{"mse"}}
+\item{type}{character specifying the type of plot: \code{"mse"},
+  \code{"runtime"}}
 
 \item{\dots}{}
 }

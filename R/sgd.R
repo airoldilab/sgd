@@ -311,14 +311,16 @@ print.sgd <- function(x, ...) {
 #'
 #' @param x object of class \code{sgd}.
 #' @param \dots
-#' @param type character specifying the type of plot: \code{"mse"}
+#' @param type character specifying the type of plot: \code{"mse"},
+#'   \code{"runtime"}
 #'
 #' @export
 plot.sgd <- function(x, ..., type="mse") {
   if (type == "mse") {
     plot <- plot_mse
+  } else if (type %in% c("runtime", "mse-runtime")) {
+    plot <- function(x, ..., xaxis="runtime") plot_mse(x, ..., xaxis=xaxis)
   } else {
-    print(type)
     stop("'type' not recognized")
   }
   return(plot(x, ...))
@@ -565,7 +567,7 @@ plot_mse <- function(x, x_test, y_test, xaxis="iter") {
     get_mse <- get_mse_glm
   # TODO
   } else {
-    stop("Model not recognized!")
+    stop("'model' not recognized")
   }
   #sgds <- list(x, ...)
   dat <- data.frame()
@@ -574,16 +576,24 @@ plot_mse <- function(x, x_test, y_test, xaxis="iter") {
   sgd <- x
     mse <- get_mse(sgd, x_test, y_test)
     temp_dat <- data.frame(mse=mse,
+                           time=sgd$time,
                            pos=sgd$pos,
-                           label=count) # TODO vectorize pos, times
+                           label=count)
     temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
     dat <- rbind(dat, temp_dat)
     count <- count + 1
   #}
   dat$label <- as.factor(dat$label)
 
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label)) +
-    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
+  # TODO there's got to be a more efficient way to do this...
+  if (xaxis == "iter") {
+    p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label))
+  } else if (xaxis == "runtime") {
+    p <- ggplot2::ggplot(dat, ggplot2::aes(x=time, y=mse, group=label))
+  } else {
+    stop("'xaxis' not recognized")
+  }
+  p <- p + ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
       panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),
@@ -597,14 +607,29 @@ plot_mse <- function(x, x_test, y_test, xaxis="iter") {
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_x_log10(breaks=10^(1:log(sgd.theta$pos[length(sgd.theta$pos)],
-      base=10))) +
-    ggplot2::scale_y_log10() +
-    ggplot2::labs(
-      title="Mean Squared Error",
-      x="log-Iteration",
-      y="log-MSE"
-    )
+    ggplot2::scale_y_log10()
+  if (xaxis == "iter") {
+    p <- p +
+      ggplot2::scale_x_log10(
+        breaks=10^(1:log(sgd.theta$pos[length(sgd.theta$pos)], base=10))) +
+      ggplot2::labs(
+        title="Mean Squared Error",
+        x="log-Iteration",
+        y="log-MSE"
+      )
+  } else if (xaxis == "runtime") {
+    p <- p +
+      #ggplot2::scale_x_continuous(
+      #  breaks=10^(1:log(sgd.theta$pos[length(sgd.theta$pos)], base=10))) +
+      ggplot2::labs(
+        title="Mean Squared Error",
+        x="Runtime (s)",
+        y="log-MSE"
+      )
+  } else {
+    stop("'xaxis' not recognized")
+  }
+
   return(p)
 }
 
