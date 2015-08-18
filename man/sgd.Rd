@@ -13,7 +13,8 @@ sgd(x, ...)
 \method{sgd}{formula}(formula, data, model, model.control = list(),
   sgd.control = list(...), ...)
 
-\method{sgd}{function}(fn, gr = NULL, x, y, sgd.control = list(...), ...)
+\method{sgd}{function}(fn, gr = NULL, x, y, nparams,
+  sgd.control = list(...), ...)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
