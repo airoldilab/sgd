@@ -4,7 +4,6 @@
 #include "basedef.h"
 #include "data/data_set.h"
 #include "model/glm_model.h"
-#include <stdlib.h>
 
 template <typename SGD>
 Rcpp::List post_process(const SGD& sgd, const data_set& data,

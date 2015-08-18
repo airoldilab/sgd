@@ -1,8 +1,6 @@
 #ifndef DATA_DATA_SET_H
 #define DATA_DATA_SET_H
 
-#include <iostream>
-#include <vector>
 #include "basedef.h"
 #include "data/data_point.h"
 

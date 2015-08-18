@@ -4,13 +4,15 @@
 #define BOOST_DISABLE_ASSERTS true
 
 #include "RcppArmadillo.h"
-#include <boost/function.hpp>
-#include <boost/timer.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <math.h>
-#include <string>
-#include <cstddef>
 #include <bigmemory/MatrixAccessor.hpp>
+#include <boost/function.hpp>
+#include <boost/math/tools/roots.hpp>
+#include <boost/math/tools/tuple.hpp>
+#include <boost/timer.hpp>
+#include <math.h>
+#include <stdlib.h>
+#include <string>
+#include <vector>
 
 using namespace arma;
 

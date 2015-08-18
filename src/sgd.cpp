@@ -11,7 +11,6 @@
 #include "sgd/momentum_sgd.h"
 #include "sgd/nesterov_sgd.h"
 #include "validity-check/validity_check.h"
-#include <stdlib.h>
 
 // [[Rcpp::depends(BH)]]
 // [[Rcpp::depends(RcppArmadillo)]]

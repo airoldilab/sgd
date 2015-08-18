@@ -4,10 +4,6 @@
 #include "basedef.h"
 #include "data/data_point.h"
 #include "model/base_model.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/math/tools/roots.hpp>
-#include <boost/ref.hpp>
-#include <iostream>
 
 class cox_model : public base_model {
   /**

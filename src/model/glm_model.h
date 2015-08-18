@@ -6,10 +6,6 @@
 #include "model/base_model.h"
 #include "model/glm/glm_family.h"
 #include "model/glm/glm_transfer.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/math/tools/roots.hpp>
-#include <boost/ref.hpp>
-#include <iostream>
 
 class glm_model : public base_model {
   /**

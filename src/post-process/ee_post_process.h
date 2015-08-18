@@ -4,7 +4,6 @@
 #include "basedef.h"
 #include "data/data_set.h"
 #include "model/ee_model.h"
-#include <stdlib.h>
 
 // model.out: flag to include weighting matrix
 template <typename SGD>

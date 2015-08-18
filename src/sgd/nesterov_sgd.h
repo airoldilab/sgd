@@ -5,7 +5,6 @@
 #include "data/data_set.h"
 #include "learn-rate/learn_rate_value.h"
 #include "sgd/base_sgd.h"
-#include <stdlib.h>
 
 class nesterov_sgd : public base_sgd {
   /**

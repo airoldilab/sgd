@@ -1,8 +1,6 @@
 #ifndef DATA_DATA_POINT_H
 #define DATA_DATA_POINT_H
 
-#include <iostream>
-#include <vector>
 #include "basedef.h"
 
 struct data_point {

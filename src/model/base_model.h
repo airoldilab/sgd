@@ -3,10 +3,6 @@
 
 #include "basedef.h"
 #include "data/data_point.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/math/tools/roots.hpp>
-#include <boost/ref.hpp>
-#include <iostream>
 
 class base_model;
 //TODO

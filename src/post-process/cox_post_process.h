@@ -3,8 +3,7 @@
 
 #include "basedef.h"
 #include "data/data_set.h"
-#include "model/ee_model.h"
-#include <stdlib.h>
+#include "model/cox_model.h"
 
 template <typename SGD>
 Rcpp::List post_process(const SGD& sgd, const data_set& data,

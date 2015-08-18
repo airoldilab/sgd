@@ -6,8 +6,6 @@
 #include "learn-rate/onedim_learn_rate.h"
 #include "learn-rate/onedim_eigen_learn_rate.h"
 #include "learn-rate/ddim_learn_rate.h"
-#include <iostream>
-#include <vector>
 
 class base_sgd {
   /**
