@@ -128,4 +128,7 @@ main <- function() {
  
   d = generate.data(N=1e3, p=200)
   Mestimation.sgd(d, niters=1e4, C=15)
+  # Run this to get a plot with std. errors
+  # run.m_estimation.many(10)
+  #
 }
