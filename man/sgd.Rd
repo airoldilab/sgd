@@ -73,18 +73,22 @@ proportional hazards model), \code{"ee"} (estimating equation). See
     \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
     \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
     See \sQuote{Details}.}
-  \item{\code{start}}{starting values for the parameter estimates. Default is
-    random initialization around zero.}
-  \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
-    (distributed log-uniformly over total number of iterations)}
-  \item{\code{weights}}{an optional vector of "prior weights" to be used in the
-    fitting process. Should be NULL or a numeric vector.}
-  \item{\code{npasses}}{the number of passes over the data. Default is 1.}
   \item{\code{lr.control}}{vector of scalar hyperparameters one can
     set dependent on the learning rate. For hyperparameters aimed
     to be left as default, specify \code{NA} in the corresponding
     entries. See \sQuote{Details}.}
-  \item{\code{verbose}}{character specifying whether to print progress}
+  \item{\code{start}}{starting values for the parameter estimates. Default is
+    random initialization around zero.}
+  \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
+    (distributed log-uniformly over total number of iterations)}
+  \item{\code{reltol}}{relative convergence tolerance. The algorithm stops
+    if it is unable to change the relative mean squared difference in the
+    parameters by more than the amount. Default is \code{1e-05}.}
+  \item{\code{npasses}}{the maximum number of passes over the data. Default
+    is 3.}
+  \item{\code{pass}}{logical. Should \code{tol} be ignored and run the
+   algorithm for all of \code{npasses}?}
+  \item{\code{verbose}}{logical. Should the algorithm print progress?}
 }}
 
 \item{fn}{a function \eqn{f(theta, x)} of parameters and data, which outputs

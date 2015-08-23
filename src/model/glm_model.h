@@ -37,10 +37,6 @@ public:
     } else if (transfer_ == "logistic") {
       transfer_obj_ = new logistic_transfer();
     }
-    rank = Rcpp::as<bool>(model["rank"]);
-    weights = Rcpp::as<mat>(model["weights"]);
-    trace = Rcpp::as<bool>(model["trace"]);
-    dev = Rcpp::as<bool>(model["deviance"]);
   }
 
   mat gradient(unsigned t, const mat& theta_old, const data_set& data)
@@ -50,7 +46,6 @@ public:
       data_pt.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
   }
 
-  // TODO not all models have these methods
   double h_transfer(double u) const {
     return transfer_obj_->transfer(u);
   }
@@ -90,11 +85,6 @@ public:
   std::string transfer() const {
     return transfer_;
   }
-
-  mat weights;
-  bool trace;
-  bool dev;
-  bool rank;
 
 private:
   std::string family_;

@@ -146,40 +146,31 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   unsigned n_features = data.n_features;
   unsigned n_passes = sgd.get_n_passes();
 
-  // TODO this shouldn't be placed here
-  unsigned X_rank = n_features;
-  if (model.name() == "lm" || model.name() == "glm") {
-    // Check if the number of observations is greater than the rank of X.
-    if (model.rank) {
-      X_rank = arma::rank(data.X);
-      if (X_rank > n_samples) {
-        Rcpp::Rcout << "error: X matrix has rank " << X_rank << ", but only "
-          << n_samples << " observation" << std::endl;
-        return Rcpp::List();
-      }
-    }
-  }
-
   bool good_gradient = true;
   bool good_validity = true;
-  bool flag_ave = false;
+  bool averaging = false;
   if (sgd.name() == "asgd" || sgd.name() == "ai-sgd") {
-    flag_ave = true;
+    averaging = true;
   }
 
+  // TODO these should really be vec's
   mat theta_new;
-  mat theta_old = sgd.get_last_estimate();
   mat theta_new_ave;
-  mat theta_old_ave;
+  mat theta_old = sgd.get_last_estimate();
+  mat theta_old_ave = theta_old;
 
+  bool do_more_iterations = true;
+  unsigned t = 1;
+  unsigned max_iters = n_samples*n_passes;
+  double diff;
   if (sgd.verbose()) {
     Rcpp::Rcout << "Stochastic gradient method: " << sgd.name() << std::endl;
     Rcpp::Rcout << "SGD Start!" << std::endl;
   }
-  for (int t = 1; t <= n_samples*n_passes; ++t) {
+  while (do_more_iterations) {
     theta_new = sgd.update(t, theta_old, data, model, good_gradient);
 
-    if (flag_ave) {
+    if (averaging) {
       if (t != 1) {
         theta_new_ave = (1. - 1./(double)t) * theta_old_ave +
           1./((double)t) * theta_new;
@@ -187,24 +178,49 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
         theta_new_ave = theta_new;
       }
       sgd = theta_new_ave;
-      theta_old_ave = theta_new_ave;
     } else {
       sgd = theta_new;
     }
-    theta_old = theta_new;
 
-    good_validity = validity_check(data, theta_old, good_gradient, t, model);
+    good_validity = validity_check(data, theta_new, good_gradient, t, model);
     if (!good_validity) {
       return Rcpp::List();
     }
+
+    // Check if satisfy convergence threshold.
+    if (!sgd.pass()) {
+      if (averaging) {
+        diff = mean(mean(abs(theta_new_ave - theta_old_ave))) /
+          mean(mean(abs(theta_old_ave)));
+      } else {
+        diff = mean(mean(abs(theta_new - theta_old))) /
+          mean(mean(abs(theta_old)));
+      }
+      if (diff < sgd.reltol()) {
+        do_more_iterations = false;
+      }
+    }
+    // Stop if hit maximum number of iterations.
+    if (t == max_iters) {
+      if (!sgd.pass()) {
+        // warning here
+      }
+      do_more_iterations = false;
+    }
+
+    // Set old to new updates and repeat.
+    if (averaging) {
+      theta_old_ave = theta_new_ave;
+    }
+    theta_old = theta_new;
+    ++t;
   }
 
-  mat coef = sgd.get_last_estimate();
-  Rcpp::List model_out = post_process(sgd, data, model, coef, X_rank);
+  Rcpp::List model_out = post_process(sgd, data, model);
 
   return Rcpp::List::create(
     Rcpp::Named("model") = model.name(),
-    Rcpp::Named("coefficients") = coef,
+    Rcpp::Named("coefficients") = sgd.get_last_estimate(),
     Rcpp::Named("converged") = true,
     Rcpp::Named("estimates") = sgd.get_estimates(),
     Rcpp::Named("pos") = sgd.get_pos(),

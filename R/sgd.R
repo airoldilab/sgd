@@ -47,18 +47,22 @@
 #'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
 #'       \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
 #'       See \sQuote{Details}.}
-#'     \item{\code{start}}{starting values for the parameter estimates. Default is
-#'       random initialization around zero.}
-#'     \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
-#'       (distributed log-uniformly over total number of iterations)}
-#'     \item{\code{weights}}{an optional vector of "prior weights" to be used in the
-#'       fitting process. Should be NULL or a numeric vector.}
-#'     \item{\code{npasses}}{the number of passes over the data. Default is 1.}
 #'     \item{\code{lr.control}}{vector of scalar hyperparameters one can
 #'       set dependent on the learning rate. For hyperparameters aimed
 #'       to be left as default, specify \code{NA} in the corresponding
 #'       entries. See \sQuote{Details}.}
-#'     \item{\code{verbose}}{character specifying whether to print progress}
+#'     \item{\code{start}}{starting values for the parameter estimates. Default is
+#'       random initialization around zero.}
+#'     \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
+#'       (distributed log-uniformly over total number of iterations)}
+#'     \item{\code{reltol}}{relative convergence tolerance. The algorithm stops
+#'       if it is unable to change the relative mean squared difference in the
+#'       parameters by more than the amount. Default is \code{1e-05}.}
+#'     \item{\code{npasses}}{the maximum number of passes over the data. Default
+#'       is 3.}
+#'     \item{\code{pass}}{logical. Should \code{tol} be ignored and run the
+#'      algorithm for all of \code{npasses}?}
+#'     \item{\code{verbose}}{logical. Should the algorithm print progress?}
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
@@ -282,11 +286,7 @@ fit <- function(x, y, model,
                 model.control,
                 sgd.control) {
   suppressMessages(library(bigmemory))
-  if (model %in% c("lm", "glm")) {
-    out <- fit_glm(x, y, model.control, sgd.control)
-    return(out)
-  }
-
+  #time_start <- proc.time()[3] # TODO timer only starts here
   # TODO
   if (model == "ee") {
     if (sgd.control$method %in% c("implicit", "ai-sgd")) {
@@ -302,6 +302,10 @@ fit <- function(x, y, model,
     dataset[["bigmat"]] <- big.matrix(1, 1)@address
   }
 
+  if (model %in% c("lm", "glm")) {
+    model.control$transfer <- transfer_name(model.control$family$link)
+    model.control$family <- model.control$family$family
+  }
   sgd.control$start <- as.matrix(sgd.control$start)
 
   if (sgd.control$verbose) {
@@ -316,160 +320,10 @@ fit <- function(x, y, model,
     stop("An error has occured, program stopped")
   }
   class(out) <- "sgd"
-  out$pos <- as.vector(out$pos) # TODO this should be done in C++, not here
+  out$pos <- as.vector(out$pos)
+  #out$times <- as.vector(out$times) + (proc.time()[3] - time_start) # C++ time + R time
   out$times <- as.vector(out$times)
   return(out)
-}
-
-fit_glm <- function(x, y,
-                    model.control,
-                    sgd.control) {
-  time_start <- proc.time()[3] # TODO timer only starts here
-  xnames <- dimnames(x)[[2L]]
-  if (is.matrix(y)) {
-    ynames <- rownames(y)
-  } else {
-    ynames <- names(y)
-  }
-  N <- NROW(y) # number of samples
-  d <- ncol(x) # number of features
-
-  # sgd.control arguments
-  start <- sgd.control$start
-  weights <- sgd.control$weight
-
-  # model.control arguments
-  family <- model.control$family
-  if ("(Intercept)" %in% xnames) {
-    intercept <- TRUE
-  } else {
-    intercept <- FALSE
-  }
-
-  variance <- family$variance
-  linkinv <- family$linkinv
-  if (!is.function(variance) || !is.function(linkinv)) {
-    stop("'family' argument seems not to be a valid family object",
-         call.=FALSE)
-  }
-  dev.resids <- family$dev.resids
-  mu.eta <- family$mu.eta
-
-  unless.null <- function(x, if.null) {
-    if (is.null(x)) {
-      return(if.null)
-    } else {
-      return(x)
-    }
-  }
-  valideta <- unless.null(family$valideta, function(eta) TRUE)
-  validmu <- unless.null(family$validmu, function(mu) TRUE)
-
-  EMPTY <- d == 0
-  if (EMPTY) {
-    eta <- rep.int(0, N)
-    if (!valideta(eta)) {
-      stop("invalid linear predictor values in empty model",
-           call.=FALSE)
-    }
-    mu <- linkinv(eta)
-    if (!validmu(mu)) {
-      stop("invalid fitted means in empty model", call.=FALSE)
-    }
-    dev <- sum(dev.resids(y, mu, weights))
-    w <- ((weights * mu.eta(eta)^2)/variance(mu))^0.5
-    residuals <- (y - mu)/mu.eta(eta)
-    good <- rep_len(TRUE, length(residuals))
-    boundary <- conv <- TRUE
-    coef <- numeric()
-    rank <- 0L
-    converged <- FALSE
-  } else {
-    eta <- sum(x[1, ] * start)
-    if (!valideta(eta)) {
-      stop("cannot find valid starting values: please specify some", call.=FALSE)
-    }
-
-    # Select x, y with weights > 0.
-    good <- weights > 0
-    #dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
-    dataset <- list(X=x, Y=as.matrix(y), big=F)
-    if ('big.matrix' %in% class(x)) {
-      dataset$big <- TRUE
-      dataset[["bigmat"]] <- x@address
-    } else {
-      dataset[["bigmat"]] <- big.matrix(1, 1)@address
-    }
-
-    model.control$family <- family$family
-    model.control$weights <- as.matrix(weights[good])
-    model.control$transfer <- transfer_name(family$link)
-    sgd.control$start <- as.matrix(sgd.control$start)
-
-    if (sgd.control$verbose) {
-      print("Completed pre-processing attributes...")
-      print("Running C++ algorithm...")
-    }
-    out <- run(dataset, model.control, sgd.control)
-    if (sgd.control$verbose) {
-      print("Completed C++ algorithm...")
-    }
-    if (length(out) == 0) {
-      stop("An error has occured, program stopped")
-    }
-
-    temp.mu <- as.numeric(out$model.out$mu)
-    mu <- rep(0, length(good))
-    mu[good] <- temp.mu
-    mu[!good] <- NA
-    temp.eta <- as.numeric(out$model.out$eta)
-    eta <- rep(0, length(good))
-    eta[good] <- temp.eta
-    eta[!good] <- NA
-    coef <- as.numeric(out$coefficients)
-    dev <- out$model.out$deviance
-    residuals <- as.numeric((y - mu)/mu.eta(eta))
-    rank <- out$model.out$rank
-    converged <- out$converged
-  }
-  names(residuals) <- ynames
-  names(mu) <- ynames
-  names(eta) <- ynames
-  names(weights) <- ynames
-  names(y) <- ynames
-  if (intercept == TRUE) {
-    wtdmu <- sum(weights * y)/sum(weights)
-  } else {
-    stop("TODO not implemented yet")
-  }
-  nulldev <- sum(dev.resids(y, wtdmu, weights))
-  n.ok <- N - sum(weights == 0)
-  nulldf <- n.ok - as.integer(intercept)
-  resdf <- n.ok - rank
-  names(coef) <- xnames
-  aic.model <- family$aic(y, 0, mu, weights, dev) + 2 * rank
-  result <- list(
-    model=out$model,
-    coefficients=coef,
-    converged=converged,
-    estimates=out$estimates,
-    #times=as.vector(out$times) + (proc.time()[3] - time_start), # C++ time + R time
-    pos=as.vector(out$pos),
-    times=as.vector(out$times), #C++ time only
-    model.out=list(residuals=residuals,
-                  fitted.values=mu,
-                  rank=rank,
-                  family=family,
-                  linear.predictors=eta,
-                  deviance=dev,
-                  null.deviance=nulldev,
-                  weights=weights,
-                  df.residual=resdf,
-                  df.null=nulldf,
-                  aic=aic.model)
-  )
-  class(result) <- "sgd"
-  return(result)
 }
 
 ################################################################################
@@ -618,14 +472,15 @@ valid_model_control <- function(model, model.control=list(...), ...) {
 }
 
 valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
+                              lr.control=NULL,
                               start=rnorm(nparams, mean=0, sd=1e-5),
-                              weights=rep.int(1, N),
-                              N, nparams, npasses=1, size=100,
-                              lr.control=NULL, verbose=F, ...) {
-                              # TODO allow specifying seed for both C++ and R
-                              # TODO there are two sorts of weights: the glm
-                              # argument of weights, and the weights declaring
-                              # probability weights for subsampling the data
+                              size=100,
+                              reltol=1e-5, npasses=3, pass=F,
+                              verbose=F,
+                              N, nparams, ...) {
+  # TODO size isn't the correct thing since reltol means you don't know when it
+  # ends. user should specify how often to store the iterates (how many per
+  # iteration)
   # Run validity check of arguments passed to sgd.control. It passes defaults to
   # those unspecified and converts to the correct type if possible; otherwise it
   # errors.
@@ -651,30 +506,6 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     }
   } else {
     stop("invalid 'lr'")
-  }
-
-  # Check validity of start.
-  if (!is.numeric(start)) {
-    stop("'start' must be numeric")
-  } else if (length(start) != nparams) {
-    stop(gettextf("length of 'start' should equal %d", nparams), domain=NA)
-  }
-
-  # Check validity of weights.
-  if (!is.numeric(weights)) {
-    stop("'weights' must be numeric")
-  } else if (length(weights) != N) {
-    stop(gettextf("length of 'weights' should equal %d", N), domain=NA)
-  }
-
-  # Check validity of npasses.
-  if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
-    stop("'npasses' must be positive integer")
-  }
-
-  # Check validity of size.
-  if (!is.numeric(size) || size - as.integer(size) != 0 || size < 1) {
-    stop("'size' must be positive integer")
   }
 
   # Check validity of lr.control.
@@ -729,6 +560,35 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     lr.control[missing] <- defaults[missing]
   }
 
+  # Check validity of start.
+  if (!is.numeric(start)) {
+    stop("'start' must be numeric")
+  } else if (length(start) != nparams) {
+    stop(gettextf("length of 'start' should equal %d", nparams), domain=NA)
+  }
+
+  # Check validity of size.
+  if (!is.numeric(size) || size - as.integer(size) != 0 || size < 1) {
+    stop("'size' must be positive integer")
+  }
+
+  # Check validity of reltol
+  if (!is.numeric(reltol)) {
+    stop("'reltol' must be numeric")
+  } else if (length(reltol) != 1) {
+    stop("'reltol' must be scalar")
+  }
+
+  # Check validity of npasses.
+  if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
+    stop("'npasses' must be positive integer")
+  }
+
+  # Check validity of pass.
+  if (!is.logical(pass)) {
+    stop("'pass' must be logical")
+  }
+
   # Check validity of verbose.
   if (!is.logical(verbose)) {
     stop("'verbose' must be logical")
@@ -738,21 +598,24 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
   if (method %in% c("implicit", "ai-sgd")) {
     call <- match.call()
     implicit.control <- do.call("valid_implicit_control", list(...))
+  } else {
+    implicit.control <- NULL
   }
   # TODO, since experment.h requires it for all stochastic gradient methods,
   # even though it shouldn't.
-  call <- match.call()
-  implicit.control <- do.call("valid_implicit_control", list(...))
+  #call <- match.call()
+  #implicit.control <- do.call("valid_implicit_control", list(...))
 
   return(c(list(method=method,
                 lr=lr,
-                start=start,
-                weights=weights,
-                npasses=npasses,
-                nparams=nparams,
-                size=size,
                 lr.control=lr.control,
-                verbose=verbose),
+                start=start,
+                size=size,
+                reltol=reltol,
+                npasses=npasses,
+                pass=pass,
+                verbose=verbose,
+                nparams=nparams),
            implicit.control))
 }
 

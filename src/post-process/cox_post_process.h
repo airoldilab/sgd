@@ -7,9 +7,8 @@
 
 template <typename SGD>
 Rcpp::List post_process(const SGD& sgd, const data_set& data,
-  const cox_model& model, mat& coef, unsigned X_rank) {
+  const cox_model& model) {
   // TODO
-  Rcpp::Rcout << "warning: post_process for Cox not implemented yet" << std::endl;
   return Rcpp::List();
 }
 

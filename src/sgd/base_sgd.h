@@ -19,8 +19,8 @@ public:
   base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) : ti_(ti) {
     name_ = Rcpp::as<std::string>(sgd["method"]);
     n_params_ = Rcpp::as<unsigned>(sgd["nparams"]);
+    reltol_ = Rcpp::as<double>(sgd["reltol"]);
     n_passes_ = Rcpp::as<unsigned>(sgd["npasses"]);
-    n_iters_ = n_samples*n_passes_;
     size_ = Rcpp::as<unsigned>(sgd["size"]);
     estimates_ = mat(n_params_, size_);
     last_estimate_ = Rcpp::as<mat>(sgd["start"]);
@@ -28,16 +28,18 @@ public:
     t_ = 0;
     n_recorded_ = 0;
     pos_ = Mat<unsigned>(1, size_);
+    pass_ = Rcpp::as<bool>(sgd["pass"]);
     verbose_ = Rcpp::as<bool>(sgd["verbose"]);
 
     // Set which iterations to store estimates
+    unsigned n_iters = n_samples*n_passes_;
     for (unsigned i = 0; i < size_; ++i) {
-      pos_(0, i) = int(round(pow(10, i * log10(n_iters_) / (size_-1))));
+      pos_(0, i) = int(round(pow(10, i * log10(n_iters) / (size_-1))));
     }
-    if (pos_(0, pos_.n_cols-1) != n_iters_) {
-      pos_(0, pos_.n_cols-1) = n_iters_;
+    if (pos_(0, pos_.n_cols-1) != n_iters) {
+      pos_(0, pos_.n_cols-1) = n_iters;
     }
-    if (n_iters_ < size_) {
+    if (n_iters < size_) {
       Rcpp::Rcout << "Warning: Too few data points for plotting!" << std::endl;
     }
 
@@ -74,8 +76,14 @@ public:
   mat get_last_estimate() const {
     return last_estimate_;
   }
+  double reltol() const {
+    return reltol_;
+  }
   bool verbose() const {
     return verbose_;
+  }
+  bool pass() const {
+    return pass_;
   }
   vec get_times() const {
     return times_;
@@ -90,7 +98,8 @@ public:
 
   //TODO declare update method
   //template<typename MODEL>
-  //mat update(const data_set& data, MODEL& model, bool& good_gradient);
+  //mat update(unsigned t, const mat& theta_old, const data_set& data,
+  //MODEL& model, bool& good_gradient);
 
   base_sgd& operator=(const mat& theta_new) {
     last_estimate_ = theta_new;
@@ -111,8 +120,8 @@ public:
 protected:
   std::string name_;        // name of stochastic gradient method
   unsigned n_params_;       // number of parameters
+  double reltol_;           // relative tolerance for convergence
   unsigned n_passes_;       // number of passes over data
-  unsigned n_iters_;        // total number of iterations
   unsigned size_;           // number of estimates to be recorded (log-uniformly)
   mat estimates_;           // collection of stored estimates
   mat last_estimate_;       // last SGD estimate
@@ -122,6 +131,7 @@ protected:
   unsigned t_;              // current iteration
   unsigned n_recorded_;     // number of coefs that have been recorded
   Mat<unsigned> pos_;       // the iteration of recorded coefficients
+  bool pass_;
   bool verbose_;
 };
 
