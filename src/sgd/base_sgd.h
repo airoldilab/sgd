@@ -131,7 +131,7 @@ protected:
   unsigned t_;              // current iteration
   unsigned n_recorded_;     // number of coefs that have been recorded
   Mat<unsigned> pos_;       // the iteration of recorded coefficients
-  bool pass_;
+  bool pass_;               // whether to force running for n_passes_ over data
   bool verbose_;
 };
 

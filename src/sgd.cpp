@@ -203,7 +203,13 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
     // Stop if hit maximum number of iterations.
     if (t == max_iters) {
       if (!sgd.pass()) {
-        // warning here
+        Rcpp::Rcout
+          << "Informational Message: The maximum number of iterations is "
+          << "reached! The algorithm has not converged."
+          << std::endl
+          << "Estimates from this stochastic gradient descent are not "
+          << "guaranteed to be meaningful."
+          << std::endl;
       }
       do_more_iterations = false;
     }
