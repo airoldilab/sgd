@@ -18,10 +18,10 @@ URL: https://github.com/airoldilab/sgd
 BugReports: https://github.com/airoldilab/sgd/issues
 License: GPL-2
 Suggests:
+    bigmemory,
     gridExtra,
     testthat
 Imports:
-    bigmemory,
     ggplot2,
     MASS,
     Rcpp (>= 0.11.3)

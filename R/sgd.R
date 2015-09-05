@@ -285,7 +285,6 @@ sgd.big.matrix <- function(x, y, model,
 fit <- function(x, y, model,
                 model.control,
                 sgd.control) {
-  suppressMessages(library(bigmemory))
   #time_start <- proc.time()[3] # TODO timer only starts here
   # TODO
   if (model == "ee") {
@@ -294,17 +293,19 @@ fit <- function(x, y, model,
     }
   }
 
-  dataset <- list(X=x, Y=as.matrix(y), big=F)
+  dataset <- list(X=x, Y=as.matrix(y))
   if ('big.matrix' %in% class(x)) {
-    dataset$big <- T
+    dataset$big <- TRUE
     dataset[["bigmat"]] <- x@address
   } else {
-    dataset[["bigmat"]] <- big.matrix(1, 1)@address
+    dataset$big <- FALSE
+    dataset[["bigmat"]] <- new("externalptr")
   }
 
   if (model %in% c("lm", "glm")) {
     model.control$transfer <- transfer_name(model.control$family$link)
-    model.control$family <- model.control$family$family
+    family <- model.control$family
+    model.control$family <- family$family
   }
   sgd.control$start <- as.matrix(sgd.control$start)
 
@@ -320,6 +321,10 @@ fit <- function(x, y, model,
     stop("An error has occured, program stopped")
   }
   class(out) <- "sgd"
+  if (model %in% c("lm", "glm")) {
+    out$model.out$transfer <- model.control$transfer
+    out$model.out$family <- family
+  }
   out$pos <- as.vector(out$pos)
   #out$times <- as.vector(out$times) + (proc.time()[3] - time_start) # C++ time + R time
   out$times <- as.vector(out$times)
