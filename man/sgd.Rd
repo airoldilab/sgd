@@ -36,8 +36,8 @@ environment(formula), typically the environment from which glm is called.}
 
 \item{model}{character specifying the model to be used: \code{"lm"} (linear
 model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
-proportional hazards model), \code{"ee"} (estimating equation). See
-\sQuote{Details}.}
+proportional hazards model), \code{"gmm"} (generalized method of moments).
+See \sQuote{Details}.}
 
 \item{model.control}{a list of parameters for controlling the model.
 \describe{
@@ -48,17 +48,17 @@ proportional hazards model), \code{"ee"} (estimating equation). See
     family functions.)}
   \item{\code{rank} (\code{"glm"})}{logical. Should the rank of the design matrix
     be checked?}
-  \item{\code{fn} (\code{"ee"})}{a function \eqn{g(\theta,x)} which returns a
+  \item{\code{fn} (\code{"gmm"})}{a function \eqn{g(\theta,x)} which returns a
     \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
     required argument if \code{gr} not specified.}
-  \item{\code{gr} (\code{"ee"})}{a function to return the gradient. If
+  \item{\code{gr} (\code{"gmm"})}{a function to return the gradient. If
     unspecified, a finite-difference approximation will be used.}
-  \item{\code{nparams} (\code{"ee"})}{number of model parameters. This is
+  \item{\code{nparams} (\code{"gmm"})}{number of model parameters. This is
     automatically determined for other models.}
-  \item{\code{type} (\code{"ee"})}{character specifying the generalized method of
+  \item{\code{type} (\code{"gmm"})}{character specifying the generalized method of
     moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
     (Hansen et al., 1996). Defaults to \code{"iterative"}.}
-  \item{\code{wmatrix} (\code{"ee"})}{weighting matrix to be used in the loss
+  \item{\code{wmatrix} (\code{"gmm"})}{weighting matrix to be used in the loss
     function. Defaults to the identity matrix.}
   \item{\code{lambda1}}{L1 regularization parameter. Default is 0.}
   \item{\code{lambda2}}{L2 regularization parameter. Default is 0.}

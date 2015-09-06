@@ -59,11 +59,11 @@ public:
   }
 
   double h_first_deriv(double u) const {
-    return transfer_obj_->first_deriv(u);
+    return transfer_obj_->first_derivative(u);
   }
 
   double h_second_deriv(double u) const {
-    return transfer_obj_->second_deriv(u);
+    return transfer_obj_->second_derivative(u);
   }
 
   bool valideta(double eta) const {

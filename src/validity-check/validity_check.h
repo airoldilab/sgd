@@ -5,7 +5,7 @@
 #include "data/data_set.h"
 #include "validity-check/cox_validity_check_model.h"
 #include "validity-check/glm_validity_check_model.h"
-#include "validity-check/ee_validity_check_model.h"
+#include "validity-check/gmm_validity_check_model.h"
 
 template<typename MODEL>
 bool validity_check(const data_set& data, const mat& theta, bool good_gradient,

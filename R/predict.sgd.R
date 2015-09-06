@@ -11,7 +11,7 @@
 predict.sgd <- function(x, x_test, ...) {
   # TODO
   #if (x$model == "cox") {
-  #} else if (x$model == "ee") {
+  #} else if (x$model == "gmm") {
   #} else if (x$model %in% c("lm", "glm")) {
   if (x$model %in% c("lm", "glm")) {
     eta <- x_test %*% x$coefficients # assuming intercepts in X

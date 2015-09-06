@@ -1,11 +1,11 @@
 #include "basedef.h"
 #include "data/data_set.h"
 #include "model/cox_model.h"
-#include "model/ee_model.h"
 #include "model/glm_model.h"
+#include "model/gmm_model.h"
 #include "post-process/cox_post_process.h"
-#include "post-process/ee_post_process.h"
 #include "post-process/glm_post_process.h"
+#include "post-process/gmm_post_process.h"
 #include "sgd/explicit_sgd.h"
 #include "sgd/implicit_sgd.h"
 #include "sgd/momentum_sgd.h"
@@ -65,8 +65,8 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
       Rcpp::Rcout << "error: stochastic gradient method not implemented" << std::endl;
       return Rcpp::List();
     }
-  } else if (model_name == "ee") {
-    ee_model model(Model_control);
+  } else if (model_name == "gmm") {
+    gmm_model model(Model_control);
     // Construct stochastic gradient method.
     std::string sgd_name = Rcpp::as<std::string>(Sgd_control["method"]);
     if (sgd_name == "sgd" || sgd_name == "asgd") {

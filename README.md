@@ -53,7 +53,7 @@ models are built-in:
 * Linear models
 * Generalized linear models
 * Cox proportional hazards model
-* Estimating equations and the generalized method of moments
+* Generalized method of moments
 
 The following stochastic gradient methods exist:
 * Standard stochastic gradient descent

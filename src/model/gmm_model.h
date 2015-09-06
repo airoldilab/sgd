@@ -1,18 +1,18 @@
-#ifndef MODEL_EE_MODEL_H
-#define MODEL_EE_MODEL_H
+#ifndef MODEL_GMM_MODEL_H
+#define MODEL_GMM_MODEL_H
 
 #include "basedef.h"
 #include "data/data_point.h"
 #include "model/base_model.h"
 
-class ee_model : public base_model {
+class gmm_model : public base_model {
   /**
-   * Estimating equations
+   * Generalized method of moments
    *
    * @param model attributes affiliated with model as R type
    */
 public:
-  ee_model(Rcpp::List model) :
+  gmm_model(Rcpp::List model) :
     base_model(model), gr_(Rcpp::as<Rcpp::Function>(model["gr"])) {
     //if model["wmatrix"] == NULL {
       int k = 5;
