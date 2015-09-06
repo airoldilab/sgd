@@ -58,12 +58,12 @@ public:
     return transfer_obj_->link(u);
   }
 
-  double h_first_derivative(double u) const {
-    return transfer_obj_->first_derivative(u);
+  double h_first_deriv(double u) const {
+    return transfer_obj_->first_deriv(u);
   }
 
-  double h_second_derivative(double u) const {
-    return transfer_obj_->second_derivative(u);
+  double h_second_deriv(double u) const {
+    return transfer_obj_->second_deriv(u);
   }
 
   bool valideta(double eta) const {
@@ -84,6 +84,26 @@ public:
 
   std::string transfer() const {
     return transfer_;
+  }
+
+  // Functions for implicit update
+  // ell(x^T theta + ||x||^2 * ksi)
+  double scale_factor(double ksi, const data_point& data_pt, const mat&
+    theta_old, double normx) const {
+    return data_pt.y - h_transfer(dot(theta_old, data_pt.x) + normx * ksi);
+  }
+
+  // d/d(ksi) ell(x^T theta + ||x||^2 * ksi)
+  double scale_factor_first_deriv(double ksi, const data_point& data_pt, const
+    mat& theta_old, double normx) const {
+    return h_first_deriv(dot(theta_old, data_pt.x) + normx * ksi)*normx;
+  }
+
+  // d^2/d(ksi)^2 ell(x^T theta + ||x||^2 * ksi)
+  double scale_factor_second_deriv(double ksi, const data_point& data_pt, const
+    mat& theta_old, double normx) const {
+    return h_second_deriv(dot(theta_old, data_pt.x) + normx * ksi)*normx*
+      normx;
   }
 
 private:

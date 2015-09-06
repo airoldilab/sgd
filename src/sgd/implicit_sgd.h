@@ -10,6 +10,36 @@
 #include "learn-rate/learn_rate_value.h"
 #include "sgd/base_sgd.h"
 
+template<typename MODEL>
+class Implicit_fn {
+  // Root finding functor for implicit update
+  // Evaluates the zeroth, first, and second derivatives of:
+  // ksi - ell(x^T theta + ||x||^2 * ksi)
+public:
+  typedef boost::math::tuple<double, double, double> tuple_type;
+
+  Implicit_fn(const MODEL& m, double a, const data_point& d, const mat& t,
+    double n) : model_(m), at_(a), data_pt_(d), theta_old_(t), normx_(n) {}
+
+  tuple_type operator()(double ksi) const {
+    double value = ksi - at_ *
+      model_.scale_factor(ksi, data_pt_, theta_old_, normx_);
+    double first = 1 + at_ *
+      model_.scale_factor_first_deriv(ksi, data_pt_, theta_old_, normx_);
+    double second = at_ *
+      model_.scale_factor_second_deriv(ksi, data_pt_, theta_old_, normx_);
+    tuple_type out(value, first, second);
+    return out;
+  }
+
+private:
+  const MODEL& model_;
+  double at_;
+  const data_point& data_pt_;
+  const mat& theta_old_;
+  double normx_;
+};
+
 class implicit_sgd : public base_sgd {
   /**
    * Stochastic gradient descent using an "implicit" update
@@ -34,32 +64,25 @@ public:
     data_point data_pt = data.get_data_point(t);
     double normx = dot(data_pt.x, data_pt.x);
 
-    Get_grad_coeff<glm_model> get_grad_coeff(model, data_pt, theta_old,
-      normx);
-    Implicit_fn<glm_model> implicit_fn(at_avg, get_grad_coeff);
-
-    double rt = at_avg * get_grad_coeff(0);
+    double r = at_avg * model.scale_factor(0, data_pt, theta_old, normx);
     double lower = 0;
     double upper = 0;
-    if (rt < 0) {
+    if (r < 0) {
       upper = 0;
-      lower = rt;
+      lower = r;
     } else {
-      // double u = 0;
-      // u = (model.g_link(data_pt.y) - dot(theta_old,data_pt.x))/normx;
-      // upper = std::min(rt, u);
-      // lower = 0;
-      upper = rt;
+      upper = r;
       lower = 0;
     }
-    double result;
+    double ksi;
     if (lower != upper) {
-      result = boost::math::tools::schroeder_iterate(implicit_fn, (lower +
+      Implicit_fn<glm_model> implicit_fn(model, at_avg, data_pt, theta_old, normx);
+      ksi = boost::math::tools::schroeder_iterate(implicit_fn, (lower +
         upper)/2, lower, upper, delta_);
     } else {
-      result = lower;
+      ksi = lower;
     }
-    return theta_old + result * data_pt.x.t();
+    return theta_old + ksi * data_pt.x.t();
   }
 
   mat update(unsigned t, const mat& theta_old, const data_set& data,
