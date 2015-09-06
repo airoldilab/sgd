@@ -52,15 +52,16 @@ Any loss function may be specified, although for convenience the following are
 built-in:
 * Linear models
 * Generalized linear models
+* Method of moments
 * Generalized method of moments
 * Cox proportional hazards model
 * M-estimation
 
 The following stochastic gradient methods exist:
-* Standard stochastic gradient descent
+* (Standard) stochastic gradient descent
 * Implicit stochastic gradient descent
-* Stochastic gradient descent with averaging
-* Implicit stochastic gradient descent with averaging
+* Averaged stochastic gradient descent
+* Averaged implicit stochastic gradient descent
 * Classical momentum
 * Nesterov's accelerated gradient
 
