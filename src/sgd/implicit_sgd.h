@@ -7,6 +7,7 @@
 #include "model/cox_model.h"
 #include "model/glm_model.h"
 #include "model/gmm_model.h"
+#include "model/m_model.h"
 #include "learn-rate/learn_rate_value.h"
 #include "sgd/base_sgd.h"
 
@@ -77,6 +78,37 @@ public:
     double ksi;
     if (lower != upper) {
       Implicit_fn<glm_model> implicit_fn(model, at_avg, data_pt, theta_old, normx);
+      ksi = boost::math::tools::schroeder_iterate(implicit_fn, (lower +
+        upper)/2, lower, upper, delta_);
+    } else {
+      ksi = lower;
+    }
+    return theta_old + ksi * data_pt.x.t();
+  }
+
+  mat update(unsigned t, const mat& theta_old, const data_set& data,
+    m_model& model, bool& good_gradient) {
+    mat theta_new;
+    learn_rate_value at = learning_rate(t, model.gradient(t, theta_old, data));
+    // TODO how to deal with non-scalar learning rates?
+    double at_avg = at.mean();
+
+    data_point data_pt = data.get_data_point(t);
+    double normx = dot(data_pt.x, data_pt.x);
+
+    double r = at_avg * model.scale_factor(0, data_pt, theta_old, normx);
+    double lower = 0;
+    double upper = 0;
+    if (r < 0) {
+      upper = 0;
+      lower = r;
+    } else {
+      upper = r;
+      lower = 0;
+    }
+    double ksi;
+    if (lower != upper) {
+      Implicit_fn<m_model> implicit_fn(model, at_avg, data_pt, theta_old, normx);
       ksi = boost::math::tools::schroeder_iterate(implicit_fn, (lower +
         upper)/2, lower, upper, delta_);
     } else {

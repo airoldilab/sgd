@@ -32,10 +32,23 @@ get_mse_glm <- function(x, x_test, y_test) {
   return(mse)
 }
 
+get_mse_m <- function(x, x_test, y_test) {
+  nests <- ncol(x$estimates)
+  eta <- x_test %*% x$estimates # assuming intercepts in X
+  mu <- eta
+  mse <- rep(NA, nests)
+  for (j in 1:nests) {
+    mse[j] <- colMeans((mu[, j] - y_test)^2)
+  }
+  return(mse)
+}
+
 # TODO in the same way as plot.R, allow for a list of sgd objects
 plot_mse <- function(x, x_test, y_test, xaxis="iter") {
   if (x$model %in% c("lm", "glm")) {
     get_mse <- get_mse_glm
+  } else if (x$model == "m") {
+    get_mse <- get_mse_m
   # TODO
   } else {
     stop("'model' not recognized")

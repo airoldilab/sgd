@@ -87,19 +87,19 @@ public:
   }
 
   // Functions for implicit update
-  // ell(x^T theta + ||x||^2 * ksi)
+  // ell'(x^T theta + ||x||^2 * ksi)
   double scale_factor(double ksi, const data_point& data_pt, const mat&
     theta_old, double normx) const {
     return data_pt.y - h_transfer(dot(theta_old, data_pt.x) + normx * ksi);
   }
 
-  // d/d(ksi) ell(x^T theta + ||x||^2 * ksi)
+  // d/d(ksi) ell'(x^T theta + ||x||^2 * ksi)
   double scale_factor_first_deriv(double ksi, const data_point& data_pt, const
     mat& theta_old, double normx) const {
     return h_first_deriv(dot(theta_old, data_pt.x) + normx * ksi)*normx;
   }
 
-  // d^2/d(ksi)^2 ell(x^T theta + ||x||^2 * ksi)
+  // d^2/d(ksi)^2 ell'(x^T theta + ||x||^2 * ksi)
   double scale_factor_second_deriv(double ksi, const data_point& data_pt, const
     mat& theta_old, double normx) const {
     return h_second_deriv(dot(theta_old, data_pt.x) + normx * ksi)*normx*

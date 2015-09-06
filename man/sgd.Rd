@@ -36,8 +36,8 @@ environment(formula), typically the environment from which glm is called.}
 
 \item{model}{character specifying the model to be used: \code{"lm"} (linear
 model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
-proportional hazards model), \code{"gmm"} (generalized method of moments).
-See \sQuote{Details}.}
+proportional hazards model), \code{"gmm"} (generalized method of moments),
+\code{"m"} (M-estimation). See \sQuote{Details}.}
 
 \item{model.control}{a list of parameters for controlling the model.
 \describe{
@@ -60,6 +60,8 @@ See \sQuote{Details}.}
     (Hansen et al., 1996). Defaults to \code{"iterative"}.}
   \item{\code{wmatrix} (\code{"gmm"})}{weighting matrix to be used in the loss
     function. Defaults to the identity matrix.}
+  \item{\code{loss} (\code{"m"})}{character specifying the loss function to be
+    used in the estimating equation. Default is the Huber loss.}
   \item{\code{lambda1}}{L1 regularization parameter. Default is 0.}
   \item{\code{lambda2}}{L2 regularization parameter. Default is 0.}
 }}
@@ -142,18 +144,18 @@ Learning rates and hyperparameters:
   \item{\code{one-dim}}{scalar value prescribed in Xu (2011) as
     \deqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
     where the defaults are
-    \code{lr_control = (scale=1, gamma=1, alpha=1, c)}
+    \code{lr.control = (scale=1, gamma=1, alpha=1, c)}
     where \code{c} is \code{1} if implemented without averaging,
     \code{2/3} if with averaging}
   \item{\code{one-dim-eigen}}{diagonal matrix
-    \code{lr_control = NULL}}
+    \code{lr.control = NULL}}
   \item{\code{d-dim}}{diagonal matrix
-    \code{lr_control = (epsilon=1e-6)}}
+    \code{lr.control = (epsilon=1e-6)}}
   \item{\code{adagrad}}{diagonal matrix prescribed in Duchi et al. (2011) as
-    \code{lr_control = (eta=1, epsilon=1e-6)}}
+    \code{lr.control = (eta=1, epsilon=1e-6)}}
   \item{\code{rmsprop}}{diagonal matrix prescribed in Tieleman and Hinton
     (2012) as
-    \code{lr_control = (eta=1, gamma=0.9, epsilon=1e-6)}}
+    \code{lr.control = (eta=1, gamma=0.9, epsilon=1e-6)}}
 }
 }
 \examples{

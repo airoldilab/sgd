@@ -1,6 +1,7 @@
-bench-linear-regression  Benchmark linear regression on simulated normal data
+bench-linear-regression  Benchmark linear regression on normal data
 cox-regression           Demo Cox regression on simulated data
-glm-poisson-regression   Demo generalized linear regression (Poisson) on simulated Poisson data
-glm-logistic-regression  Demo generalized linear regression (logistic) on simulated Bernoulli data
-linear-regression        Demo linear regression on simulated normal data
-normal-method-of-moments Demo estimating equations for estimating parameters of normal distribution
+glm-logistic-regression  Demo logistic regression on Bernoulli data
+glm-poisson-regression   Demo Poisson regression on Poisson data
+linear-regression        Demo linear regression on normal data
+m-estimation             Demo M-estimation with Huber loss on contaminated normal data
+normal-method-of-moments Demo method of moments for estimating normal parameters

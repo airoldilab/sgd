@@ -12,8 +12,8 @@
 #'   environment(formula), typically the environment from which glm is called.
 #' @param model character specifying the model to be used: \code{"lm"} (linear
 #'   model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
-#'   proportional hazards model), \code{"gmm"} (generalized method of moments).
-#'   See \sQuote{Details}.
+#'   proportional hazards model), \code{"gmm"} (generalized method of moments),
+#'   \code{"m"} (M-estimation). See \sQuote{Details}.
 #' @param model.control a list of parameters for controlling the model.
 #'   \describe{
 #'     \item{\code{family} (\code{"glm"})}{a description of the error distribution and
@@ -35,6 +35,8 @@
 #'       (Hansen et al., 1996). Defaults to \code{"iterative"}.}
 #'     \item{\code{wmatrix} (\code{"gmm"})}{weighting matrix to be used in the loss
 #'       function. Defaults to the identity matrix.}
+#'     \item{\code{loss} (\code{"m"})}{character specifying the loss function to be
+#'       used in the estimating equation. Default is the Huber loss.}
 #'     \item{\code{lambda1}}{L1 regularization parameter. Default is 0.}
 #'     \item{\code{lambda2}}{L2 regularization parameter. Default is 0.}
 #'   }
@@ -96,18 +98,18 @@
 #'   \item{\code{one-dim}}{scalar value prescribed in Xu (2011) as
 #'     \deqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
 #'     where the defaults are
-#'     \code{lr_control = (scale=1, gamma=1, alpha=1, c)}
+#'     \code{lr.control = (scale=1, gamma=1, alpha=1, c)}
 #'     where \code{c} is \code{1} if implemented without averaging,
 #'     \code{2/3} if with averaging}
 #'   \item{\code{one-dim-eigen}}{diagonal matrix
-#'     \code{lr_control = NULL}}
+#'     \code{lr.control = NULL}}
 #'   \item{\code{d-dim}}{diagonal matrix
-#'     \code{lr_control = (epsilon=1e-6)}}
+#'     \code{lr.control = (epsilon=1e-6)}}
 #'   \item{\code{adagrad}}{diagonal matrix prescribed in Duchi et al. (2011) as
-#'     \code{lr_control = (eta=1, epsilon=1e-6)}}
+#'     \code{lr.control = (eta=1, epsilon=1e-6)}}
 #'   \item{\code{rmsprop}}{diagonal matrix prescribed in Tieleman and Hinton
 #'     (2012) as
-#'     \code{lr_control = (eta=1, gamma=0.9, epsilon=1e-6)}}
+#'     \code{lr.control = (eta=1, gamma=0.9, epsilon=1e-6)}}
 #' }
 #'
 #' @return
@@ -356,6 +358,7 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   } else if (length(lambda2) != 1) {
     stop(gettextf("length of 'lambda2' should equal %d", 1), domain=NA)
   }
+  nparams <- model.control$d
   # Set family to gaussian for linear model.
   if (model == "lm") {
     model.control$family <- gaussian()
@@ -365,7 +368,6 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     control.rank <- model.control$rank
     control.trace <- model.control$trace
     control.deviance <- model.control$deviance
-    control.nparams <-  model.control$d
     # Check validity of family.
     if (is.null(control.family)) {
       control.family <- gaussian()
@@ -401,14 +403,13 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       rank=control.rank,
       trace=control.trace,
       deviance=control.deviance,
-      nparams=control.nparams,
+      nparams=nparams,
       lambda1=lambda1,
       lambda2=lambda2))
   } else if (model == "cox") {
-    control.nparams <-  model.control$d
     return(list(
       name=model,
-      nparams=control.nparams,
+      nparams=nparams,
       lambda1=lambda1,
       lambda2=lambda2))
   } else if (model == "gmm") {
@@ -471,6 +472,19 @@ valid_model_control <- function(model, model.control=list(...), ...) {
       nparams=control.nparams,
       lambda1=lambda1,
       lambda2=lambda2))
+  } else if (model == "m") {
+    control.loss <-  model.control$loss
+    if (is.null(control.loss)) {
+      control.loss <- "huber"
+    } else if (control.loss != "huber") {
+      stop ("'loss' not available")
+    }
+    return(list(
+      name=model,
+      loss=control.loss,
+      nparams=nparams,
+      lambda1=lambda1,
+      lambda2=lambda2))
   } else {
     stop("model not specified")
   }
@@ -522,7 +536,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     } else {
       c <- 1
     }
-    defaults <- c(1, 1, c, 1)
+    defaults <- c(1, 1, 1, c)
     if (is.null(lr.control)) {
       lr.control <- defaults
     } else if (length(lr.control) != 4) {

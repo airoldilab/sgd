@@ -48,12 +48,13 @@ dat <- data.frame(y=y, x=X)
 sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 ```
 
-Any loss function may be specified, although for convenience the following
-models are built-in:
+Any loss function may be specified, although for convenience the following are
+built-in:
 * Linear models
 * Generalized linear models
-* Cox proportional hazards model
 * Generalized method of moments
+* Cox proportional hazards model
+* M-estimation
 
 The following stochastic gradient methods exist:
 * Standard stochastic gradient descent
