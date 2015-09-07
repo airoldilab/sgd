@@ -4,7 +4,7 @@
 #SBATCH -e dump/err-m-estimation-high-%a.txt # File for the standard error
 #SBATCH -p stats           # Partition to use
 #SBATCH --mem-per-cpu=4096 # Memory required per CPU, in MegaBytes
-#SBATCH -a 1-5             # Array of n jobs
+#SBATCH -a 1-2             # Array of n jobs
 #SBATCH --mail-user=dtran@g.harvard.edu # Where to send mail
 #SBATCH --mail-type=ALL    # When to send mail
 
