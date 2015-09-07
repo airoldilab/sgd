@@ -4,6 +4,10 @@
 #include "basedef.h"
 #include "data/data_point.h"
 
+// wrapper around R's RNG such that we get a uniform distribution over
+// [0,n) as required by the STL algorithm
+inline int randWrapper(const int n) { return floor(unif_rand()*n); }
+
 class data_set {
   /**
    * Collection of all data points.
@@ -26,14 +30,13 @@ public:
       n_features = xpMat_->ncol();
     }
     idxmap_ = std::vector<unsigned>(n_samples*n_passes);
-    // std::srand(unsigned(std::time(0)));
-    std::srand(0);
     for (unsigned i = 0; i < n_passes; ++i) {
       for (unsigned j = 0; j < n_samples; ++j) {
         idxmap_[i * n_samples + j] = j;
       }
       std::random_shuffle(idxmap_.begin() + i * n_samples,
-                          idxmap_.begin() + (i + 1) * n_samples);
+                          idxmap_.begin() + (i + 1) * n_samples,
+                          randWrapper);
     }
   }
 
