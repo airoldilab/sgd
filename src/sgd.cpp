@@ -40,10 +40,11 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
 
   // Construct data.
   data_set data(Dataset["bigmat"],
-                Rcpp::as<bool>(Dataset["big"]),
                 Rcpp::as<mat>(Dataset["X"]),
                 Rcpp::as<mat>(Dataset["Y"]),
-                Rcpp::as<unsigned>(Sgd_control["npasses"]));
+                Rcpp::as<unsigned>(Sgd_control["npasses"]),
+                Rcpp::as<bool>(Dataset["big"]),
+                Rcpp::as<bool>(Sgd_control["shuffle"]));
 
   // Construct model.
   std::string model_name = Rcpp::as<std::string>(Model_control["name"]);
@@ -181,15 +182,14 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   mat theta_old = sgd.get_last_estimate();
   mat theta_old_ave = theta_old;
 
-  bool do_more_iterations = true;
-  unsigned t = 1;
-  unsigned max_iters = n_samples*n_passes;
   double diff;
+  unsigned max_iters = n_samples*n_passes;
+  bool do_more_iterations = true;
   if (sgd.verbose()) {
     Rcpp::Rcout << "Stochastic gradient method: " << sgd.name() << std::endl;
     Rcpp::Rcout << "SGD Start!" << std::endl;
   }
-  while (do_more_iterations) {
+  for (unsigned t = 1; do_more_iterations; ++t) {
     theta_new = sgd.update(t, theta_old, data, model, good_gradient);
 
     if (averaging) {
@@ -241,7 +241,6 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
       theta_old_ave = theta_new_ave;
     }
     theta_old = theta_new;
-    ++t;
   }
 
   Rcpp::List model_out = post_process(sgd, data, model);

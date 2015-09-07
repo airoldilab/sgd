@@ -63,7 +63,9 @@
 #'     \item{\code{npasses}}{the maximum number of passes over the data. Default
 #'       is 3.}
 #'     \item{\code{pass}}{logical. Should \code{tol} be ignored and run the
-#'      algorithm for all of \code{npasses}?}
+#'       algorithm for all of \code{npasses}?}
+#'     \item{\code{shuffle}}{logical. Should the algorithm shuffle the data set
+#'       including for each pass?}
 #'     \item{\code{verbose}}{logical. Should the algorithm print progress?}
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
@@ -495,7 +497,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               start=rnorm(nparams, mean=0, sd=1e-5),
                               size=100,
                               reltol=1e-5, npasses=3, pass=F,
-                              verbose=F,
+                              shuffle=F, verbose=F,
                               N, nparams, ...) {
   # TODO size isn't the correct thing since reltol means you don't know when it
   # ends. user should specify how often to store the iterates (how many per
@@ -608,6 +610,11 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
     stop("'pass' must be logical")
   }
 
+  # Check validity of shuffle.
+  if (!is.logical(shuffle)) {
+    stop("'shuffle' must be logical")
+  }
+
   # Check validity of verbose.
   if (!is.logical(verbose)) {
     stop("'verbose' must be logical")
@@ -633,6 +640,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 reltol=reltol,
                 npasses=npasses,
                 pass=pass,
+                shuffle=shuffle,
                 verbose=verbose,
                 nparams=nparams),
            implicit.control))

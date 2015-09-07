@@ -89,7 +89,9 @@ proportional hazards model), \code{"gmm"} (generalized method of moments),
   \item{\code{npasses}}{the maximum number of passes over the data. Default
     is 3.}
   \item{\code{pass}}{logical. Should \code{tol} be ignored and run the
-   algorithm for all of \code{npasses}?}
+    algorithm for all of \code{npasses}?}
+  \item{\code{shuffle}}{logical. Should the algorithm shuffle the data set
+    including for each pass?}
   \item{\code{verbose}}{logical. Should the algorithm print progress?}
 }}
 
