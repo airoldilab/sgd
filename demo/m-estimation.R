@@ -17,9 +17,8 @@ library(sgd)
 library(ggplot2)
 
 generate.data <- function(N, d) {
-  library(mvtnorm)
   l2 <- function(x) sqrt(sum(x**2))
-  X <- rmvnorm(N, mean=rep(0, d), sigma=diag(d)/N)
+  X <- matrix(rnorm(N*d, mean=0, sd=1/N), nrow=N, ncol=d)
   theta <- runif(d)
   theta <- theta * 6 *sqrt(d) / l2(theta)
 
