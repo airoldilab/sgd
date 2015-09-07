@@ -49,6 +49,23 @@ plot.sgd <- function(x, ..., type="mse") {
   return(plot(x, ...))
 }
 
+#' @export
+#' @rdname plot.sgd
+plot.list <- function(x, ..., type="mse") {
+  if (type == "mse") {
+    plot <- plot_mse
+  } else if (type %in% c("runtime", "mse-runtime")) {
+    plot <- function(x, ...) plot_mse(x, ..., xaxis="Runtime (s)")
+  } else if (type == "mse-param") {
+    plot <- plot_mse_param
+  } else if (type == "mse-param-runtime") {
+    plot <- function(x, ...) plot_mse_param(x, ..., xaxis="Runtime (s)")
+  } else {
+    stop("'type' not recognized")
+  }
+  return(plot(x, ...))
+}
+
 ################################################################################
 # Auxiliary functions: plots
 ################################################################################
@@ -75,7 +92,6 @@ get_mse_m <- function(x, x_test, y_test) {
   return(mse)
 }
 
-# TODO in the same way as plot.R, allow for a list of sgd objects
 plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
   if (x$model %in% c("lm", "glm")) {
     get_mse <- get_mse_glm
@@ -85,20 +101,23 @@ plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
   } else {
     stop("'model' not recognized")
   }
-  #sgds <- list(x, ...)
+
+  if (class(x) != "list") {
+    x <- list(label=x)
+  }
   dat <- data.frame()
-  #for (x in sgds) {
-    mse <- get_mse(x, x_test, y_test)
+  for (i in 1:length(x)) {
+    mse <- get_mse(x[[i]], x_test, y_test)
     temp_dat <- data.frame(y=mse,
-                           label=label)
+                           label=names(x)[i])
     if (xaxis == "log-Iteration") {
-      temp_dat$x <- x$pos
+      temp_dat$x <- x[[i]]$pos
     } else if (xaxis == "Runtime (s)") {
-      temp_dat$x <- x$time
+      temp_dat$x <- x[[i]]$time
     }
     temp_dat <- temp_dat[!duplicated(temp_dat$x), ]
     dat <- rbind(dat, temp_dat)
-  #}
+  }
   dat$label <- as.factor(dat$label)
 
   p <- generic_plot(dat, xaxis) +
@@ -117,19 +136,23 @@ get_mse_param <- function(x, true_param) {
 
 plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
   get_mse <- get_mse_param
+
+  if (class(x) != "list") {
+    x <- list(label=x)
+  }
   dat <- data.frame()
-  #for (x in sgds) {
-    mse <- get_mse(x, true_param)
+  for (i in 1:length(x)) {
+    mse <- get_mse(x[[i]], true_param)
     temp_dat <- data.frame(y=mse,
-                           label=label)
+                           label=names(x)[i])
     if (xaxis == "log-Iteration") {
-      temp_dat$x <- x$pos
+      temp_dat$x <- x[[i]]$pos
     } else if (xaxis == "Runtime (s)") {
-      temp_dat$x <- x$time
+      temp_dat$x <- x[[i]]$time
     }
     temp_dat <- temp_dat[!duplicated(temp_dat$x), ]
     dat <- rbind(dat, temp_dat)
-  #}
+  }
   dat$label <- as.factor(dat$label)
 
   p <- generic_plot(dat, xaxis) +
