@@ -1,36 +1,23 @@
-#ifndef SGD_FAMILY_H
-#define SGD_FAMILY_H
+#ifndef MODEL_GLM_FAMILY_H
+#define MODEL_GLM_FAMILY_H
 
-#include "sgd_basedef.h"
+#include "basedef.h"
 
-using namespace arma;
+class base_family;
+class gaussian_family;
+class poisson_family;
+class binomial_family;
+class gamma_family;
 
-struct Sgd_Family_Base;
-struct Sgd_Gaussian;
-struct Sgd_Poisson;
-struct Sgd_Binomial;
-struct Sgd_Gamma;
-
-struct Sgd_Family_Base
-{
-#if DEBUG
-  virtual ~Sgd_Family_Base() {
-    Rcpp::Rcout << "Family object released" << std::endl;
-  }
-#endif
-  virtual ~Sgd_Family_Base() {}
-
-  virtual double bfunc_for_score(double h) const = 0;
+class base_family {
+  /* Base class from which all exponential family classes inherit from */
+public:
   virtual double variance(double u) const = 0;
   virtual double deviance(const mat& y, const mat& mu, const mat& wt) const = 0;
 };
 
-// gaussian model family
-struct Sgd_Gaussian : public Sgd_Family_Base {
-  virtual double bfunc_for_score(double h) const {
-    return 1.;
-  }
-
+class gaussian_family : public base_family {
+public:
   virtual double variance(double u) const {
     return 1.;
   }
@@ -40,16 +27,8 @@ struct Sgd_Gaussian : public Sgd_Family_Base {
   }
 };
 
-// poisson model family
-struct Sgd_Poisson : public Sgd_Family_Base {
-  virtual double bfunc_for_score(double h) const {
-    if (h) {
-      return 1. / h;
-    }
-    Rcpp::Rcout << "Out of valid range in b func for Poisson." << std::endl;
-    return 1.;
-  }
-
+class poisson_family : public base_family {
+public:
   virtual double variance(double u) const {
     return u;
   }
@@ -65,17 +44,8 @@ struct Sgd_Poisson : public Sgd_Family_Base {
   }
 };
 
-// binomial model family
-struct Sgd_Binomial : public Sgd_Family_Base
-{
-  virtual double bfunc_for_score(double h) const {
-    if (h > 0. && h < 1.) {
-      return (1./h + 1./(1.-h));
-    }
-    Rcpp::Rcout << "Out of valid range in b func for Binomial." << std::endl;
-    return 1.;
-  }
-
+class binomial_family : public base_family {
+public:
   virtual double variance(double u) const {
     return u * (1. - u);
   }
@@ -96,16 +66,8 @@ private:
   }
 };
 
-struct Sgd_Gamma : public Sgd_Family_Base
-{
-  virtual double bfunc_for_score(double h) const {
-    if (h) {
-      return 1. / (h * h);
-    }
-    Rcpp::Rcout << "Out of valid range in b func for Gamma." << std::endl;
-    return 1.;
-  }
-
+class gamma_family : public base_family {
+public:
   virtual double variance(double u) const {
     return pow(u, 2);
   }

@@ -1,24 +1,17 @@
-#ifndef SGD_TRANSFER_H
-#define SGD_TRANSFER_H
+#ifndef MODEL_GLM_TRANSFER_H
+#define MODEL_GLM_TRANSFER_H
 
-#include "sgd_basedef.h"
+#include "basedef.h"
 
-using namespace arma;
+class base_transfer;
+class identity_transfer;
+class inverse_transfer;
+class exp_transfer;
+class logistic_transfer;
 
-struct Sgd_Transfer_Base;
-struct Sgd_Identity_Transfer;
-struct Sgd_Inverse_Transfer;
-struct Sgd_Exp_Transfer;
-struct Sgd_Logistic_Transfer;
-
-struct Sgd_Transfer_Base {
-#if DEBUG
-  virtual ~Sgd_Transfer_Base() {
-    Rcpp::Rcout << "Transfer object released! " << std::endl;
-  }
-#endif
-  virtual ~Sgd_Transfer_Base() {}
-
+class base_transfer {
+  /* Base class from which all transfer function classes inherit from */
+public:
   virtual double transfer(double u) const = 0;
 
   virtual mat transfer(const mat& u) const {
@@ -36,8 +29,8 @@ struct Sgd_Transfer_Base {
   virtual bool valideta(double eta) const = 0;
 };
 
-// Identity transfer function
-struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
+class identity_transfer : public base_transfer {
+public:
   virtual double transfer(double u) const {
     return u;
   }
@@ -59,8 +52,8 @@ struct Sgd_Identity_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-// Inverse transfer function
-struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
+class inverse_transfer : public base_transfer {
+public:
   virtual double transfer(double u) const {
     if (valideta(u)) {
       return -1. / u;
@@ -94,8 +87,8 @@ struct Sgd_Inverse_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-// Exponentional transfer function
-struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
+class exp_transfer : public base_transfer {
+public:
   virtual double transfer(double u) const {
     return exp(u);
   }
@@ -104,7 +97,6 @@ struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
     if (u > 0.) {
       return log(u);
     }
-
     return 0.;
   }
 
@@ -121,8 +113,8 @@ struct Sgd_Exp_Transfer : public Sgd_Transfer_Base {
   }
 };
 
-// Logistic transfer function
-struct Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
+class logistic_transfer : public base_transfer {
+public:
   virtual double transfer(double u) const {
     return sigmoid(u);
   }
@@ -149,7 +141,6 @@ struct Sgd_Logistic_Transfer : public Sgd_Transfer_Base {
   }
 
 private:
-  // sigmoid function
   double sigmoid(double u) const {
       return 1. / (1. + exp(-u));
   }

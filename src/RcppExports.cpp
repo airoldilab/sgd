@@ -6,21 +6,16 @@
 
 using namespace Rcpp;
 
-// run_online_algorithm
-Rcpp::List run_online_algorithm(SEXP dataset, SEXP experiment, SEXP algorithm, SEXP verbose);
-RcppExport SEXP sgd_run_online_algorithm(SEXP datasetSEXP, SEXP experimentSEXP, SEXP algorithmSEXP, SEXP verboseSEXP) {
+// run
+Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control);
+RcppExport SEXP sgd_run(SEXP datasetSEXP, SEXP model_controlSEXP, SEXP sgd_controlSEXP) {
 BEGIN_RCPP
-    SEXP __sexp_result;
-    {
-        Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< SEXP >::type dataset(datasetSEXP );
-        Rcpp::traits::input_parameter< SEXP >::type experiment(experimentSEXP );
-        Rcpp::traits::input_parameter< SEXP >::type algorithm(algorithmSEXP );
-        Rcpp::traits::input_parameter< SEXP >::type verbose(verboseSEXP );
-        Rcpp::List __result = run_online_algorithm(dataset, experiment, algorithm, verbose);
-        PROTECT(__sexp_result = Rcpp::wrap(__result));
-    }
-    UNPROTECT(1);
-    return __sexp_result;
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type dataset(datasetSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type model_control(model_controlSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sgd_control(sgd_controlSEXP);
+    __result = Rcpp::wrap(run(dataset, model_control, sgd_control));
+    return __result;
 END_RCPP
 }

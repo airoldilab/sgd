@@ -2,6 +2,7 @@
 % Please edit documentation in R/sgd.R
 \name{sgd}
 \alias{sgd}
+\alias{sgd.big.matrix}
 \alias{sgd.formula}
 \alias{sgd.function}
 \alias{sgd.matrix}
@@ -12,14 +13,17 @@ sgd(x, ...)
 \method{sgd}{formula}(formula, data, model, model.control = list(),
   sgd.control = list(...), ...)
 
-\method{sgd}{function}(x, fn.control = list(), sgd.control = list(...), ...)
+\method{sgd}{function}(fn, gr = NULL, x, y, nparams,
+  sgd.control = list(...), ...)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
+
+\method{sgd}{big.matrix}(x, y, model, model.control = list(),
+  sgd.control = list(...), ...)
 }
 \arguments{
-\item{x}{for \code{sgd.function}, x is a function to minimize; for
-\code{sgd.matrix}, x is a design matrix.}
+\item{x,y}{a design matrix and the respective vector of outcomes.}
 
 \item{formula}{an object of class \code{"\link{formula}"} (or one that can be
 coerced to that class): a symbolic description of the model to be fitted.
@@ -31,112 +35,128 @@ variables in the model. If not found in data, the variables are taken from
 environment(formula), typically the environment from which glm is called.}
 
 \item{model}{character specifying the model to be used: \code{"lm"} (linear
-model), \code{"glm"} (generalized linear model).}
+model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
+proportional hazards model), \code{"gmm"} (generalized method of moments),
+\code{"m"} (M-estimation). See \sQuote{Details}.}
 
 \item{model.control}{a list of parameters for controlling the model.
-\itemize{
-  \item family (\code{"glm"}): a description of the error distribution and
+\describe{
+  \item{\code{family} (\code{"glm"})}{a description of the error distribution and
     link function to be used in the model. This can be a character string
     naming a family function, a family function or the result of a call to
-    a family function.  (See \code{\link[stats]{family}} for details of
-    family functions.)
-  \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
-    be included in the \emph{null} model?
+    a family function. (See \code{\link[stats]{family}} for details of
+    family functions.)}
+  \item{\code{rank} (\code{"glm"})}{logical. Should the rank of the design matrix
+    be checked?}
+  \item{\code{fn} (\code{"gmm"})}{a function \eqn{g(\theta,x)} which returns a
+    \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
+    required argument if \code{gr} not specified.}
+  \item{\code{gr} (\code{"gmm"})}{a function to return the gradient. If
+    unspecified, a finite-difference approximation will be used.}
+  \item{\code{nparams} (\code{"gmm"})}{number of model parameters. This is
+    automatically determined for other models.}
+  \item{\code{type} (\code{"gmm"})}{character specifying the generalized method of
+    moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
+    (Hansen et al., 1996). Defaults to \code{"iterative"}.}
+  \item{\code{wmatrix} (\code{"gmm"})}{weighting matrix to be used in the loss
+    function. Defaults to the identity matrix.}
+  \item{\code{loss} (\code{"m"})}{character specifying the loss function to be
+    used in the estimating equation. Default is the Huber loss.}
+  \item{\code{lambda1}}{L1 regularization parameter. Default is 0.}
+  \item{\code{lambda2}}{L2 regularization parameter. Default is 0.}
 }}
 
-\item{sgd.control}{a list of parameters for controlling the estimation
-\itemize{
-  \item method: character specifying the method to be used: \code{"sgd"},
-    \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See
-    \sQuote{Details}.
-  \item lr.type: character specifying the learning rate to be used:
-    \code{"uni-dim"}, \code{"uni-dim-eigen"}, \code{"p-dim"},
-    \code{"p-dim-weighted"}, \code{"adagrad"}. Default is \code{"uni-dim"}.
-    See \sQuote{Details}.
-  \item start: starting values for the parameter estimates. Default is
-    random initialization around the mean.
-  \item weights: an optional vector of "prior weights" to be used in the
-    fitting process. Should be NULL or a numeric vector.
-  \item offset: this can be used to specify an a priori known component to
-    be included in the linear predictor during fitting. This should be NULL
-    or a numeric vector of length equal to the number of cases. One or more
-    offset terms can be included in the formula instead or as well, and if
-    more than one is specified their sum is used. See
-    \code{\link[stats]{offset}}
+\item{sgd.control}{an optional list of parameters for controlling the estimation.
+\describe{
+  \item{\code{method}}{character specifying the method to be used: \code{"sgd"},
+    \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}, \code{"momentum"},
+    \code{"nesterov"}. Default is \code{"ai-sgd"}. See \sQuote{Details}.}
+  \item{\code{lr}}{character specifying the learning rate to be used:
+    \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
+    \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
+    See \sQuote{Details}.}
+  \item{\code{lr.control}}{vector of scalar hyperparameters one can
+    set dependent on the learning rate. For hyperparameters aimed
+    to be left as default, specify \code{NA} in the corresponding
+    entries. See \sQuote{Details}.}
+  \item{\code{start}}{starting values for the parameter estimates. Default is
+    random initialization around zero.}
+  \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
+    (distributed log-uniformly over total number of iterations)}
+  \item{\code{reltol}}{relative convergence tolerance. The algorithm stops
+    if it is unable to change the relative mean squared difference in the
+    parameters by more than the amount. Default is \code{1e-05}.}
+  \item{\code{npasses}}{the maximum number of passes over the data. Default
+    is 3.}
+  \item{\code{pass}}{logical. Should \code{tol} be ignored and run the
+   algorithm for all of \code{npasses}?}
+  \item{\code{verbose}}{logical. Should the algorithm print progress?}
 }}
 
-\item{fn.control}{for \code{sgd.function}, it is a list of controls for the
-function.}
+\item{fn}{a function \eqn{f(theta, x)} of parameters and data, which outputs
+a real number to be minimized.}
 
-\item{y}{for {sgd.matrix}, y is a vector of observations, with length equal
-to the number of rows in x.}
+\item{gr}{a function to return the gradient. If it is \code{NULL}, a
+finite-difference approximation will be used.}
 
 \item{\dots}{arguments to be used to form the default \code{sgd.control}
 arguments if it is not supplied directly.}
 }
 \value{
-An object of class \code{"sgd"}, which is a list containing at least the
-following components:
-
-\code{coefficients}
-a named vector of coefficients
-
-\code{residuals}
-the \emph{working} residuals, that is the residuals in the final iteration of
-the fit. Since cases with zero weights are omitted, their working residuals
-are NA.
-
-\code{fitted.values}
-the fitted mean values, obtained by transforming the linear predictors by the
-inverse of the link function.
-
-\code{rank}
-the numeric rank of the fitted linear model.
-
-\code{family}
-the \code{\link[stats]{family}} object used.
-
-\code{linear.predictors}
-the linear fit on link scale.
-
-\code{deviance}
-up to a constant, minus twice the maximized log-likelihood. Where sensible,
-the constant is chosen so that a saturated model has deviance zero.
-
-\code{null.deviance}
-The deviance for the null model, comparable with \code{deviance}. The null
-model will include the offset, and an intercept if there is one in the model.
-Note that this will be incorrect if the link function depends on the data
-other than through the fitted mean: specify a zero offset to force a correct
-calculation.
-
-\code{iter}
-the number of iterations of the algorithm used.
-
-\code{weights}
-the weights initially supplied, a vector of 1s if none were.
-
-\code{df.residual}
-the residual degrees of freedom.
-
-\code{df.null}
-the residual degrees of freedom for the null model.
-
-\code{converged}
-logical. Was the algorithm judged to have converged?
+An object of class \code{"sgd"}, which is a list containing the following
+components:
+\item{model}{name of the model}
+\item{coefficients}{a named vector of coefficients}
+\item{converged}{logical. Was the algorithm judged to have converged?}
+\item{estimates}{estimates from algorithm stored at each iteration
+    specified in \code{pos}}
+\item{pos}{vector of indices specifying the iteration number each estimate
+    was stored for}
+\item{times}{vector of times in seconds it took to complete the number of
+    iterations specified in \code{pos}}
+\item{model.out}{a list of model-specific output attributes}
 }
 \description{
-Run stochastic gradient descent on the underlying loss function for a given
-model and data, or a user-specified loss function.
+Run stochastic gradient descent in order to optimize the induced loss
+function given a model and data.
 }
 \details{
-Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).
-"implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).
-"asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
+Models:
+The Cox model assumes that the survival data is ordered when passed
+in, i.e., such that the risk set of an observation i is all data points after
+it.
 
-Learning rates: "uni-dim" uses the one-dimensional learning rate.  The
-method "p-dim" uses the p-dimensional learning rate.  The method "adagrad"
-uses a diagonal scaling (Duchi et al., 2011).
+Methods:
+\describe{
+  \item{\code{sgd}}{stochastic gradient descent (Robbins and Monro, 1951)}
+  \item{\code{implicit}}{implicit stochastic gradient descent (Toulis et al.,
+    2014)}
+  \item{\code{asgd}}{stochastic gradient with averaging (Polyak and Juditsky,
+    1992)}
+  \item{\code{ai-sgd}}{implicit stochastic gradient with averaging (Toulis et
+    al., 2015)}
+  \item{\code{momentum}}{"classical" momentum (Polyak, 1964)}
+  \item{\code{nesterov}}{Nesterov's accelerated gradient (Nesterov, 1983)}
+}
+
+Learning rates and hyperparameters:
+\describe{
+  \item{\code{one-dim}}{scalar value prescribed in Xu (2011) as
+    \deqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
+    where the defaults are
+    \code{lr.control = (scale=1, gamma=1, alpha=1, c)}
+    where \code{c} is \code{1} if implemented without averaging,
+    \code{2/3} if with averaging}
+  \item{\code{one-dim-eigen}}{diagonal matrix
+    \code{lr.control = NULL}}
+  \item{\code{d-dim}}{diagonal matrix
+    \code{lr.control = (epsilon=1e-6)}}
+  \item{\code{adagrad}}{diagonal matrix prescribed in Duchi et al. (2011) as
+    \code{lr.control = (eta=1, epsilon=1e-6)}}
+  \item{\code{rmsprop}}{diagonal matrix prescribed in Tieleman and Hinton
+    (2012) as
+    \code{lr.control = (eta=1, gamma=0.9, epsilon=1e-6)}}
+}
 }
 \examples{
 ## Dobson (1990, p.93): Randomized Controlled Trial
@@ -147,12 +167,6 @@ print(d.AD <- data.frame(treatment, outcome, counts))
 sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
                model.control=list(family = poisson()))
 sgd.D93
-
-## Venables & Ripley (2002, p.189): an example with offsets
-utils::data(anorexia, package="MASS")
-
-anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-                data=anorexia, model="lm")
 }
 \author{
 Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
@@ -161,6 +175,14 @@ Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
 John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for
 online learning and stochastic optimization. \emph{Journal of Machine
 Learning Research}, 12:2121-2159, 2011.
+
+Yurii Nesterov. A method for solving a convex programming problem with
+convergence rate \eqn{O(1/k^2)}. \emph{Soviet Mathematics Doklady},
+27(2):372-376, 1983.
+
+Boris T. Polyak. Some methods of speeding up the convergence of iteration
+methods. \emph{USSR Computational Mathematics and Mathematical Physics},
+4(5):1–17, 1964.
 
 Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 approximation by averaging. \emph{SIAM Journal on Control and Optimization},
@@ -173,5 +195,11 @@ Panos Toulis, Jason Rennie, and Edoardo M. Airoldi, "Statistical analysis of
 stochastic gradient methods for generalized linear models", In
 \emph{Proceedings of the 31st International Conference on Machine Learning},
 2014.
+
+Panos Toulis, Dustin Tran, and Edoardo M. Airoldi, "Stability and optimality
+in stochastic gradient descent", arXiv preprint arXiv:1505.02417, 2015.
+
+Wei Xu. Towards optimal one pass large scale learning with averaged
+stochastic gradient descent. arXiv preprint arXiv:1107.2490, 2011.
 }
 

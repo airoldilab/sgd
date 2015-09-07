@@ -1,7 +1,7 @@
 #' Stochastic gradient descent
 #'
-#' Run stochastic gradient descent on the underlying loss function for a given
-#' model and data, or a user-specified loss function.
+#' Run stochastic gradient descent in order to optimize the induced loss
+#' function given a model and data.
 #'
 #' @param formula an object of class \code{"\link{formula}"} (or one that can be
 #'   coerced to that class): a symbolic description of the model to be fitted.
@@ -11,111 +11,134 @@
 #'   variables in the model. If not found in data, the variables are taken from
 #'   environment(formula), typically the environment from which glm is called.
 #' @param model character specifying the model to be used: \code{"lm"} (linear
-#'   model), \code{"glm"} (generalized linear model).
+#'   model), \code{"glm"} (generalized linear model), \code{"cox"} (Cox
+#'   proportional hazards model), \code{"gmm"} (generalized method of moments),
+#'   \code{"m"} (M-estimation). See \sQuote{Details}.
 #' @param model.control a list of parameters for controlling the model.
-#'   \itemize{
-#'     \item family (\code{"glm"}): a description of the error distribution and
+#'   \describe{
+#'     \item{\code{family} (\code{"glm"})}{a description of the error distribution and
 #'       link function to be used in the model. This can be a character string
 #'       naming a family function, a family function or the result of a call to
-#'       a family function.  (See \code{\link[stats]{family}} for details of
-#'       family functions.)
-#'     \item intercept (\code{"lm"}, \code{"glm"}): logical. Should an intercept
-#'       be included in the \emph{null} model?
+#'       a family function. (See \code{\link[stats]{family}} for details of
+#'       family functions.)}
+#'     \item{\code{rank} (\code{"glm"})}{logical. Should the rank of the design matrix
+#'       be checked?}
+#'     \item{\code{fn} (\code{"gmm"})}{a function \eqn{g(\theta,x)} which returns a
+#'       \eqn{k}-vector corresponding to the \eqn{k} moment conditions. It is a
+#'       required argument if \code{gr} not specified.}
+#'     \item{\code{gr} (\code{"gmm"})}{a function to return the gradient. If
+#'       unspecified, a finite-difference approximation will be used.}
+#'     \item{\code{nparams} (\code{"gmm"})}{number of model parameters. This is
+#'       automatically determined for other models.}
+#'     \item{\code{type} (\code{"gmm"})}{character specifying the generalized method of
+#'       moments procedure: \code{"twostep"} (Hansen, 1982), \code{"iterative"}
+#'       (Hansen et al., 1996). Defaults to \code{"iterative"}.}
+#'     \item{\code{wmatrix} (\code{"gmm"})}{weighting matrix to be used in the loss
+#'       function. Defaults to the identity matrix.}
+#'     \item{\code{loss} (\code{"m"})}{character specifying the loss function to be
+#'       used in the estimating equation. Default is the Huber loss.}
+#'     \item{\code{lambda1}}{L1 regularization parameter. Default is 0.}
+#'     \item{\code{lambda2}}{L2 regularization parameter. Default is 0.}
 #'   }
-#' @param sgd.control a list of parameters for controlling the estimation
-#'   \itemize{
-#'     \item method: character specifying the method to be used: \code{"sgd"},
-#'       \code{"implicit"}, \code{"asgd"}. Default is \code{"implicit"}. See
-#'       \sQuote{Details}.
-#'     \item lr.type: character specifying the learning rate to be used:
-#'       \code{"uni-dim"}, \code{"uni-dim-eigen"}, \code{"p-dim"},
-#'       \code{"p-dim-weighted"}, \code{"adagrad"}. Default is \code{"uni-dim"}.
-#'       See \sQuote{Details}.
-#'     \item start: starting values for the parameter estimates. Default is
-#'       random initialization around the mean.
-#'     \item weights: an optional vector of "prior weights" to be used in the
-#'       fitting process. Should be NULL or a numeric vector.
-#'     \item offset: this can be used to specify an a priori known component to
-#'       be included in the linear predictor during fitting. This should be NULL
-#'       or a numeric vector of length equal to the number of cases. One or more
-#'       offset terms can be included in the formula instead or as well, and if
-#'       more than one is specified their sum is used. See
-#'       \code{\link[stats]{offset}}
+#' @param sgd.control an optional list of parameters for controlling the estimation.
+#'   \describe{
+#'     \item{\code{method}}{character specifying the method to be used: \code{"sgd"},
+#'       \code{"implicit"}, \code{"asgd"}, \code{"ai-sgd"}, \code{"momentum"},
+#'       \code{"nesterov"}. Default is \code{"ai-sgd"}. See \sQuote{Details}.}
+#'     \item{\code{lr}}{character specifying the learning rate to be used:
+#'       \code{"one-dim"}, \code{"one-dim-eigen"}, \code{"d-dim"},
+#'       \code{"adagrad"}, \code{"rmsprop"}. Default is \code{"one-dim"}.
+#'       See \sQuote{Details}.}
+#'     \item{\code{lr.control}}{vector of scalar hyperparameters one can
+#'       set dependent on the learning rate. For hyperparameters aimed
+#'       to be left as default, specify \code{NA} in the corresponding
+#'       entries. See \sQuote{Details}.}
+#'     \item{\code{start}}{starting values for the parameter estimates. Default is
+#'       random initialization around zero.}
+#'     \item{\code{size}}{number of SGD estimates to store for diagnostic purposes
+#'       (distributed log-uniformly over total number of iterations)}
+#'     \item{\code{reltol}}{relative convergence tolerance. The algorithm stops
+#'       if it is unable to change the relative mean squared difference in the
+#'       parameters by more than the amount. Default is \code{1e-05}.}
+#'     \item{\code{npasses}}{the maximum number of passes over the data. Default
+#'       is 3.}
+#'     \item{\code{pass}}{logical. Should \code{tol} be ignored and run the
+#'      algorithm for all of \code{npasses}?}
+#'     \item{\code{verbose}}{logical. Should the algorithm print progress?}
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
-#' @param x for \code{sgd.function}, x is a function to minimize; for
-#' \code{sgd.matrix}, x is a design matrix.
-#' @param y for {sgd.matrix}, y is a vector of observations, with length equal
-#' to the number of rows in x.
-#' @param fn.control for \code{sgd.function}, it is a list of controls for the
-#' function.
+#' @param fn a function \eqn{f(theta, x)} of parameters and data, which outputs
+#'   a real number to be minimized.
+#' @param gr a function to return the gradient. If it is \code{NULL}, a
+#'   finite-difference approximation will be used.
+#' @param x,y a design matrix and the respective vector of outcomes.
 #'
 #' @details
-#' Methods: "sgd" uses stochastic gradient descent (Robbins and Monro, 1951).
-#' "implicit" uses implicit stochastic gradient descent (Toulis et al., 2014).
-#' "asgd" uses stochastic gradient with averaging (Polyak and Juditsky, 1992).
+#' Models:
+#' The Cox model assumes that the survival data is ordered when passed
+#' in, i.e., such that the risk set of an observation i is all data points after
+#' it.
 #'
-#' Learning rates: "uni-dim" uses the one-dimensional learning rate.  The
-#' method "p-dim" uses the p-dimensional learning rate.  The method "adagrad"
-#' uses a diagonal scaling (Duchi et al., 2011).
+#' Methods:
+#' \describe{
+#'   \item{\code{sgd}}{stochastic gradient descent (Robbins and Monro, 1951)}
+#'   \item{\code{implicit}}{implicit stochastic gradient descent (Toulis et al.,
+#'     2014)}
+#'   \item{\code{asgd}}{stochastic gradient with averaging (Polyak and Juditsky,
+#'     1992)}
+#'   \item{\code{ai-sgd}}{implicit stochastic gradient with averaging (Toulis et
+#'     al., 2015)}
+#'   \item{\code{momentum}}{"classical" momentum (Polyak, 1964)}
+#'   \item{\code{nesterov}}{Nesterov's accelerated gradient (Nesterov, 1983)}
+#' }
+#'
+#' Learning rates and hyperparameters:
+#' \describe{
+#'   \item{\code{one-dim}}{scalar value prescribed in Xu (2011) as
+#'     \deqn{a_n = scale * gamma/(1 + alpha*gamma*n)^(-c)}
+#'     where the defaults are
+#'     \code{lr.control = (scale=1, gamma=1, alpha=1, c)}
+#'     where \code{c} is \code{1} if implemented without averaging,
+#'     \code{2/3} if with averaging}
+#'   \item{\code{one-dim-eigen}}{diagonal matrix
+#'     \code{lr.control = NULL}}
+#'   \item{\code{d-dim}}{diagonal matrix
+#'     \code{lr.control = (epsilon=1e-6)}}
+#'   \item{\code{adagrad}}{diagonal matrix prescribed in Duchi et al. (2011) as
+#'     \code{lr.control = (eta=1, epsilon=1e-6)}}
+#'   \item{\code{rmsprop}}{diagonal matrix prescribed in Tieleman and Hinton
+#'     (2012) as
+#'     \code{lr.control = (eta=1, gamma=0.9, epsilon=1e-6)}}
+#' }
 #'
 #' @return
-#' An object of class \code{"sgd"}, which is a list containing at least the
-#' following components:
-#'
-#' \code{coefficients}
-#' a named vector of coefficients
-#'
-#' \code{residuals}
-#' the \emph{working} residuals, that is the residuals in the final iteration of
-#' the fit. Since cases with zero weights are omitted, their working residuals
-#' are NA.
-#'
-#' \code{fitted.values}
-#' the fitted mean values, obtained by transforming the linear predictors by the
-#' inverse of the link function.
-#'
-#' \code{rank}
-#' the numeric rank of the fitted linear model.
-#'
-#' \code{family}
-#' the \code{\link[stats]{family}} object used.
-#'
-#' \code{linear.predictors}
-#' the linear fit on link scale.
-#'
-#' \code{deviance}
-#' up to a constant, minus twice the maximized log-likelihood. Where sensible,
-#' the constant is chosen so that a saturated model has deviance zero.
-#'
-#' \code{null.deviance}
-#' The deviance for the null model, comparable with \code{deviance}. The null
-#' model will include the offset, and an intercept if there is one in the model.
-#' Note that this will be incorrect if the link function depends on the data
-#' other than through the fitted mean: specify a zero offset to force a correct
-#' calculation.
-#'
-#' \code{iter}
-#' the number of iterations of the algorithm used.
-#'
-#' \code{weights}
-#' the weights initially supplied, a vector of 1s if none were.
-#'
-#' \code{df.residual}
-#' the residual degrees of freedom.
-#'
-#' \code{df.null}
-#' the residual degrees of freedom for the null model.
-#'
-#' \code{converged}
-#' logical. Was the algorithm judged to have converged?
+#' An object of class \code{"sgd"}, which is a list containing the following
+#' components:
+#' \item{model}{name of the model}
+#' \item{coefficients}{a named vector of coefficients}
+#' \item{converged}{logical. Was the algorithm judged to have converged?}
+#' \item{estimates}{estimates from algorithm stored at each iteration
+#'     specified in \code{pos}}
+#' \item{pos}{vector of indices specifying the iteration number each estimate
+#'     was stored for}
+#' \item{times}{vector of times in seconds it took to complete the number of
+#'     iterations specified in \code{pos}}
+#' \item{model.out}{a list of model-specific output attributes}
 #'
 #' @author Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
 #' @references
 #' John Duchi, Elad Hazan, and Yoram Singer. Adaptive subgradient methods for
 #' online learning and stochastic optimization. \emph{Journal of Machine
 #' Learning Research}, 12:2121-2159, 2011.
+#'
+#' Yurii Nesterov. A method for solving a convex programming problem with
+#' convergence rate \eqn{O(1/k^2)}. \emph{Soviet Mathematics Doklady},
+#' 27(2):372-376, 1983.
+#'
+#' Boris T. Polyak. Some methods of speeding up the convergence of iteration
+#' methods. \emph{USSR Computational Mathematics and Mathematical Physics},
+#' 4(5):1–17, 1964.
 #'
 #' Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 #' approximation by averaging. \emph{SIAM Journal on Control and Optimization},
@@ -129,6 +152,12 @@
 #' \emph{Proceedings of the 31st International Conference on Machine Learning},
 #' 2014.
 #'
+#' Panos Toulis, Dustin Tran, and Edoardo M. Airoldi, "Stability and optimality
+#' in stochastic gradient descent", arXiv preprint arXiv:1505.02417, 2015.
+#'
+#' Wei Xu. Towards optimal one pass large scale learning with averaged
+#' stochastic gradient descent. arXiv preprint arXiv:1107.2490, 2011.
+#'
 #' @examples
 #' ## Dobson (1990, p.93): Randomized Controlled Trial
 #' counts <- c(18, 17, 15, 20, 10, 20, 25, 13, 12)
@@ -139,16 +168,10 @@
 #'                model.control=list(family = poisson()))
 #' sgd.D93
 #'
-#' ## Venables & Ripley (2002, p.189): an example with offsets
-#' utils::data(anorexia, package="MASS")
-#'
-#' anorex.1 <- sgd(Postwt ~ Prewt + Treat + offset(Prewt),
-#'                 data=anorexia, model="lm")
-#'
 #' @useDynLib sgd
 #' @import MASS
 #' @importFrom Rcpp evalCpp
-#' @aliases sgd.formula sgd.function sgd.matrix
+
 ################################################################################
 # Classes
 ################################################################################
@@ -170,25 +193,13 @@ sgd.formula <- function(formula, data, model,
                         model.control=list(),
                         sgd.control=list(...),
                         ...) {
-  # TODO
-  # subset: a subset of data points; can be a parameter in sgd.control
-  # na.action: how to deal when data has NA; can be a parameter in sgd.control
-  # model: logical value determining whether to output the X data frame
-  # x,y: logical value determining whether to output the x and/or y
-  # contrasts: a list for performing hypothesis testing on other sets of predictors; can be a paramter in sgd.control
-  # Call method when the first argument is a formula
-  # the call parameter to return
-  call <- match.call()
-
+  call <- match.call() # set call function to match on arguments
   # 1. Validity check.
-  if (missing(model)) {
-    stop("model not specified")
-  }
   if (missing(data)) {
     data <- environment(formula)
   }
 
-  # 2. Build dataframe according to the formula.
+  # 2. Build X and Y according to the formula.
   mf <- match.call(expand.dots=FALSE)
   m <- match(c("formula", "data"), names(mf), 0L)
   mf <- mf[c(1L, m)]
@@ -218,15 +229,13 @@ sgd.formula <- function(formula, data, model,
 
 #' @export
 #' @rdname sgd
-sgd.function <- function(x,
-                        fn.control=list(),
-                        sgd.control=list(...),
-                        ...) {
-  # TODO run_online_algorithm will not work on this as it relies on data
-  # sgd.fn.control.valid
-  gr <- NULL
-  lower <- -Inf
-  upper <- Inf
+sgd.function <- function(fn, gr=NULL, x, y,
+                         nparams,
+                         sgd.control=list(...),
+                         ...) {
+  model <- "gmm"
+  model.control <- list(model="gmm", fn=fn, gr=gr, d=ncol(x), nparams=nparams)
+  return(sgd.matrix(x, y, model, model.control, sgd.control))
 }
 
 #' @export
@@ -235,239 +244,94 @@ sgd.matrix <- function(x, y, model,
                        model.control=list(),
                        sgd.control=list(...),
                        ...) {
-  # Call method when the first argument is a formula
-  # the call parameter to return
-  call <- match.call()
-
-  # 1. Validity check.
+  call <- match.call() # set call function to match on arguments
   if (missing(x)) {
-    stop("x not specified")
+    stop("'x' not specified")
   }
   if (missing(y)) {
-    stop("y not specified")
+    stop("'y' not specified")
   }
   if (missing(model)) {
-    stop("model not specified")
+    stop("'model' not specified")
   }
-  if (!is.list(model.control))  {
+  if (!is.list(model.control)) {
     stop("'model.control' is not a list")
-  } else {
-    model.control <- do.call("valid_model_control", c(model.control,
-                             model=model))
   }
+  model.control <- do.call("valid_model_control",
+                           c(model.control, model=model, d=ncol(x)))
   if (!is.list(sgd.control))  {
     stop("'sgd.control' is not a list")
   }
-  sgd.control <- do.call("valid_sgd_control", sgd.control)
+  sgd.control <- do.call("valid_sgd_control",
+                         c(sgd.control, N=NROW(y), nparams=model.control$nparams))
 
-  # 2. Fit!
-  if (model %in% c("lm", "glm")) {
-    fit <- fit_glm
-  } else {
-    print(model)
-    stop("'model' not recognized")
-  }
-  out <- fit(x, y, model.control, sgd.control)
-  class(out) <- c(out$class, "sgd")
+  out <- fit(x, y, model, model.control, sgd.control)
   return(out)
 }
 
-################################################################################
-# Generic methods
-################################################################################
-
-# TODO
-#print.sgd <- function(x) {
-#  # What goes to standard output.
-#  #
-#  # Args:
-#  #   x:    sgd object
-#}
-#plot.sgd <- function(x, type="mse") {
-#  # An all-encompassing visualization routine.
-#  #
-#  # Args:
-#  #   x:    sgd object
-#  #   type: character in c("")
-#  #
-#  # Returns:
-#  #   A plot.
-#  if (type == "mse") {
-#    plot <- plot.sgd.mse
-#  } else {
-#    print(type)
-#    stop("'type' not recognized")
-#  }
-#  return(plot(x))
-#}
+#' @export
+#' @rdname sgd
+# TODO y should be allowed to be a big matrix too; it should be any combination
+# (x is a big matrix, y is, etc.)
+sgd.big.matrix <- function(x, y, model,
+                       model.control=list(),
+                       sgd.control=list(...),
+                       ...) {
+  return(sgd.matrix(x, y, model, model.control, sgd.control))
+}
 
 ################################################################################
 # Auxiliary functions: model fitting
 ################################################################################
 
-fit_glm <- function(x, y,
-                    model.control,
-                    sgd.control) {
-  xnames <- dimnames(x)[[2L]]
-  if (is.matrix(y)) {
-    ynames <- rownames(y)
+fit <- function(x, y, model,
+                model.control,
+                sgd.control) {
+  #time_start <- proc.time()[3] # TODO timer only starts here
+  # TODO
+  if (model == "gmm") {
+    if (sgd.control$method %in% c("implicit", "ai-sgd")) {
+      stop("implicit methods not implemented yet")
+    }
+  }
+
+  dataset <- list(X=x, Y=as.matrix(y))
+  if ('big.matrix' %in% class(x)) {
+    dataset$big <- TRUE
+    dataset[["bigmat"]] <- x@address
   } else {
-    ynames <- names(y)
+    dataset$big <- FALSE
+    dataset[["bigmat"]] <- new("externalptr")
   }
-  N <- NROW(y) # number of observations
-  d <- ncol(x) # number of features
-  EMPTY <- d == 0
 
-  family <- model.control$family
-  intercept <- model.control$intercept
+  if (model %in% c("lm", "glm")) {
+    model.control$transfer <- transfer_name(model.control$family$link)
+    family <- model.control$family
+    model.control$family <- family$family
+  }
+  sgd.control$start <- as.matrix(sgd.control$start)
 
-  start <- sgd.control$start
-  method <- sgd.control$method
-  lr.type <- sgd.control$lr.type
-  if (is.null(sgd.control$weights)) {
-    weights <- rep.int(1, N)
-  } else {
-    weights <- sgd.control$weights
+  if (sgd.control$verbose) {
+    print("Completed pre-processing attributes...")
+    print("Running C++ algorithm...")
   }
-  if (is.null(sgd.control$offset)) {
-    offset <- rep.int(0, N)
-  } else {
-    offset <- sgd.control$offset
+  out <- run(dataset, model.control, sgd.control)
+  if (sgd.control$verbose) {
+    print("Completed C++ algorithm...")
   }
-  implicit.control <- do.call("valid_implicit_control", sgd.control)
-
-  variance <- family$variance
-  linkinv <- family$linkinv
-  if (!is.function(variance) || !is.function(linkinv)) {
-    stop("'family' argument seems not to be a valid family object",
-         call.=FALSE)
+  if (length(out) == 0) {
+    stop("An error has occured, program stopped")
   }
-  dev.resids <- family$dev.resids
-  mu.eta <- family$mu.eta
-
-  unless.null <- function(x, if.null) {
-    if (is.null(x)) {
-      return(if.null)
-    } else {
-      return(x)
-    }
+  class(out) <- "sgd"
+  if (model %in% c("lm", "glm")) {
+    out$model.out$transfer <- model.control$transfer
+    out$model.out$family <- family
   }
-  valideta <- unless.null(family$valideta, function(eta) TRUE)
-  validmu <- unless.null(family$validmu, function(mu) TRUE)
-
-  if (EMPTY) {
-    eta <- rep.int(0, N) + offset
-    if (!valideta(eta)) {
-      stop("invalid linear predictor values in empty model",
-           call.=FALSE)
-    }
-    mu <- linkinv(eta)
-    if (!validmu(mu)) {
-      stop("invalid fitted means in empty model", call.=FALSE)
-    }
-    dev <- sum(dev.resids(y, mu, weights))
-    w <- ((weights * mu.eta(eta)^2)/variance(mu))^0.5
-    residuals <- (y - mu)/mu.eta(eta)
-    good <- rep_len(TRUE, length(residuals))
-    boundary <- conv <- TRUE
-    coef <- numeric()
-    iter <- 0L
-    rank <- 0L
-    converged <- FALSE
-  } else {
-    # Set the initial value for theta.
-    if (!is.null(start) & length(start) != d) {
-      stop(gettextf("length of 'start' should equal %d and correspond to initial coefs for %s",
-                    d, paste(deparse(xnames), collapse=", ")), domain=NA)
-    } else {
-      start <- rep(0, d)
-    }
-    eta <- sum(x[1, ] * start)+offset[1]
-    if (!valideta(eta)) {
-      stop("cannot find valid starting values: please specify some", call.=FALSE)
-    }
-    y <- as.matrix(y)
-
-    # Select x, y with weights > 0; adjust for offsets.
-    good <- weights > 0
-    dataset <- list(X=as.matrix(x[good, ]), Y=as.matrix(y[good]))
-    experiment <- list()
-    experiment$name <- family$family
-    experiment$model.attrs <- list()
-    experiment$model.attrs$transfer.name <- transfer_name(family$link)
-    experiment$niters <- length(dataset$Y)
-    experiment$lr.type <- lr.type
-    experiment$p <- dim(dataset$X)[2]
-    experiment$weights <- as.matrix(weights[good])
-    experiment$start <- as.matrix(start)
-    experiment$deviance <- implicit.control$deviance
-    experiment$trace <- implicit.control$trace
-    experiment$convergence <- implicit.control$convergence
-    experiment$epsilon <- implicit.control$epsilon
-    experiment$offset <- as.matrix(offset[good])
-    out <- run_online_algorithm(dataset, experiment, method, verbose=F)
-    if (length(out) == 0) {
-      stop("An error has occured, program stopped.")
-    }
-    temp.mu <- as.numeric(out$mu)
-    mu <- rep(0, length(good))
-    mu[good] <- temp.mu
-    mu[!good] <- NA
-    temp.eta <- as.numeric(out$eta)
-    eta <- rep(0, length(good))
-    eta[good] <- temp.eta
-    eta[!good] <- NA
-    coef <- as.numeric(out$coefficients)
-    dev <- out$deviance
-    residuals <- as.numeric((y - mu)/mu.eta(eta))
-    iter <- experiment$p
-    rank <- out$rank
-    converged <- out$converged
-  }
-  names(residuals) <- ynames
-  names(mu) <- ynames
-  names(eta) <- ynames
-  names(weights) <- ynames
-  names(y) <- ynames
-  if (intercept == TRUE) {
-    wtdmu <- sum(weights * y)/sum(weights)
-  } else {
-    wtdmu <- linkinv(offset)
-  }
-  nulldev <- sum(dev.resids(y, wtdmu, weights))
-  n.ok <- N - sum(weights == 0)
-  nulldf <- n.ok - as.integer(intercept)
-  resdf <- n.ok - rank
-  names(coef) <- xnames
-  return(list(coefficients=coef,
-       residuals=residuals,
-       fitted.values=mu,
-       rank=rank,
-       family=family,
-       linear.predictors=eta,
-       deviance=dev,
-       null.deviance=nulldev,
-       iter=iter,
-       weights=weights,
-       df.residual=resdf,
-       df.null=nulldf,
-       converged=if(implicit.control$convergence) converged))
-  # TODO in C: deal with offset
-  # TODO compare all results with glm
-  # TODO unit test on all checks
-  # TODO write start value
+  out$pos <- as.vector(out$pos)
+  #out$times <- as.vector(out$times) + (proc.time()[3] - time_start) # C++ time + R time
+  out$times <- as.vector(out$times)
+  return(out)
 }
-
-################################################################################
-# Auxiliary functions: plots
-################################################################################
-
-# TODO
-#plot.sgd.mse <- function(x) {
-#  if (class(x) != "sgd") {
-#    stop("'x' is not of type sgd")
-#  }
-#}
 
 ################################################################################
 # Auxiliary functions: validity checks
@@ -477,100 +341,313 @@ valid_model_control <- function(model, model.control=list(...), ...) {
   # Run validity check of arguments passed to model.control given model. It
   # passes defaults to those unspecified and converts to the correct type if
   # possible; otherwise it errors.
+  # Check validity of regularization parameters.
+  lambda1 <- model.control$lambda1
+  if (is.null(lambda1)) {
+    lambda1 <- 0
+  } else if (!is.numeric(lambda1)) {
+    stop("'lambda1' must be numeric")
+  } else if (length(lambda1) != 1) {
+    stop(gettextf("length of 'lambda1' should equal %d", 1), domain=NA)
+  }
+  lambda2 <- model.control$lambda2
+  if (is.null(lambda2)) {
+    lambda2 <- 0
+  } else if (!is.numeric(lambda2)) {
+    stop("'lambda2' must be numeric")
+  } else if (length(lambda2) != 1) {
+    stop(gettextf("length of 'lambda2' should equal %d", 1), domain=NA)
+  }
+  nparams <- model.control$d
+  # Set family to gaussian for linear model.
   if (model == "lm") {
-    control.intercept <- model.control$intercept
-    # Check the validity of intercept.
-    if (is.null(control.intercept)) {
-      control.intercept <- TRUE
-    } else if (!is.logical(control.intercept)) {
-      stop("'intercept' not logical")
-    }
-    return(list(family=gaussian(), intercept=control.intercept))
-  } else if (model == "glm") {
+    model.control$family <- gaussian()
+  }
+  if (model %in% c("lm", "glm")) {
     control.family <- model.control$family
-    control.intercept <- model.control$intercept
-    # Check the validity of family.
+    control.rank <- model.control$rank
+    control.trace <- model.control$trace
+    control.deviance <- model.control$deviance
+    # Check validity of family.
     if (is.null(control.family)) {
       control.family <- gaussian()
     } else if (is.character(control.family)) {
-      control.family <- get(family, mode="function", envir=parent.frame())()
+      control.family <- get(control.family, mode="function", envir=parent.frame())()
     } else if (is.function(control.family)) {
-      control.family <- family()
+      control.family <- control.family()
     } else if (is.null(control.family$family)) {
       print(control.family)
       stop("'family' not recognized")
     }
-    # Check the validity of intercept.
-    if (is.null(control.intercept)) {
-      control.intercept <- TRUE
-    } else if (!is.logical(control.intercept)) {
-      stop("'intercept' not logical")
+    # Check validity of rank.
+    if (is.null(control.rank)) {
+      control.rank <- FALSE
+    } else if (!is.logical(control.rank)) {
+      stop ("'rank' not logical")
     }
-    return(list(family=control.family, intercept=control.intercept))
+    # Check validity of trace.
+    if (is.null(control.trace)) {
+      control.trace <- FALSE
+    } else if (!is.logical(control.trace)) {
+      stop ("'trace' not logical")
+    }
+    # Check validity of deviance.
+    if (is.null(control.deviance)) {
+      control.deviance <- FALSE
+    } else if (!is.logical(control.deviance)) {
+      stop ("'deviance' not logical")
+    }
+    return(list(
+      name=model,
+      family=control.family,
+      rank=control.rank,
+      trace=control.trace,
+      deviance=control.deviance,
+      nparams=nparams,
+      lambda1=lambda1,
+      lambda2=lambda2))
+  } else if (model == "cox") {
+    return(list(
+      name=model,
+      nparams=nparams,
+      lambda1=lambda1,
+      lambda2=lambda2))
+  } else if (model == "gmm") {
+    control.fn <- model.control$fn
+    control.gr <- model.control$gr
+    control.nparams <- model.control$nparams
+    control.type <- model.control$type
+    control.wmatrix <- model.control$wmatrix
+    # Check validify of moment function and its gradient.
+    if (is.null(control.fn) && is.null(control.gr)) {
+      stop("either 'fn' or 'gr' must be specified")
+    } else if (!is.null(control.fn) && !is.function(control.fn)) {
+      stop("'fn' not a function")
+    } else if (!is.null(control.gr) && !is.function(control.gr)) {
+      stop("'gr' not a function")
+    } else if (!is.null(control.fn) && is.null(control.gr)) {
+      # Default to numerical gradient via central differences.
+      #library(numDeriv)
+      # TODO probably does not work
+      control.gr <- function(x, fn=control.fn) {
+        d <- length(x)
+        h <- 1e-5
+        out <- rep(0, d)
+        for (i in 1:d) {
+          ei <- c(rep(0, i-1), h, rep(0, d-i))
+          out[i] <- (fn(x + ei) - fn(x - ei)) / (2*h)
+        }
+        return(out)
+      }
+    }
+    # Check validity of nparams.
+    if (is.null(control.nparams)) {
+      stop("'nparams' not specified")
+    } else if (!is.numeric(control.nparams) ||
+               control.nparams - as.integer(control.nparams) != 0 ||
+               control.nparams < 1) {
+      stop("'nparams' must be a positive integer")
+    }
+    # Check validity of GMM type.
+    if (is.null(control.type)) {
+      control.type <- "iterative"
+    } else if (!is.character(control.type)) {
+      stop("'type' must be a string")
+    # TODO implement cuee
+    } else if (!(control.type %in% c("twostep", "iterative", "cuee"))) {
+      stop("'type' not recognized")
+    }
+    # Check validity of weighting matrix.
+    if (is.null(control.wmatrix)) {
+      # do nothing, since will not store large matrix in R but in C++
+    } else if (!is.matrix(control.wmatrix)) {
+      stop("'wmatrix' not a matrix")
+    # TODO check if dimensions are same as moment conditions
+    #} else if (identical(dim(control.wmatrix), c(k,k))) {
+    }
+    return(list(
+      name=model,
+      gr=control.gr,
+      type=control.type,
+      nparams=control.nparams,
+      lambda1=lambda1,
+      lambda2=lambda2))
+  } else if (model == "m") {
+    control.loss <-  model.control$loss
+    if (is.null(control.loss)) {
+      control.loss <- "huber"
+    } else if (control.loss != "huber") {
+      stop ("'loss' not available")
+    }
+    return(list(
+      name=model,
+      loss=control.loss,
+      nparams=nparams,
+      lambda1=lambda1,
+      lambda2=lambda2))
   } else {
     stop("model not specified")
   }
 }
 
-valid_sgd_control <- function(method="implicit", lr.type="uni-dim",
-                              start=NULL, ...) {
-  # TODO documentation
-  # Check the validity of learning rate type.
-  lr.types <- c("uni-dim", "uni-dim-eigen", "p-dim", "p-dim-weighted", "adagrad")
-  if (is.numeric(lr.type)) {
-    if (lr.type < 1 | lr.type > length(lr.types)) {
-      stop("'lr.type' out of range")
-    }
-    lr.type <- lr.types[lr.type]
-  } else if (is.character(lr.type)) {
-    lr.type <- tolower(lr.type)
-    if (!(lr.type %in% lr.types)) {
-      stop("'lr.type' not recognized")
-    }
-  } else {
-    stop("invalid 'lr.type'")
-  }
-
-  #Check the validity of start.
-  if (!is.null(start) & !is.numeric(start)) {
-    stop("'start' must be numeric")
-  }
-  # TODO where should we check if the dim(start) == dim(parameters)?
-
-  # Check the validity of method.
+valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
+                              lr.control=NULL,
+                              start=rnorm(nparams, mean=0, sd=1e-5),
+                              size=100,
+                              reltol=1e-5, npasses=3, pass=F,
+                              verbose=F,
+                              N, nparams, ...) {
+  # TODO size isn't the correct thing since reltol means you don't know when it
+  # ends. user should specify how often to store the iterates (how many per
+  # iteration)
+  # Run validity check of arguments passed to sgd.control. It passes defaults to
+  # those unspecified and converts to the correct type if possible; otherwise it
+  # errors.
+  # Check validity of method.
   if (!is.character(method)) {
     stop("'method' must be a string")
-  } else if (!(method %in% c("implicit", "asgd", "sgd"))) {
+  } else if (!(method %in% c("sgd", "implicit", "asgd", "ai-sgd", "momentum",
+                             "nesterov"))) {
     stop("'method' not recognized")
   }
-  return(list(method=method,
-              lr.type=lr.type,
-              start=start))
+
+  # Check validity of learning rate.
+  lrs <- c("one-dim", "one-dim-eigen", "d-dim", "adagrad", "rmsprop")
+  if (is.numeric(lr)) {
+    if (lr < 1 | lr > length(lrs)) {
+      stop("'lr' out of range")
+    }
+    lr <- lrs[lr]
+  } else if (is.character(lr)) {
+    lr <- tolower(lr)
+    if (!(lr %in% lrs)) {
+      stop("'lr' not recognized")
+    }
+  } else {
+    stop("invalid 'lr'")
+  }
+
+  # Check validity of lr.control.
+  if (!is.null(lr.control) && !is.numeric(lr.control)) {
+    stop("'lr.control' must be numeric")
+  } else if (lr == "one-dim") {
+    if (method %in% c("asgd", "ai-sgd")) {
+      c <- 2/3
+    } else {
+      c <- 1
+    }
+    defaults <- c(1, 1, 1, c)
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 4) {
+      stop(gettextf("length of 'lr.control' should equal %d", 4), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  } else if (lr == "one-dim-eigen") {
+    if (is.null(lr.control)) {
+      lr.control <- 0 # garbage number to store double in C++
+    } else if (length(lr.control) != 0) {
+      stop(gettextf("length of 'lr.control' should equal %d", 0), domain=NA)
+    }
+  } else if (lr == "d-dim") {
+    defaults <- 1e-6
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 1) {
+      stop(gettextf("length of 'lr.control' should equal %d", 1), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  } else if (lr == "adagrad") {
+    defaults <- c(1, 1e-6)
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 2) {
+      stop(gettextf("length of 'lr.control' should equal %d", 2), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  } else if (lr == "rmsprop") {
+    defaults <- c(1, 0.9, 1e-6)
+    if (is.null(lr.control)) {
+      lr.control <- defaults
+    } else if (length(lr.control) != 3) {
+      stop(gettextf("length of 'lr.control' should equal %d", 3), domain=NA)
+    }
+    missing <- which(is.na(lr.control))
+    lr.control[missing] <- defaults[missing]
+  }
+
+  # Check validity of start.
+  if (!is.numeric(start)) {
+    stop("'start' must be numeric")
+  } else if (length(start) != nparams) {
+    stop(gettextf("length of 'start' should equal %d", nparams), domain=NA)
+  }
+
+  # Check validity of size.
+  if (!is.numeric(size) || size - as.integer(size) != 0 || size < 1) {
+    stop("'size' must be positive integer")
+  }
+
+  # Check validity of reltol
+  if (!is.numeric(reltol)) {
+    stop("'reltol' must be numeric")
+  } else if (length(reltol) != 1) {
+    stop("'reltol' must be scalar")
+  }
+
+  # Check validity of npasses.
+  if (!is.numeric(npasses) || npasses - as.integer(npasses) != 0 || npasses < 1) {
+    stop("'npasses' must be positive integer")
+  }
+
+  # Check validity of pass.
+  if (!is.logical(pass)) {
+    stop("'pass' must be logical")
+  }
+
+  # Check validity of verbose.
+  if (!is.logical(verbose)) {
+    stop("'verbose' must be logical")
+  }
+
+  # Check validity of additional arguments if the method is implicit.
+  if (method %in% c("implicit", "ai-sgd")) {
+    call <- match.call()
+    implicit.control <- do.call("valid_implicit_control", list(...))
+  } else {
+    implicit.control <- NULL
+  }
+  # TODO, since experment.h requires it for all stochastic gradient methods,
+  # even though it shouldn't.
+  #call <- match.call()
+  #implicit.control <- do.call("valid_implicit_control", list(...))
+
+  return(c(list(method=method,
+                lr=lr,
+                lr.control=lr.control,
+                start=start,
+                size=size,
+                reltol=reltol,
+                npasses=npasses,
+                pass=pass,
+                verbose=verbose,
+                nparams=nparams),
+           implicit.control))
 }
 
-valid_implicit_control <- function(epsilon=1e-08, trace=FALSE, deviance=FALSE,
-                                   convergence=FALSE, ...) {
-  # Maintain control parameters for running implicit SGD.
+valid_implicit_control <- function(delta=30L, ...) {
+  # Maintain control parameters for running implicit SGD. Pass defaults
+  # if unspecified.
   #
   # Args:
-  #   epsilon:     positive convergence tolerance; the iterations
-  #                converge when |dev - dev_{old}|/(|dev| + 0.1) < epsilon
-  #   trace:       logical indicating if output should be produced for each
-  #                iteration
-  #   deviance:    logical indicating if the validity of deviance should be
-  #                checked in each iteration
-  #   convergence: logical indicating if the convergence of the algorithm should
-  #                be checked
-  #
-  # Returns:
-  #   A list of parameters according to user input, default otherwise.
-  if (!is.numeric(epsilon) || epsilon <= 0) {
-    stop("value of 'epsilon' must be > 0")
+  #   delta: convergence criterion for the one-dimensional optimization
+  if (!is.numeric(delta) || delta - as.integer(delta) != 0 || delta <= 0) {
+    stop("value of 'delta' must be integer > 0")
   }
-  return(list(epsilon=epsilon,
-              trace=trace,
-              deviance=deviance,
-              convergence=convergence))
+  return(list(delta=delta))
 }
 
 ################################################################################

@@ -1,9 +1,9 @@
 # sgd
 
 sgd is an R package which provides a fast and flexible set of tools for large
-scale inference. It features many different stochastic gradient methods,
-built-in models, visualization tools, automated hyperparameter tuning, model
-checking, interval estimation, and convergence diagnostics.
+scale inference. It features many stochastic gradient methods, built-in models,
+visualization tools, automated hyperparameter tuning, model checking, interval
+estimation, and convergence diagnostics.
 
 ## Installation
 To install the latest version from CRAN:
@@ -24,8 +24,11 @@ At the core of the package is the function
 ```{R}
 sgd(formula, data, model, model.control, sgd.control)
 ```
-It implements stochastic gradient descent in order to optimize the underlying
-loss function given the data and model; the user can also specify a loss function.
+It estimates parameters for a given data set and model using stochastic gradient
+descent. The optional arguments `model.control` and `sgd.control` specify
+attributes about the model and stochastic gradient method. Taking advantage of
+the bigmemory package, sgd also operates on data sets which are too large to fit
+in RAM as well as streaming data.
 
 Example of large-scale linear regression:
 ```{R}
@@ -45,16 +48,25 @@ dat <- data.frame(y=y, x=X)
 sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 ```
 
-The following models are built-in:
+Any loss function may be specified, although for convenience the following are
+built-in:
 * Linear models
 * Generalized linear models
+* Method of moments
+* Generalized method of moments
+* Cox proportional hazards model
+* M-estimation
 
 The following stochastic gradient methods exist:
-* Standard stochastic gradient descent
+* (Standard) stochastic gradient descent
 * Implicit stochastic gradient descent
-* Stochastic gradient descent with averaging
+* Averaged stochastic gradient descent
+* Averaged implicit stochastic gradient descent
+* Classical momentum
+* Nesterov's accelerated gradient
 
-For more documentation, see `?sgd`.
+For more examples, see the `demo/` directory, and for more documentation, run
+`?sgd` or `library(help=sgd)` in R.
 
 ## Authors
 sgd is written by [Dustin Tran](http://dustintran.com), [Tian
