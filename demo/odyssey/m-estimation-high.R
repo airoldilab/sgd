@@ -13,6 +13,7 @@
 #   N=1e6 observations
 #   d=1e4 parameters
 
+library(methods)
 library(sgd)
 
 generate.data <- function(N, d) {
@@ -30,8 +31,8 @@ generate.data <- function(N, d) {
 }
 
 # Dimensions
-N <- 1e6
-d <- 1e4
+N <- 1e3
+d <- 1e2
 
 # Generate data.
 set.seed(42)
@@ -50,4 +51,4 @@ if (job.id == 1) {
 }
 
 # Save outputs into individual files.
-save(sgd.theta, file=sprintf("out/m-estimation-high-%i.RData", job.id))
+save(sgd.theta, data$theta, file=sprintf("out/m-estimation-high-%i.RData", job.id))
