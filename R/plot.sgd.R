@@ -1,16 +1,48 @@
 #' Plot objects of class \code{sgd}.
 #'
 #' @param x object of class \code{sgd}.
-#' @param \dots
+#' @param \dots additional arguments used for each type of plot. See
+#'   \sQuote{Details}.
 #' @param type character specifying the type of plot: \code{"mse"},
-#'   \code{"runtime"}
+#'   \code{"runtime"}. See \sQuote{Details}.
+#'
+#' @details
+#' Types:
+#' \describe{
+#'   \item{\code{mse}}{Mean squared error in predictions, which takes the
+#'     following arguments:
+#'     \describe{
+#'       \item{\code{x_test}}{test set}
+#'       \item{\code{y_test}}{test responses to compare predictions to}
+#'     }}
+#'   \item{\code{runtime}}{Mean squared error in predictions over runtime, which
+#'     takes the following arguments:
+#'     \describe{
+#'       \item{\code{x_test}}{test set}
+#'       \item{\code{y_test}}{test responses to compare predictions to}
+#'     }}
+#'   \item{\code{mse-param}}{Mean squared error in parameters, which takes the
+#'     following arguments:
+#'     \describe{
+#'       \item{\code{true_param}}{true vector of parameters to compare to}
+#'     }}
+#'   \item{\code{mse-param-runtime}}{Mean squared error in parameters over
+#'     runtime, which takes the following arguments:
+#'     \describe{
+#'       \item{\code{true_param}}{true vector of parameters to compare to}
+#'     }}
+#' }
 #'
 #' @export
 plot.sgd <- function(x, ..., type="mse") {
   if (type == "mse") {
     plot <- plot_mse
   } else if (type %in% c("runtime", "mse-runtime")) {
-    plot <- function(x, ..., xaxis="runtime") plot_mse(x, ..., xaxis=xaxis)
+    plot <- function(x, ...) plot_mse(x, ..., xaxis="Runtime (s)")
+  } else if (type == "mse-param") {
+    plot <- plot_mse_param
+  } else if (type == "mse-param-runtime") {
+    plot <- function(x, ...) plot_mse_param(x, ..., xaxis="Runtime (s)")
   } else {
     stop("'type' not recognized")
   }
@@ -27,7 +59,7 @@ get_mse_glm <- function(x, x_test, y_test) {
   mu <- x$model.out$family$linkinv(eta)
   mse <- rep(NA, nests)
   for (j in 1:nests) {
-    mse[j] <- colMeans((mu[, j] - y_test)^2)
+    mse[j] <- mean((mu[, j] - y_test)^2)
   }
   return(mse)
 }
@@ -38,13 +70,13 @@ get_mse_m <- function(x, x_test, y_test) {
   mu <- eta
   mse <- rep(NA, nests)
   for (j in 1:nests) {
-    mse[j] <- colMeans((mu[, j] - y_test)^2)
+    mse[j] <- mean((mu[, j] - y_test)^2)
   }
   return(mse)
 }
 
 # TODO in the same way as plot.R, allow for a list of sgd objects
-plot_mse <- function(x, x_test, y_test, xaxis="iter") {
+plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
   if (x$model %in% c("lm", "glm")) {
     get_mse <- get_mse_glm
   } else if (x$model == "m") {
@@ -55,29 +87,60 @@ plot_mse <- function(x, x_test, y_test, xaxis="iter") {
   }
   #sgds <- list(x, ...)
   dat <- data.frame()
-  count <- 1
-  #for (sgd in sgds) {
-  sgd <- x
-    mse <- get_mse(sgd, x_test, y_test)
-    temp_dat <- data.frame(mse=mse,
-                           time=sgd$time,
-                           pos=sgd$pos,
-                           label=count)
-    temp_dat <- temp_dat[!duplicated(temp_dat$pos), ]
+  #for (x in sgds) {
+    mse <- get_mse(x, x_test, y_test)
+    temp_dat <- data.frame(y=mse,
+                           label=label)
+    if (xaxis == "log-Iteration") {
+      temp_dat$x <- x$pos
+    } else if (xaxis == "Runtime (s)") {
+      temp_dat$x <- x$time
+    }
+    temp_dat <- temp_dat[!duplicated(temp_dat$x), ]
     dat <- rbind(dat, temp_dat)
-    count <- count + 1
   #}
   dat$label <- as.factor(dat$label)
 
-  # TODO there's got to be a more efficient way to do this...
-  if (xaxis == "iter") {
-    p <- ggplot2::ggplot(dat, ggplot2::aes(x=pos, y=mse, group=label))
-  } else if (xaxis == "runtime") {
-    p <- ggplot2::ggplot(dat, ggplot2::aes(x=time, y=mse, group=label))
-  } else {
-    stop("'xaxis' not recognized")
+  p <- generic_plot(dat, xaxis) +
+    ggplot2::scale_y_log10()
+  return(p)
+}
+
+get_mse_param <- function(x, true_param) {
+  nests <- ncol(x$estimates)
+  mse <- rep(NA, nests)
+  for (j in 1:nests) {
+    mse[j] <- mean((x$estimates[, j] - true_param)^2)
   }
-  p <- p + ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
+  return(mse)
+}
+
+plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
+  get_mse <- get_mse_param
+  dat <- data.frame()
+  #for (x in sgds) {
+    mse <- get_mse(x, true_param)
+    temp_dat <- data.frame(y=mse,
+                           label=label)
+    if (xaxis == "log-Iteration") {
+      temp_dat$x <- x$pos
+    } else if (xaxis == "Runtime (s)") {
+      temp_dat$x <- x$time
+    }
+    temp_dat <- temp_dat[!duplicated(temp_dat$x), ]
+    dat <- rbind(dat, temp_dat)
+  #}
+  dat$label <- as.factor(dat$label)
+
+  p <- generic_plot(dat, xaxis) +
+    ggplot2::scale_y_continuous(
+      breaks=5 * 1:(max(dat$y)/5))
+  return(p)
+}
+
+generic_plot <- function(dat, xaxis) {
+  p <- ggplot2::ggplot(dat, ggplot2::aes(x=x, y=y, group=label)) +
+    ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
       panel.background=ggplot2::element_blank(),
       panel.border=ggplot2::element_blank(),
@@ -91,28 +154,15 @@ plot_mse <- function(x, x_test, y_test, xaxis="iter") {
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
     ggplot2::scale_fill_hue(l=50) +
-    ggplot2::scale_y_log10()
-  if (xaxis == "iter") {
+    ggplot2::labs(
+      title="Mean Squared Error",
+      x=xaxis,
+      y=""
+    )
+  if (xaxis == "log-Iteration") {
     p <- p +
       ggplot2::scale_x_log10(
-        breaks=10^(1:log(sgd.theta$pos[length(sgd.theta$pos)], base=10))) +
-      ggplot2::labs(
-        title="Mean Squared Error",
-        x="log-Iteration",
-        y="log-MSE"
-      )
-  } else if (xaxis == "runtime") {
-    p <- p +
-      #ggplot2::scale_x_continuous(
-      #  breaks=10^(1:log(sgd.theta$pos[length(sgd.theta$pos)], base=10))) +
-      ggplot2::labs(
-        title="Mean Squared Error",
-        x="Runtime (s)",
-        y="log-MSE"
-      )
-  } else {
-    stop("'xaxis' not recognized")
+        breaks=10^(1:log(max(dat$x), base=10)))
   }
-
   return(p)
 }
