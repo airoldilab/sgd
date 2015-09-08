@@ -38,8 +38,8 @@ benchmark <- microbenchmark(
 )
 benchmark
 ## Output (for 2.6 GHz, Intel Core i5)
-## Unit: seconds
-##    expr      min       lq     mean   median       uq      max neval
-##     sgd 1.122968 1.251983 1.369997 1.296095 1.526145 1.786849    10
-##      lm 1.546782 1.623304 1.838424 1.795919 2.061442 2.201741    10
-##  glmnet 2.452500 2.584168 2.682394 2.627161 2.735530 3.093342    10
+## Unit: milliseconds
+##    expr       min        lq      mean    median        uq       max neval
+##     sgd  644.8761  676.8018  740.3485  733.2575  776.6705  918.4465    10
+##      lm 1467.7145 1566.2102 1648.5728 1608.2134 1773.2074 1816.3088    10
+##  glmnet 2392.7664 2437.7863 2636.2133 2600.4307 2789.2635 3091.6138    10
