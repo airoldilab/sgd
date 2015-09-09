@@ -185,6 +185,7 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   double diff;
   unsigned max_iters = n_samples*n_passes;
   bool do_more_iterations = true;
+  bool converged = false;
   if (sgd.verbose()) {
     Rcpp::Rcout << "Stochastic gradient method: " << sgd.name() << std::endl;
     Rcpp::Rcout << "SGD Start!" << std::endl;
@@ -219,6 +220,8 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
           mean(mean(abs(theta_old)));
       }
       if (diff < sgd.reltol()) {
+        converged = true;
+        sgd.end_early();
         do_more_iterations = false;
       }
     }
@@ -248,7 +251,7 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   return Rcpp::List::create(
     Rcpp::Named("model") = model.name(),
     Rcpp::Named("coefficients") = sgd.get_last_estimate(),
-    Rcpp::Named("converged") = true,
+    Rcpp::Named("converged") = converged,
     Rcpp::Named("estimates") = sgd.get_estimates(),
     Rcpp::Named("pos") = sgd.get_pos(),
     Rcpp::Named("times") = sgd.get_times(),

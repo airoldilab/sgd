@@ -22,9 +22,9 @@ public:
     reltol_ = Rcpp::as<double>(sgd["reltol"]);
     n_passes_ = Rcpp::as<unsigned>(sgd["npasses"]);
     size_ = Rcpp::as<unsigned>(sgd["size"]);
-    estimates_ = mat(n_params_, size_);
+    estimates_ = zeros<mat>(n_params_, size_);
     last_estimate_ = Rcpp::as<mat>(sgd["start"]);
-    times_ = vec(size_);
+    times_ = zeros<vec>(size_);
     t_ = 0;
     n_recorded_ = 0;
     pos_ = Mat<unsigned>(1, size_);
@@ -115,6 +115,13 @@ public:
       }
     }
     return *this;
+  }
+
+  void end_early() {
+    // Throw away the space for things that were not recorded.
+    pos_.shed_cols(n_recorded_, size_-1);
+    estimates_.shed_cols(n_recorded_, size_-1);
+    times_.shed_rows(n_recorded_, size_-1);
   }
 
 protected:
