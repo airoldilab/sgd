@@ -8,8 +8,6 @@
 #SBATCH --mail-user=dtran@g.harvard.edu # Where to send mail
 #SBATCH --mail-type=ALL    # When to send mail
 
-# This file runs the simulation code for a given set of simulations.
-
 Rscript m-estimation-high.R $SLURM_ARRAY_TASK_ID
 
 # vim:filetype=sh
