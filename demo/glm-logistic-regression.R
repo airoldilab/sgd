@@ -28,5 +28,8 @@ y <- rbinom(N, 1, p)
 dat <- data.frame(y=y, x=X)
 
 sgd.theta <- sgd(y ~ ., data=dat, model="glm",
-                 model.control=list(family="binomial"))
-sgd.theta$coefficients
+                 model.control=list(family="binomial"),
+                 sgd.control=list(lr.control=c(100, NA, NA, NA), npasses=1,
+                 pass=T))
+
+plot(sgd.theta, theta, label="ai-sgd", type="mse-param")

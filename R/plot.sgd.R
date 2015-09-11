@@ -138,7 +138,8 @@ plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
   get_mse <- get_mse_param
 
   if (class(x) != "list") {
-    x <- list(label=x)
+    x <- list(x)
+    names(x) <- label
   }
   dat <- data.frame()
   for (i in 1:length(x)) {
