@@ -43,7 +43,11 @@ public:
     const {
     data_point data_pt = data.get_data_point(t);
     return ((data_pt.y - h_transfer(dot(data_pt.x, theta_old))) *
-      data_pt.x).t() + lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
+      data_pt.x).t() - gradient_penalty(theta_old);
+  }
+
+  double g_link(double u) const {
+    return transfer_obj_->link(u);
   }
 
   double h_transfer(double u) const {
@@ -52,10 +56,6 @@ public:
 
   mat h_transfer(const mat& u) const {
     return transfer_obj_->transfer(u);
-  }
-
-  double g_link(double u) const {
-    return transfer_obj_->link(u);
   }
 
   double h_first_deriv(double u) const {
@@ -87,23 +87,28 @@ public:
   }
 
   // Functions for implicit update
-  // ell'(x^T theta + ||x||^2 * ksi)
-  double scale_factor(double ksi, const data_point& data_pt, const mat&
-    theta_old, double normx) const {
-    return data_pt.y - h_transfer(dot(theta_old, data_pt.x) + normx * ksi);
+  double scale_factor(double ksi, double at, const data_point& data_pt, const
+    mat& theta_old, double normx) const {
+    return data_pt.y - h_transfer(
+      dot(theta_old, data_pt.x) -
+      at * dot(gradient_penalty(theta_old), data_pt.x) +
+      ksi * normx);
   }
 
-  // d/d(ksi) ell'(x^T theta + ||x||^2 * ksi)
-  double scale_factor_first_deriv(double ksi, const data_point& data_pt, const
-    mat& theta_old, double normx) const {
-    return h_first_deriv(dot(theta_old, data_pt.x) + normx * ksi)*normx;
+  double scale_factor_first_deriv(double ksi, double at, const data_point&
+    data_pt, const mat& theta_old, double normx) const {
+    return h_first_deriv(
+      dot(theta_old, data_pt.x) -
+      at * dot(gradient_penalty(theta_old), data_pt.x) +
+      ksi * normx) * normx;
   }
 
-  // d^2/d(ksi)^2 ell'(x^T theta + ||x||^2 * ksi)
-  double scale_factor_second_deriv(double ksi, const data_point& data_pt, const
-    mat& theta_old, double normx) const {
-    return h_second_deriv(dot(theta_old, data_pt.x) + normx * ksi)*normx*
-      normx;
+  double scale_factor_second_deriv(double ksi, double at, const data_point&
+    data_pt, const mat& theta_old, double normx) const {
+    return h_second_deriv(
+      dot(theta_old, data_pt.x) -
+      at * dot(gradient_penalty(theta_old), data_pt.x) +
+      ksi * normx) * normx * normx;
   }
 
 private:

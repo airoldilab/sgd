@@ -1,4 +1,4 @@
-context("Mean Squared Error")
+context("Linear regression")
 
 test_that("MSE converges for linear models", {
 
@@ -18,8 +18,11 @@ test_that("MSE converges for linear models", {
 
   get.mse <- function(method, lr) {
     sgd.theta <- sgd(y ~ ., data=dat, model="lm",
-                     sgd.control=list(method=method, lr=lr,
-                     npasses=10))
+                     sgd.control=list(
+                       method=method,
+                       lr=lr,
+                       npasses=10,
+                       pass=T))
     mean((sgd.theta$coefficients - theta)^2)
   }
 

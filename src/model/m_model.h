@@ -27,8 +27,8 @@ public:
     const {
     data_point data_pt = data.get_data_point(t);
     return (loss_obj_->first_derivative(
-      data_pt.y - dot(data_pt.x, theta_old), lambda_) * data_pt.x).t() +
-      lambda1*norm(theta_old, 1) + lambda2*norm(theta_old, 2);
+      data_pt.y - dot(data_pt.x, theta_old), lambda_) * data_pt.x).t() -
+      gradient_penalty(theta_old);
   }
 
   std::string loss() const {
@@ -36,25 +36,31 @@ public:
   }
 
   // Functions for implicit update
-  // rho'(y - x^T theta + ||x||^2 * ksi)
-  double scale_factor(double ksi, const data_point& data_pt, const mat&
-    theta_old, double normx) const {
+  double scale_factor(double ksi, double at, const data_point& data_pt, const
+    mat& theta_old, double normx) const {
     return loss_obj_->first_derivative(
-      data_pt.y - dot(theta_old, data_pt.x) + normx * ksi, lambda_);
+      data_pt.y - dot(theta_old, data_pt.x) -
+        at * dot(gradient_penalty(theta_old), data_pt.x) +
+        ksi * normx,
+      lambda_);
   }
 
-  // d/d(ksi) rho'(y - x^T theta + ||x||^2 * ksi)
-  double scale_factor_first_deriv(double ksi, const data_point& data_pt, const
-    mat& theta_old, double normx) const {
+  double scale_factor_first_deriv(double ksi, double at, const data_point&
+    data_pt, const mat& theta_old, double normx) const {
     return loss_obj_->second_derivative(
-      data_pt.y - dot(theta_old, data_pt.x) + normx * ksi, lambda_)*normx;
+      data_pt.y - dot(theta_old, data_pt.x) -
+        at * dot(gradient_penalty(theta_old), data_pt.x) +
+        ksi * normx,
+      lambda_) * normx;
   }
 
-  // d^2/d(ksi)^2 rho'(y - x^T theta + ||x||^2 * ksi)
-  double scale_factor_second_deriv(double ksi, const data_point& data_pt, const
-    mat& theta_old, double normx) const {
+  double scale_factor_second_deriv(double ksi, double at, const data_point&
+    data_pt, const mat& theta_old, double normx) const {
     return loss_obj_->third_derivative(
-      data_pt.y - dot(theta_old, data_pt.x) + normx * ksi, lambda_)*normx*normx;
+      data_pt.y - dot(theta_old, data_pt.x) -
+        at * dot(gradient_penalty(theta_old), data_pt.x) +
+        ksi * normx,
+      lambda_) * normx * normx;
   }
 
 private:

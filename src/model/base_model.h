@@ -13,8 +13,8 @@ class base_model {
 public:
   base_model(Rcpp::List model) {
     name_ = Rcpp::as<std::string>(model["name"]);
-    lambda1 = Rcpp::as<double>(model["lambda1"]);
-    lambda2 = Rcpp::as<double>(model["lambda2"]);
+    lambda1_ = Rcpp::as<double>(model["lambda1"]);
+    lambda2_ = Rcpp::as<double>(model["lambda2"]);
   }
 
   std::string name() const {
@@ -22,13 +22,27 @@ public:
   }
 
   mat gradient(unsigned t, const mat& theta_old, const data_set& data) const;
+  mat gradient_penalty(const mat& theta) const {
+    return lambda1_*sign(theta) + lambda2_*theta;
+  }
 
-  // TODO make private
-  double lambda1;
-  double lambda2;
+  // Functions for implicit update
+  // Following the JSS paper, we assume C_n = identity, lambda = 1, and use ksi
+  // rather than s_n, which is slightly less efficient.
+  // ell'(x^T theta + at x^T grad(penalty) + ksi ||x||^2)
+  double scale_factor(double ksi, double at, const data_point& data_pt, const
+    mat& theta_old, double normx) const;
+  // d/d(ksi) ell'
+  double scale_factor_first_deriv(double ksi, double at, const data_point&
+    data_pt, const mat& theta_old, double normx) const;
+  // d^2/d(ksi)^2 ell'
+  double scale_factor_second_deriv(double ksi, double at, const data_point&
+    data_pt, const mat& theta_old, double normx) const;
 
 protected:
   std::string name_;
+  double lambda1_;
+  double lambda2_;
 };
 
 #endif
