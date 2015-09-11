@@ -24,11 +24,11 @@ public:
 
   tuple_type operator()(double ksi) const {
     double value = ksi - at_ *
-      model_.scale_factor(ksi, data_pt_, theta_old_, normx_);
+      model_.scale_factor(ksi, at_, data_pt_, theta_old_, normx_);
     double first = 1 + at_ *
-      model_.scale_factor_first_deriv(ksi, data_pt_, theta_old_, normx_);
+      model_.scale_factor_first_deriv(ksi, at_, data_pt_, theta_old_, normx_);
     double second = at_ *
-      model_.scale_factor_second_deriv(ksi, data_pt_, theta_old_, normx_);
+      model_.scale_factor_second_deriv(ksi, at_, data_pt_, theta_old_, normx_);
     tuple_type out(value, first, second);
     return out;
   }
@@ -65,15 +65,13 @@ public:
     data_point data_pt = data.get_data_point(t);
     double normx = dot(data_pt.x, data_pt.x);
 
-    double r = at_avg * model.scale_factor(0, data_pt, theta_old, normx);
+    double r = at_avg * model.scale_factor(0, at_avg, data_pt, theta_old, normx);
     double lower = 0;
     double upper = 0;
     if (r < 0) {
-      upper = 0;
       lower = r;
     } else {
       upper = r;
-      lower = 0;
     }
     double ksi;
     if (lower != upper) {
@@ -83,7 +81,9 @@ public:
     } else {
       ksi = lower;
     }
-    return theta_old + ksi * data_pt.x.t();
+    return theta_old +
+      ksi * data_pt.x.t() -
+      at_avg * model.gradient_penalty(theta_old);
   }
 
   mat update(unsigned t, const mat& theta_old, const data_set& data,
@@ -96,15 +96,13 @@ public:
     data_point data_pt = data.get_data_point(t);
     double normx = dot(data_pt.x, data_pt.x);
 
-    double r = at_avg * model.scale_factor(0, data_pt, theta_old, normx);
+    double r = at_avg * model.scale_factor(0, at_avg, data_pt, theta_old, normx);
     double lower = 0;
     double upper = 0;
     if (r < 0) {
-      upper = 0;
       lower = r;
     } else {
       upper = r;
-      lower = 0;
     }
     double ksi;
     if (lower != upper) {
@@ -114,7 +112,9 @@ public:
     } else {
       ksi = lower;
     }
-    return theta_old + ksi * data_pt.x.t();
+    return theta_old +
+      ksi * data_pt.x.t() -
+      at_avg * model.gradient_penalty(theta_old);
   }
 
   mat update(unsigned t, const mat& theta_old, const data_set& data,
