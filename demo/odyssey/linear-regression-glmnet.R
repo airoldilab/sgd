@@ -53,12 +53,10 @@ for (i in 1:nSim) {
   y <- X %*% theta + k * eps
 
   # glmnet doesn't work on streaming data
-  if (nstreams == 1) {
-    time_start <- proc.time()[3]
-    glmnet.theta <- glmnet(X, y, alpha=1, standardize=FALSE,
-      type.gaussian="covariance")
-    times.glmnet[i] <- as.numeric(proc.time()[3] - time_start)
-  }
+  time_start <- proc.time()[3]
+  glmnet.theta <- glmnet(X, y, alpha=1, standardize=FALSE,
+    type.gaussian="covariance")
+  times.glmnet[i] <- as.numeric(proc.time()[3] - time_start)
 }
 print(mean(times.glmnet))
 
