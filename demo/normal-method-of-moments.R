@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Demo usage of sgd for estimating parameters of a normal distribution using
-# estimating equations.
+# the method of moments.
 #
 # Data generating process:
 #   X ~ Normal(4, 2)
@@ -32,7 +32,7 @@ gr <- function(theta, x) {
          2*(x^3 - theta[1]*(theta[1]^2 + 3*theta[2]^2)) * -6*theta[1]*theta[2])
     )))
 }
-sgd.theta <- sgd(X, y=matrix(NA, nrow=nrow(X)), model="ee",
+sgd.theta <- sgd(X, y=matrix(NA, nrow=nrow(X)), model="gmm",
   model.control=list(gr=gr, nparams=2),
   sgd.control=list(method="sgd", npasses=100, lr="adagrad"))
 sgd.theta
