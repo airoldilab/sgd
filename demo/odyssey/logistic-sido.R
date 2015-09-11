@@ -9,8 +9,8 @@
 library(sgd)
 library(gridExtra)
 
-source("script/plot.R")
-source("script/run_exp.R")
+source("demo/odyssey/plot.R")
+source("demo/odyssey/run_exp.R")
 
 raw <- read.table("data/sido0_train.data", header=F)
 labels <- read.table("data/sido0_train.targets", header=F)[, 1]

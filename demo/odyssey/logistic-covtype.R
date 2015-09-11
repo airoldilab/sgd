@@ -5,8 +5,8 @@
 #   data files should be stored in "data/"
 # * covtype.data
 
-source("script/plot.R")
-source("script/run_exp.R")
+source("demo/odyssey/plot.R")
+source("demo/odyssey/run_exp.R")
 
 library(sgd)
 library(gridExtra)

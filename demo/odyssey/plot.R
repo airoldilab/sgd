@@ -48,8 +48,8 @@ plot_mse <- function(sgds, names, np) {
     count <- count + 1
   }
 
-  pos <- 0
-  label <- 0
+  #pos <- 0
+  #label <- 0
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=npass, y=mse, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(

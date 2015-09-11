@@ -8,9 +8,9 @@
 # * train-images.idx3-ubyte
 # * train-labels.idx1-ubyte
 
-source("script/load_mnist.R")
-source("script/plot.R")
-source("script/run_exp.R")
+source("demo/odyssey/logistic-load-mnist.R")
+source("demo/odyssey/plot.R")
+source("demo/odyssey/run_exp.R")
 
 library(sgd)
 library(gridExtra)

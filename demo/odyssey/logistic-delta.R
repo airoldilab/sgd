@@ -9,8 +9,8 @@
 library(sgd)
 library(gridExtra)
 
-source("script/plot.R")
-source("script/run_exp.R")
+source("demo/odyssey/plot.R")
+source("demo/odyssey/run_exp.R")
 
 # N = 500000
 # raw <- read.table("data/delta_train.dat.bz2", header=F, nrows=N)

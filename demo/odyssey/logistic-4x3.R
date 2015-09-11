@@ -4,10 +4,10 @@ library(ggplot2)
 library(gridExtra)
 library(sgd)
 
-source("script/exp_covtype.R")
-source("script/exp_delta.R")
-source("script/exp_sido.R")
-source("script/exp_mnist.R")
+source("demo/odyssey/logistic-covtype.R")
+source("demo/odyssey/logistic-delta.R")
+source("demo/odyssey/logistic-sido.R")
+source("demo/odyssey/logistic-mnist.R")
 
 pdf("img/exp_4x3.pdf")
 grid.arrange(out_covtype[[1]], out_covtype[[2]], out_covtype[[3]],

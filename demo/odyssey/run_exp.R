@@ -1,4 +1,4 @@
-source("script/plot.R")
+source("demo/odyssey/plot.R")
 
 library(sgd)
 library(ggplot2)
