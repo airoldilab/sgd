@@ -40,10 +40,10 @@ genx = function(n,p,rho){
 }
 
 # Dimensions: Put them manually here!
-nSim <- 10    # number of runs
-N <- 1e4      # size of minibatch
+nSim <- 1    # number of runs
+N <- 1e5      # size of minibatch
 nstreams <- 1 # number of streams
-d <- 1e3
+d <- 1e4
 rho <- 0
 
 times.aisgd <- rep(0, nSim)
@@ -51,10 +51,10 @@ times.sgd <- rep(0, nSim)
 times.glmnet <- rep(0, nSim)
 converged.aisgd <- FALSE
 converged.sgd <- FALSE
-converged.glmnet <- FALSE
 
 set.seed(42)
 for (i in 1:nSim) {
+  print(sprintf("Running simulation %i of %i...", i, nSim))
   for (nstream in 1:nstreams) {
     # Generate stream of data.
     X <- genx(N, d, rho)
@@ -71,43 +71,49 @@ for (i in 1:nSim) {
         start <- aisgd.theta$coefficients
       }
       aisgd.theta <- sgd(X, y, model="lm",
-        sgd.control=list(method="ai-sgd", npasses=1, start=start))
+        sgd.control=list(method="ai-sgd", npasses=1, pass=T, start=start))
       times.aisgd[i] <- times.aisgd[i] + max(aisgd.theta$times)
-      if (aisgd.theta$converged) {
-        converged.aisgd <- TRUE
+
+      converged.aisgd <- aisgd.theta$converged
+      if (converged.aisgd) {
+        print(sprintf("AI-SGD converged early! On nstream %i", nstream))
       }
     }
 
     # explicit SGD
+    converged.sgd <- T
     if (!converged.sgd) {
       if (nstream == 1) {
-        start <- rnorm(d, mean=0, sd=1e-5)
+        start <- start # using same as AI-SGD's start
       } else {
         start <- sgd.theta$coefficients
       }
       sgd.theta <- sgd(X, y, model="lm",
-              sgd.control=list(method="sgd", npasses=1, start=start))
+        sgd.control=list(method="sgd", npasses=1, pass=T, start=start))
       times.sgd[i] <- times.sgd[i] + max(sgd.theta$times)
-      if (sgd.theta$converged) {
-        converged.sgd <- TRUE
+
+      converged.sgd <- sgd.theta$converged
+      if (converged.sgd) {
+        print(sprintf("SGD converged early! On nstream %i", nstream))
       }
     }
 
     # glmnet doesn't work on streaming data
     if (nstreams == 1) {
       time_start <- proc.time()[3]
-      glmnet.theta <- glmnet(X, y, alpha=1, standardize=FALSE,
+      glmnet.theta <- glmnet(X, y, alpha=1,, standardize=FALSE,
         type.gaussian="covariance")
       times.glmnet[i] <- as.numeric(proc.time()[3] - time_start)
     }
   }
 }
-print(mean(times.aisgd * 10))
+print(mean(times.aisgd * 10)) # * 10 for lambdas, /60 for minute
 print(mean(times.sgd * 10))
 print(mean(times.glmnet))
 
 # Tweaks:
-# * For 100 lambda values, I simply just do one lambda value and multiply the time
-# by 10.
+# * For 100 lambda values, I simply just do one lambda value and multiply the
+#   time by 10.
 # * The times outputted from sgd only includes the C++ time.
-# * TODO detect convergence
+# * For some of these, I simply let sgd run over a full pass, instead of waiting
+# for convergence to threshold.
