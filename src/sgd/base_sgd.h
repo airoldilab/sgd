@@ -31,6 +31,11 @@ public:
     pass_ = Rcpp::as<bool>(sgd["pass"]);
     verbose_ = Rcpp::as<bool>(sgd["verbose"]);
 
+    check_ = Rcpp::as<bool>(sgd["check"]);
+    if (check_) {
+      truth_ = Rcpp::as<mat>(sgd["truth"]);
+    }
+
     // Set which iterations to store estimates
     unsigned n_iters = n_samples*n_passes_;
     for (unsigned i = 0; i < size_; ++i) {
@@ -76,20 +81,37 @@ public:
   mat get_last_estimate() const {
     return last_estimate_;
   }
-  double reltol() const {
-    return reltol_;
-  }
-  bool verbose() const {
-    return verbose_;
-  }
-  bool pass() const {
-    return pass_;
-  }
   vec get_times() const {
     return times_;
   }
   Mat<unsigned> get_pos() const {
     return pos_;
+  }
+  bool pass() const {
+    return pass_;
+  }
+  bool verbose() const {
+    return verbose_;
+  }
+
+  // Check if satisfy convergence threshold.
+  bool check_convergence(const mat& theta_new, const mat& theta_old) const {
+    // if checking against truth
+    double diff;
+    if (check_) {
+      diff = mean(mean(pow(theta_new - truth_, 2)));
+      if (diff < 0.001) {
+        return true;
+      }
+    // if not running fixed number of iterations
+    } else if (!pass_) {
+      diff = mean(mean(abs(theta_new - theta_old))) /
+        mean(mean(abs(theta_old)));
+      if (diff < reltol_) {
+        return true;
+      }
+    }
+    return false;
   }
 
   const learn_rate_value& learning_rate(unsigned t, const mat& grad_t) {
@@ -140,6 +162,8 @@ protected:
   Mat<unsigned> pos_;       // the iteration of recorded coefficients
   bool pass_;               // whether to force running for n_passes_ over data
   bool verbose_;
+  bool check_;
+  mat truth_;
 };
 
 #endif

@@ -311,7 +311,6 @@ fit <- function(x, y, model,
     family <- model.control$family
     model.control$family <- family$family
   }
-  sgd.control$start <- as.matrix(sgd.control$start)
 
   if (sgd.control$verbose) {
     print("Completed pre-processing attributes...")
@@ -498,7 +497,13 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               size=100,
                               reltol=1e-5, npasses=3, pass=F,
                               shuffle=F, verbose=F,
+                              truth=NULL, check=F,
                               N, nparams, ...) {
+  # The following are internal parameters that can be used but aren't written in
+  # the documentation for succinctness:
+  #   check: logical, specifying whether to check against \code{truth} for
+  #          convergence instead of using reltol
+  #   truth: true set of parameters
   # TODO size isn't the correct thing since reltol means you don't know when it
   # ends. user should specify how often to store the iterates (how many per
   # iteration)
@@ -627,10 +632,12 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
   } else {
     implicit.control <- NULL
   }
-  # TODO, since experment.h requires it for all stochastic gradient methods,
-  # even though it shouldn't.
-  #call <- match.call()
-  #implicit.control <- do.call("valid_implicit_control", list(...))
+
+  # TODO they should be vectors in C++, not requiring conversion
+  start <- as.matrix(start)
+  if (check) {
+    truth <- as.matrix(truth)
+  }
 
   return(c(list(method=method,
                 lr=lr,
@@ -642,6 +649,8 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 pass=pass,
                 shuffle=shuffle,
                 verbose=verbose,
+                check=check,
+                truth=truth,
                 nparams=nparams),
            implicit.control))
 }

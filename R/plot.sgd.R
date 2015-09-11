@@ -157,7 +157,7 @@ plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
 
   p <- generic_plot(dat, xaxis) +
     ggplot2::scale_y_continuous(
-      breaks=5 * 1:(max(dat$y)/5))
+      breaks=5 * 1:min((max(dat$y)/5), 100))
   return(p)
 }
 
