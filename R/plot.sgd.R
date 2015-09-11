@@ -67,7 +67,7 @@ plot.list <- function(x, ..., type="mse") {
 }
 
 ################################################################################
-# Auxiliary functions: plots
+# Helper functions
 ################################################################################
 
 get_mse_glm <- function(x, x_test, y_test) {

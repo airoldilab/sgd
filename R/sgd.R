@@ -267,8 +267,7 @@ sgd.matrix <- function(x, y, model,
   sgd.control <- do.call("valid_sgd_control",
                          c(sgd.control, N=NROW(y), nparams=model.control$nparams))
 
-  out <- fit(x, y, model, model.control, sgd.control)
-  return(out)
+  return(fit(x, y, model, model.control, sgd.control))
 }
 
 #' @export
@@ -283,7 +282,7 @@ sgd.big.matrix <- function(x, y, model,
 }
 
 ################################################################################
-# Auxiliary functions: model fitting
+# Helper functions
 ################################################################################
 
 fit <- function(x, y, model,
@@ -333,10 +332,6 @@ fit <- function(x, y, model,
   out$times <- as.vector(out$times)
   return(out)
 }
-
-################################################################################
-# Auxiliary functions: validity checks
-################################################################################
 
 valid_model_control <- function(model, model.control=list(...), ...) {
   # Run validity check of arguments passed to model.control given model. It
@@ -666,10 +661,6 @@ valid_implicit_control <- function(delta=30L, ...) {
   }
   return(list(delta=delta))
 }
-
-################################################################################
-# Auxiliary functions: Miscellaneous
-################################################################################
 
 transfer_name <- function(link.name) {
   if(!is.character(link.name)) {
