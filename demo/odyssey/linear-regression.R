@@ -41,9 +41,9 @@ genx = function(n,p,rho){
 
 # Dimensions: Put them manually here!
 nSim <- 1    # number of runs
-N <- 1e5      # size of minibatch
-nstreams <- 1 # number of streams
-d <- 1e4
+N <- 1e2      # size of minibatch
+nstreams <- 10 # number of streams
+d <- 1e5
 rho <- 0
 
 times.aisgd <- rep(0, nSim)
@@ -71,7 +71,7 @@ for (i in 1:nSim) {
         start <- aisgd.theta$coefficients
       }
       aisgd.theta <- sgd(X, y, model="lm",
-        sgd.control=list(method="ai-sgd", npasses=1, pass=T, start=start))
+        sgd.control=list(method="implicit", npasses=1, pass=T, start=start))
       times.aisgd[i] <- times.aisgd[i] + max(aisgd.theta$times)
 
       converged.aisgd <- aisgd.theta$converged
@@ -81,7 +81,6 @@ for (i in 1:nSim) {
     }
 
     # explicit SGD
-    converged.sgd <- T
     if (!converged.sgd) {
       if (nstream == 1) {
         start <- start # using same as AI-SGD's start
@@ -89,7 +88,8 @@ for (i in 1:nSim) {
         start <- sgd.theta$coefficients
       }
       sgd.theta <- sgd(X, y, model="lm",
-        sgd.control=list(method="sgd", npasses=1, pass=T, start=start))
+        sgd.control=list(method="sgd", npasses=1, pass=T, lr.control=c(0.1,
+        NA, NA, NA), start=start))
       times.sgd[i] <- times.sgd[i] + max(sgd.theta$times)
 
       converged.sgd <- sgd.theta$converged
@@ -101,14 +101,14 @@ for (i in 1:nSim) {
     # glmnet doesn't work on streaming data
     if (nstreams == 1) {
       time_start <- proc.time()[3]
-      glmnet.theta <- glmnet(X, y, alpha=1,, standardize=FALSE,
+      glmnet.theta <- glmnet(X, y, alpha=1, standardize=FALSE,
         type.gaussian="covariance")
       times.glmnet[i] <- as.numeric(proc.time()[3] - time_start)
     }
   }
 }
-print(mean(times.aisgd * 10)) # * 10 for lambdas, /60 for minute
-print(mean(times.sgd * 10))
+print(mean(times.aisgd * 1e4/60/60)) # * 10 for lambdas, /60 for minute
+print(mean(times.sgd * 1e4/60/60))
 print(mean(times.glmnet))
 
 # Tweaks:
