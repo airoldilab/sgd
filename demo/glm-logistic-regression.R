@@ -32,4 +32,4 @@ sgd.theta <- sgd(y ~ ., data=dat, model="glm",
                  sgd.control=list(lr.control=c(100, NA, NA, NA), npasses=1,
                  pass=T))
 
-plot(sgd.theta, theta, label="ai-sgd", type="mse-param")
+plot(sgd.theta, cbind(1, X), y, label="ai-sgd", type="clf")
