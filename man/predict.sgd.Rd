@@ -2,9 +2,12 @@
 % Please edit documentation in R/predict.sgd.R
 \name{predict.sgd}
 \alias{predict.sgd}
+\alias{predict_all}
 \title{Predict for objects of class \code{sgd}}
 \usage{
 \method{predict}{sgd}(x, x_test, ...)
+
+predict_all(x, x_test, ...)
 }
 \arguments{
 \item{x}{object of class \code{sgd}.}
@@ -16,5 +19,9 @@
 \description{
 Form predictions using the estimated model parameters from stochastic
 gradient descent.
+}
+\details{
+A column of 1's must be included if the parameters include a bias, or
+intercept, term.
 }
 
