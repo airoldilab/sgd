@@ -4,10 +4,15 @@
 #' @param \dots additional arguments used for each type of plot. See
 #'   \sQuote{Details}.
 #' @param type character specifying the type of plot: \code{"mse"},
-#'   \code{"runtime"}. See \sQuote{Details}.
+#'   \code{"clf"}, \code{"mse-param"}. See \sQuote{Details}. Default is
+#'   \code{"mse"}.
+#' @param xaxis character specifying the x-axis of plot: \code{"iteration"}
+#'   plots the y values over the log-iteration of the algorithm;
+#'   \code{"runtime"} plots the y values over the time in seconds to reach them.
+#'   Default is \code{"iteration"}.
 #'
 #' @details
-#' Types:
+#' Types of plots available:
 #' \describe{
 #'   \item{\code{mse}}{Mean squared error in predictions, which takes the
 #'     following arguments:
@@ -15,8 +20,8 @@
 #'       \item{\code{x_test}}{test set}
 #'       \item{\code{y_test}}{test responses to compare predictions to}
 #'     }}
-#'   \item{\code{runtime}}{Mean squared error in predictions over runtime, which
-#'     takes the following arguments:
+#'   \item{\code{clf}}{Classification error in predictions, which takes the
+#'     following arguments:
 #'     \describe{
 #'       \item{\code{x_test}}{test set}
 #'       \item{\code{y_test}}{test responses to compare predictions to}
@@ -26,43 +31,18 @@
 #'     \describe{
 #'       \item{\code{true_param}}{true vector of parameters to compare to}
 #'     }}
-#'   \item{\code{mse-param-runtime}}{Mean squared error in parameters over
-#'     runtime, which takes the following arguments:
-#'     \describe{
-#'       \item{\code{true_param}}{true vector of parameters to compare to}
-#'     }}
 #' }
 #'
 #' @export
-plot.sgd <- function(x, ..., type="mse") {
-  if (type == "mse") {
-    plot <- plot_mse
-  } else if (type %in% c("runtime", "mse-runtime")) {
-    plot <- function(x, ...) plot_mse(x, ..., xaxis="Runtime (s)")
-  } else if (type == "mse-param") {
-    plot <- plot_mse_param
-  } else if (type == "mse-param-runtime") {
-    plot <- function(x, ...) plot_mse_param(x, ..., xaxis="Runtime (s)")
-  } else {
-    stop("'type' not recognized")
-  }
+plot.sgd <- function(x, ..., type="mse", xaxis="iteration") {
+  plot <- choose_plot(type, xaxis)
   return(plot(x, ...))
 }
 
 #' @export
 #' @rdname plot.sgd
-plot.list <- function(x, ..., type="mse") {
-  if (type == "mse") {
-    plot <- plot_mse
-  } else if (type %in% c("runtime", "mse-runtime")) {
-    plot <- function(x, ...) plot_mse(x, ..., xaxis="Runtime (s)")
-  } else if (type == "mse-param") {
-    plot <- plot_mse_param
-  } else if (type == "mse-param-runtime") {
-    plot <- function(x, ...) plot_mse_param(x, ..., xaxis="Runtime (s)")
-  } else {
-    stop("'type' not recognized")
-  }
+plot.list <- function(x, ..., type="mse", xaxis="iteration") {
+  plot <- choose_plot(type, xaxis)
   return(plot(x, ...))
 }
 
@@ -70,10 +50,32 @@ plot.list <- function(x, ..., type="mse") {
 # Helper functions
 ################################################################################
 
-get_mse_glm <- function(x, x_test, y_test) {
-  nests <- ncol(x$estimates)
-  eta <- x_test %*% x$estimates # assuming intercepts in X
-  mu <- x$model.out$family$linkinv(eta)
+choose_plot <- function(type, xaxis) {
+  if (type == "mse") {
+    if (xaxis == "iteration") {
+      return(plot_mse)
+    } else if (xaxis == "runtime") {
+      return(function(x, ...) plot_mse(x, ..., xaxis="Runtime (s)"))
+    }
+  } else if (type == "mse-param") {
+    if (xaxis == "iteration") {
+      return(plot_mse_param)
+    } else if (xaxis == "runtime") {
+      return(function(x, ...) plot_mse_param(x, ..., xaxis="Runtime (s)"))
+    }
+  } else if (type == "clf") {
+    if (xaxis == "iteration") {
+      return(plot_clf)
+    } else if (xaxis == "runtime") {
+      return(function(x, ...) plot_clf(x, ..., xaxis="Runtime (s)"))
+    }
+  }
+  stop("'type' not recognized")
+}
+
+get_mse <- function(x, x_test, y_test) {
+  mu <- predict_all(x, x_test)
+  nests <- ncol(mu)
   mse <- rep(NA, nests)
   for (j in 1:nests) {
     mse[j] <- mean((mu[, j] - y_test)^2)
@@ -81,27 +83,16 @@ get_mse_glm <- function(x, x_test, y_test) {
   return(mse)
 }
 
-get_mse_m <- function(x, x_test, y_test) {
+get_mse_param <- function(x, true_param) {
   nests <- ncol(x$estimates)
-  eta <- x_test %*% x$estimates # assuming intercepts in X
-  mu <- eta
   mse <- rep(NA, nests)
   for (j in 1:nests) {
-    mse[j] <- mean((mu[, j] - y_test)^2)
+    mse[j] <- mean((x$estimates[, j] - true_param)^2)
   }
   return(mse)
 }
 
 plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
-  if (x$model %in% c("lm", "glm")) {
-    get_mse <- get_mse_glm
-  } else if (x$model == "m") {
-    get_mse <- get_mse_m
-  # TODO
-  } else {
-    stop("'model' not recognized")
-  }
-
   if (class(x) != "list") {
     x <- list(label=x)
   }
@@ -121,29 +112,22 @@ plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
   dat$label <- as.factor(dat$label)
 
   p <- generic_plot(dat, xaxis) +
-    ggplot2::scale_y_log10()
+    ggplot2::scale_y_log10() +
+    ggplot2::labs(
+      title="Mean Squared Error",
+      x=xaxis,
+      y="")
   return(p)
 }
 
-get_mse_param <- function(x, true_param) {
-  nests <- ncol(x$estimates)
-  mse <- rep(NA, nests)
-  for (j in 1:nests) {
-    mse[j] <- mean((x$estimates[, j] - true_param)^2)
-  }
-  return(mse)
-}
-
 plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
-  get_mse <- get_mse_param
-
   if (class(x) != "list") {
     x <- list(x)
     names(x) <- label
   }
   dat <- data.frame()
   for (i in 1:length(x)) {
-    mse <- get_mse(x[[i]], true_param)
+    mse <- get_mse_param(x[[i]], true_param)
     temp_dat <- data.frame(y=mse,
                            label=names(x)[i])
     if (xaxis == "log-Iteration") {
@@ -158,7 +142,45 @@ plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
 
   p <- generic_plot(dat, xaxis) +
     ggplot2::scale_y_continuous(
-      breaks=5 * 1:min((max(dat$y)/5), 100))
+      breaks=5 * 1:min((max(dat$y)/5), 100)) +
+    ggplot2::labs(
+      title="Mean Squared Error",
+      x=xaxis,
+      y="")
+  return(p)
+}
+
+plot_clf <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
+  if (class(x) != "list") {
+    x <- list(x)
+    names(x) <- label
+  }
+  dat <- data.frame()
+  for (i in 1:length(x)) {
+    pred <- predict_all(x[[i]], x_test)
+    pred <- (pred > 0.5) * 1
+    error <- colSums(pred != y_test) / nrow(pred) # is this correct?
+    temp_dat <- data.frame(y=error,
+                           label=names(x)[i])
+    if (xaxis == "log-Iteration") {
+      temp_dat$x <- x[[i]]$pos
+    } else if (xaxis == "Runtime (s)") {
+      temp_dat$x <- x[[i]]$time
+    }
+    temp_dat <- temp_dat[!duplicated(temp_dat$x), ]
+    dat <- rbind(dat, temp_dat)
+  }
+  dat$label <- as.factor(dat$label)
+
+  p <- generic_plot(dat, xaxis) +
+    ggplot2::scale_y_continuous(
+      #limits=c(max(0, mean(dat$y)-2.5*sd(dat$y)),
+      #         min(1, mean(dat$y)+2*sd(dat$y))),
+      breaks=seq(0.05, 1, 0.05)) +
+    ggplot2::labs(
+      title="Classification Error",
+      x=xaxis,
+      y="")
   return(p)
 }
 
@@ -177,12 +199,7 @@ generic_plot <- function(dat, xaxis) {
       legend.key=ggplot2::element_blank(),
       legend.background=ggplot2::element_rect(linetype="solid", color="black")
       ) +
-    ggplot2::scale_fill_hue(l=50) +
-    ggplot2::labs(
-      title="Mean Squared Error",
-      x=xaxis,
-      y=""
-    )
+    ggplot2::scale_fill_hue(l=50)
   if (xaxis == "log-Iteration") {
     p <- p +
       ggplot2::scale_x_log10(

@@ -5,15 +5,21 @@
 \alias{plot.sgd}
 \title{Plot objects of class \code{sgd}.}
 \usage{
-\method{plot}{sgd}(x, ..., type = "mse")
+\method{plot}{sgd}(x, ..., type = "mse", xaxis = "iteration")
 
-\method{plot}{list}(x, ..., type = "mse")
+\method{plot}{list}(x, ..., type = "mse", xaxis = "iteration")
 }
 \arguments{
 \item{x}{object of class \code{sgd}.}
 
 \item{type}{character specifying the type of plot: \code{"mse"},
-  \code{"runtime"}. See \sQuote{Details}.}
+\code{"clf"}, \code{"mse-param"}. See \sQuote{Details}. Default is
+\code{"mse"}.}
+
+\item{xaxis}{character specifying the x-axis of plot: \code{"iteration"}
+  plots the y values over the log-iteration of the algorithm;
+  \code{"runtime"} plots the y values over the time in seconds to reach them.
+  Default is \code{"iteration"}.}
 
 \item{\dots}{additional arguments used for each type of plot. See
 \sQuote{Details}.}
@@ -22,7 +28,7 @@
 Plot objects of class \code{sgd}.
 }
 \details{
-Types:
+Types of plots available:
 \describe{
   \item{\code{mse}}{Mean squared error in predictions, which takes the
     following arguments:
@@ -30,19 +36,14 @@ Types:
       \item{\code{x_test}}{test set}
       \item{\code{y_test}}{test responses to compare predictions to}
     }}
-  \item{\code{runtime}}{Mean squared error in predictions over runtime, which
-    takes the following arguments:
+  \item{\code{clf}}{Classification error in predictions, which takes the
+    following arguments:
     \describe{
       \item{\code{x_test}}{test set}
       \item{\code{y_test}}{test responses to compare predictions to}
     }}
   \item{\code{mse-param}}{Mean squared error in parameters, which takes the
     following arguments:
-    \describe{
-      \item{\code{true_param}}{true vector of parameters to compare to}
-    }}
-  \item{\code{mse-param-runtime}}{Mean squared error in parameters over
-    runtime, which takes the following arguments:
     \describe{
       \item{\code{true_param}}{true vector of parameters to compare to}
     }}
