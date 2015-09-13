@@ -1,55 +1,90 @@
 #!/usr/bin/env Rscript
-# Demo usage of sgd for M-estimation using the Huber loss.
-# Example taken from Donoho and Montanari (2013, Section 2.4).
-#
-# Data generating process:
-#   Y = X %*% theta + epsilon, where
-#     X ~ Normal(0, 1/N)
-#     theta ~ Unif([0,1]^d) with fixed 2-norm 6*sqrt(d)
-#     epsilon ~ ContaminatedNormal(0.05, 10) = 0.95z + 0.05h_{10},
-#       where z ~ Normal(0,1) and h_x = unit atom at x
-#
-# Dimensions:
-#   N=1e6 observations
-#   d=1e4 parameters
 
-library(methods)
 library(sgd)
+library(ggplot2)
 
-generate.data <- function(N, d) {
-  l2 <- function(x) sqrt(sum(x**2))
+generate.data <- function(N, d, theta) {
   X <- matrix(rnorm(N*d, mean=0, sd=1/sqrt(N)), nrow=N, ncol=d)
-  theta <- runif(d)
-  theta <- theta * 6 *sqrt(d) / l2(theta)
 
   # noise
   ind <- rbinom(N, size=1, prob=.95)
   epsilon <- ind * rnorm(N) + (1-ind) * rep(10 ,N)
 
   Y <- X %*% theta + epsilon
-  return(list(y=Y, X=X, theta=theta))
+  return(list(y=Y, X=X))
 }
 
 # Dimensions
-N <- 1e6
-d <- 1e4
+N <- 100
+d <- 200
+nstreams <- 10 # number of streams
 
-# Generate data.
 set.seed(42)
-data <- generate.data(N, d)
-dat <- data.frame(y=data$y, x=data$X)
+# Generate truth.
+l2 <- function(x) sqrt(sum(x**2))
+theta <- runif(d)
+theta <- theta * 6 *sqrt(d) / l2(theta)
 
-job.id <- as.integer(commandArgs(trailingOnly = TRUE))
-if (job.id == 1) {
-  sgd.theta <- sgd(y ~ .-1, data=dat, model="m", sgd.control=list(
-    method="sgd", lr="adagrad",
-    lr.control=c(5, NA), npass=10, pass=T, size=N, start=rep(5, d)))
-} else if (job.id == 2) {
-  sgd.theta <- sgd(y ~ .-1, data=dat, model="m", sgd.control=list(
-    method="ai-sgd", lr="adagrad",
-    lr.control=c(5, NA), npass=10, pass=T, size=N, start=rep(5, d)))
+for (nstream in 1:nstreams) {
+  # Generate stream of data.
+  data <- generate.data(N, d, theta)
+  dat <- data.frame(y=data$y, x=data$X)
+
+  if (nstream == 1) {
+    start <- rep(5, d)
+  } else {
+    start <- aisgd.theta$coefficients
+  }
+  aisgd.theta <- sgd(y ~ .-1, data=dat, model="m",
+    sgd.control=list(
+    method="ai-sgd",
+    lr.control=c(15, NA, NA, 2/3), npass=1, pass=T, size=0.5*N, start=start,
+    start.idx=(nstream-1)*N+1))
+  if (nstream == 1) {
+    times.aisgd <- aisgd.theta$times
+    pos.aisgd <- aisgd.theta$pos
+    estimates.aisgd <- aisgd.theta$estimates
+  } else {
+    times.aisgd <- c(times.aisgd, aisgd.theta$times + max(times.aisgd))
+    pos.aisgd <- c(pos.aisgd, aisgd.theta$pos + max(pos.aisgd))
+    estimates.aisgd <- cbind(estimates.aisgd, aisgd.theta$estimates)
+  }
+
+  if (nstream == 1) {
+    start <- rep(5, d)
+  } else {
+    start <- sgd.theta$coefficients
+  }
+  sgd.theta <- sgd(y ~ .-1, data=dat, model="m",
+    sgd.control=list(
+    method="sgd",
+    lr.control=c(15, NA, NA, 1/2), npass=1, pass=T, size=0.5*N, start=start,
+    start.idx=(nstream-1)*N+1))
+  if (nstream == 1) {
+    times.sgd <- sgd.theta$times
+    pos.sgd <- sgd.theta$pos
+    estimates.sgd <- sgd.theta$estimates
+  } else {
+    times.sgd <- c(times.sgd, sgd.theta$times + max(times.sgd))
+    pos.sgd <- c(pos.sgd, sgd.theta$pos + max(pos.sgd))
+    estimates.sgd <- cbind(estimates.sgd, sgd.theta$estimates)
+  }
 }
 
-# Save outputs into individual files.
-theta <- data$theta
-save(sgd.theta, theta, file=sprintf("out/m-estimation-high-%i.RData", job.id))
+# Create sgd object as if the command were run once.
+obj.aisgd <- list()
+obj.aisgd$times <- times.aisgd
+obj.aisgd$pos <- pos.aisgd
+obj.aisgd$estimates <- estimates.aisgd
+class(obj.aisgd) <- "sgd"
+
+obj.sgd <- list()
+obj.sgd$times <- times.sgd
+obj.sgd$pos <- pos.sgd
+obj.sgd$estimates <- estimates.sgd
+class(obj.sgd) <- "sgd"
+
+objs.sgd <- list("ai-sgd"=obj.aisgd, sgd=obj.sgd)
+
+save(objs.sgd, theta, file="out/m-estimation-high.RData")
+#plot(objs.sgd, theta, type="mse-param")
