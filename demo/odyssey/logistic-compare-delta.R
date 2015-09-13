@@ -26,5 +26,6 @@ y_test <- labels[test_idxs]
 # Set up generic X, y.
 X_train[1,1] <- as.numeric(X_train[1,1])
 y_train <- as.numeric(y_train)
+y_train[y_train == -1] <- 0
 X <- X_train
 y <- y_train
