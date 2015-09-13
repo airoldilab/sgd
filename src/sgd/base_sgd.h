@@ -35,6 +35,7 @@ public:
     if (check_) {
       truth_ = Rcpp::as<mat>(sgd["truth"]);
     }
+    start_idx_ = Rcpp::as<unsigned>(sgd["start.idx"]);
 
     // Set which iterations to store estimates
     unsigned n_iters = n_samples*n_passes_;
@@ -92,6 +93,9 @@ public:
   }
   bool verbose() const {
     return verbose_;
+  }
+  unsigned start_idx() const {
+    return start_idx_;
   }
 
   // Check if satisfy convergence threshold.
@@ -164,6 +168,7 @@ protected:
   bool verbose_;
   bool check_;
   mat truth_;
+  unsigned start_idx_;
 };
 
 #endif

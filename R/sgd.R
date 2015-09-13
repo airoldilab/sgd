@@ -493,12 +493,14 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                               reltol=1e-5, npasses=3, pass=F,
                               shuffle=F, verbose=F,
                               truth=NULL, check=F,
+                              start.idx=1,
                               N, nparams, ...) {
   # The following are internal parameters that can be used but aren't written in
   # the documentation for succinctness:
   #   check: logical, specifying whether to check against \code{truth} for
   #          convergence instead of using reltol
   #   truth: true set of parameters
+  #   start.idx: starting index for the learning rate function
   # TODO size isn't the correct thing since reltol means you don't know when it
   # ends. user should specify how often to store the iterates (how many per
   # iteration)
@@ -633,6 +635,10 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
   if (check) {
     truth <- as.matrix(truth)
   }
+  if (!is.numeric(start.idx) || start.idx - as.integer(start.idx) != 0 ||
+    start.idx < 1) {
+    stop("'start.idx' must be positive integer")
+  }
 
   return(c(list(method=method,
                 lr=lr,
@@ -646,6 +652,7 @@ valid_sgd_control <- function(method="ai-sgd", lr="one-dim",
                 verbose=verbose,
                 check=check,
                 truth=truth,
+                start.idx=start.idx,
                 nparams=nparams),
            implicit.control))
 }

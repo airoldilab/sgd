@@ -182,14 +182,14 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   mat theta_old = sgd.get_last_estimate();
   mat theta_old_ave = theta_old;
 
-  unsigned max_iters = n_samples*n_passes;
+  unsigned max_iters = n_samples*n_passes + sgd.start_idx();
   bool do_more_iterations = true;
   bool converged = false;
   if (sgd.verbose()) {
     Rcpp::Rcout << "Stochastic gradient method: " << sgd.name() << std::endl;
     Rcpp::Rcout << "SGD Start!" << std::endl;
   }
-  for (unsigned t = 1; do_more_iterations; ++t) {
+  for (unsigned t = sgd.start_idx(); do_more_iterations; ++t) {
     theta_new = sgd.update(t, theta_old, data, model, good_gradient);
 
     if (averaging) {
