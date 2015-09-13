@@ -159,4 +159,3 @@ plot.cost <- function(preds, ys, names, np, title, ylim=NULL) {
     )
   return(p)
 }
-
