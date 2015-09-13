@@ -1,18 +1,5 @@
 #!/usr/bin/env Rscript
-# Benchmark sgd package for linear regression on simulated data from a
-# correlated normal distribution. This follows the experiment in Section 5.1 of
-# Friedman et al. (2010).
-#
-# Data generating process:
-#   Y = sum_{j=1}^p X_j*β_j + k*ɛ, where
-#     X ~ Multivariate normal where each covariate Xj, Xj' has equal correlation
-#       ρ; ρ ranges over (0,0.1,0.2,0.5,0.9,0.95) for each pair (n, p)
-#     β_j = (-1)^j exp(-2(j-1)/20)
-#     ɛ ~ Normal(0,1)
-#     k = 3
-#
-# Dimensions:
-#   n=50,000, d=10,000
+# This is used to benchmark glmnet for 5e4 observations and 1e4 dimensions.
 
 library(glmnet)
 
