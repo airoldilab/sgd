@@ -1,7 +1,7 @@
 # sgd
 
 sgd is an R package which provides a fast and flexible set of tools for large
-scale inference. It features many stochastic gradient methods, built-in models,
+scale estimation. It features many stochastic gradient methods, built-in models,
 visualization tools, automated hyperparameter tuning, model checking, interval
 estimation, and convergence diagnostics.
 
@@ -69,10 +69,8 @@ For more examples, see the `demo/` directory, and for more documentation, run
 `?sgd` or `library(help=sgd)` in R.
 
 ## Authors
-sgd is written by [Dustin Tran](http://dustintran.com), [Tian
-Lan](mailto:tianlan@g.harvard.edu), [Panos
-Toulis](http://www.people.fas.harvard.edu/~ptoulis), and [Ye
-Kuang](mailto:yekuang@g.harvard.edu), and is under active development. Please
+sgd is written by [Dustin Tran](http://dustintran.com) and [Panos
+Toulis](http://www.people.fas.harvard.edu/~ptoulis), and is under active development. Please
 feel free to contribute by submitting any issues or requests—or by solving any
 current issues!
 
