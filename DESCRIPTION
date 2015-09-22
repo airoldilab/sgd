@@ -4,13 +4,13 @@ Title: Stochastic Gradient Descent for Scalable Estimation
 Version: 1.0
 Authors@R: c(
     person("Dustin", "Tran", email = "dtran@g.harvard.edu", role = c("aut", "cre")),
-    person("Tian", "Lian", role = "aut"),
     person("Panos", "Toulis", role = "aut"),
+    person("Tian", "Lian", role = "ctb"),
     person("Ye", "Kuang", role = "ctb"),
     person("Edoardo", "Airoldi", role = "ctb")
     )
 Maintainer: Dustin Tran <dtran@g.harvard.edu>
-Description: A fast and flexible set of tools for large scale inference. It
+Description: A fast and flexible set of tools for large scale estimation. It
     features many stochastic gradient methods, built-in models, visualization
     tools, automated hyperparameter tuning, model checking, interval estimation,
     and convergence diagnostics.
@@ -20,6 +20,7 @@ License: GPL-2
 Suggests:
     bigmemory,
     gridExtra,
+    R.rsp,
     testthat
 Imports:
     ggplot2,
@@ -31,3 +32,4 @@ LinkingTo:
     bigmemory,
     Rcpp,
     RcppArmadillo
+VignetteBuilder: R.rsp
