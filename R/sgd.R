@@ -70,10 +70,6 @@
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
-#' @param fn a function \eqn{f(theta, x)} of parameters and data, which outputs
-#'   a real number to be minimized.
-#' @param gr a function to return the gradient. If it is \code{NULL}, a
-#'   finite-difference approximation will be used.
 #' @param x,y a design matrix and the respective vector of outcomes.
 #'
 #' @details
@@ -140,7 +136,7 @@
 #'
 #' Boris T. Polyak. Some methods of speeding up the convergence of iteration
 #' methods. \emph{USSR Computational Mathematics and Mathematical Physics},
-#' 4(5):1–17, 1964.
+#' 4(5):1-17, 1964.
 #'
 #' Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 #' approximation by averaging. \emph{SIAM Journal on Control and Optimization},
@@ -231,7 +227,7 @@ sgd.formula <- function(formula, data, model,
 
 #' @export
 #' @rdname sgd
-sgd.function <- function(x, y, model) {
+sgd.function <- function(x, ...) {
 }
 #sgd.function <- function(x, gr=NULL, X, y,
 #                         nparams,

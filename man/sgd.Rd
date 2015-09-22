@@ -13,7 +13,7 @@ sgd(x, ...)
 \method{sgd}{formula}(formula, data, model, model.control = list(),
   sgd.control = list(...), ...)
 
-\method{sgd}{function}(x, y, model)
+\method{sgd}{function}(x, ...)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
@@ -96,12 +96,6 @@ proportional hazards model), \code{"gmm"} (generalized method of moments),
 
 \item{\dots}{arguments to be used to form the default \code{sgd.control}
 arguments if it is not supplied directly.}
-
-\item{fn}{a function \eqn{f(theta, x)} of parameters and data, which outputs
-a real number to be minimized.}
-
-\item{gr}{a function to return the gradient. If it is \code{NULL}, a
-finite-difference approximation will be used.}
 }
 \value{
 An object of class \code{"sgd"}, which is a list containing the following
@@ -183,7 +177,7 @@ convergence rate \eqn{O(1/k^2)}. \emph{Soviet Mathematics Doklady},
 
 Boris T. Polyak. Some methods of speeding up the convergence of iteration
 methods. \emph{USSR Computational Mathematics and Mathematical Physics},
-4(5):1–17, 1964.
+4(5):1-17, 1964.
 
 Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 approximation by averaging. \emph{SIAM Journal on Control and Optimization},
