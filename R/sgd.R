@@ -168,7 +168,9 @@
 #'
 #' @useDynLib sgd
 #' @import MASS
+#' @importFrom methods new
 #' @importFrom Rcpp evalCpp
+#' @importFrom stats gaussian is.empty.model model.matrix model.response rnorm
 
 ################################################################################
 # Classes

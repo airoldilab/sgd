@@ -1,6 +1,8 @@
 context("Linear regression with lasso penalty")
 
 test_that("MSE converges for linear regression with lasso", {
+  skip_on_cran()
+
   library(glmnet)
 
   # Dimensions
