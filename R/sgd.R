@@ -231,14 +231,16 @@ sgd.formula <- function(formula, data, model,
 
 #' @export
 #' @rdname sgd
-sgd.function <- function(fn, gr=NULL, x, y,
-                         nparams,
-                         sgd.control=list(...),
-                         ...) {
-  model <- "gmm"
-  model.control <- list(model="gmm", fn=fn, gr=gr, d=ncol(x), nparams=nparams)
-  return(sgd.matrix(x, y, model, model.control, sgd.control))
+sgd.function <- function(x, y, model) {
 }
+#sgd.function <- function(x, gr=NULL, X, y,
+#                         nparams,
+#                         sgd.control=list(...),
+#                         ...) {
+#  model <- "gmm"
+#  model.control <- list(model="gmm", fn=fn, gr=gr, d=ncol(X), nparams=nparams)
+#  return(sgd.matrix(X, y, model, model.control, sgd.control))
+#}
 
 #' @export
 #' @rdname sgd

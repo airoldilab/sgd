@@ -13,8 +13,7 @@ sgd(x, ...)
 \method{sgd}{formula}(formula, data, model, model.control = list(),
   sgd.control = list(...), ...)
 
-\method{sgd}{function}(fn, gr = NULL, x, y, nparams,
-  sgd.control = list(...), ...)
+\method{sgd}{function}(x, y, model)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
@@ -95,14 +94,14 @@ proportional hazards model), \code{"gmm"} (generalized method of moments),
   \item{\code{verbose}}{logical. Should the algorithm print progress?}
 }}
 
+\item{\dots}{arguments to be used to form the default \code{sgd.control}
+arguments if it is not supplied directly.}
+
 \item{fn}{a function \eqn{f(theta, x)} of parameters and data, which outputs
 a real number to be minimized.}
 
 \item{gr}{a function to return the gradient. If it is \code{NULL}, a
 finite-difference approximation will be used.}
-
-\item{\dots}{arguments to be used to form the default \code{sgd.control}
-arguments if it is not supplied directly.}
 }
 \value{
 An object of class \code{"sgd"}, which is a list containing the following

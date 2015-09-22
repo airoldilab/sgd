@@ -5,12 +5,12 @@
 \alias{predict_all}
 \title{Predict for objects of class \code{sgd}}
 \usage{
-\method{predict}{sgd}(x, x_test, ...)
+\method{predict}{sgd}(object, x_test, ...)
 
-predict_all(x, x_test, ...)
+predict_all(object, x_test, ...)
 }
 \arguments{
-\item{x}{object of class \code{sgd}.}
+\item{object}{object of class \code{sgd}.}
 
 \item{x_test}{design matrix to form predictions on}
 
