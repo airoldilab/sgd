@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# SECTION 3.3, FIGURE 2
 # This is used to generate the plot in M-estimation experiments section.
 
 library(sgd)
@@ -19,8 +20,8 @@ generate.data <- function(N, d) {
 }
 
 # Dimensions
-N <- 10000
-d <- 2000
+N <- 100000
+d <- 10000
 
 # Generate data.
 set.seed(42)

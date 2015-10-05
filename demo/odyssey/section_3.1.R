@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# SECTION 3.1, TABLE 1
 # Benchmark sgd package for linear regression on simulated data from a
 # correlated normal distribution. This follows the experiment in Section 5.1 of
 # Friedman et al. (2010).
@@ -14,7 +15,7 @@
 # Dimensions:
 #   n=1,000, d=100
 #   n=10,000, d=1,000
-#   n=100,000, d=10,000
+#   n=50,000, d=10,000
 #   n=1,000,000, d=50,000
 #   n=10,000,000, d=100,000
 
@@ -41,9 +42,9 @@ genx = function(n,p,rho){
 
 # Dimensions: Put them manually here!
 nSim <- 1    # number of runs
-N <- 1e2      # size of minibatch
-nstreams <- 10 # number of streams
-d <- 1e5
+N <- 5e4      # size of minibatch
+nstreams <- 1 # number of streams
+d <- 1e4
 rho <- 0
 
 times.aisgd <- rep(0, nSim)
@@ -107,13 +108,6 @@ for (i in 1:nSim) {
     }
   }
 }
-print(mean(times.aisgd * 1e4/60/60)) # * 10 for lambdas, /60 for minute
-print(mean(times.sgd * 1e4/60/60))
+print(mean(times.aisgd * 1e1)) # convert nlambdas
+print(mean(times.sgd * 1e1))
 print(mean(times.glmnet))
-
-# Tweaks:
-# * For 100 lambda values, I simply just do one lambda value and multiply the
-#   time by 10.
-# * The times outputted from sgd only includes the C++ time.
-# * For some of these, I simply let sgd run over a full pass, instead of waiting
-# for convergence to threshold.

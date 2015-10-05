@@ -1,7 +1,8 @@
-# Chooes data source here.
-#source("demo/odyssey/logistic-compare-mnist.R")
-#source("demo/odyssey/logistic-compare-covtype.R")
-#source("demo/odyssey/logistic-compare-delta.R")
+# SECTION 3.2, TABLE 3
+# Choose data source here.
+#source("demo/odyssey/section_3.2_mnist.R")
+#source("demo/odyssey/section_3.2_covtype.R")
+#source("demo/odyssey/section_3.2_delta.R")
 
 # sgd
 library(sgd)
@@ -47,7 +48,7 @@ time_start <- proc.time()[3]
 theta.mnlogit <- mnlogit(ff, dat)
 time.mnlogit <- as.numeric(proc.time()[3] - time_start)
 
-#glm.fit
+# glm.fit
 time_start <- proc.time()[3]
 theta.glm <- glm.fit(x=X, y=y, family=binomial(link=logit))
 time.glm <- as.numeric(proc.time()[3] - time_start)

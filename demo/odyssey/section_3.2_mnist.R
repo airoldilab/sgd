@@ -8,7 +8,7 @@
 # * train-images.idx3-ubyte
 # * train-labels.idx1-ubyte
 
-source("demo/odyssey/logistic-load-mnist.R")
+source("demo/odyssey/section_3.2_mnist_load.R")
 
 dat <- load_mnist()
 X_train <- dat$train$x

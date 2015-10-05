@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# SECTION 3.3, TABLE 4
 # This is used to generate the table in M-estimation experiments section.
 
 library(sgd)
@@ -31,7 +32,7 @@ times.sgd <- c()
 times.aisgd <- c()
 times.hqreg <- c()
 
-nSim <- 1e2
+nSim <- 10
 for (i in 1:nSim) {
   sgd.theta1 <- sgd(y ~ .-1, data=dat, model="m",
     sgd.control=list(
