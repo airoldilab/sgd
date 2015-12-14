@@ -1,5 +1,6 @@
 bench-corr-linear-regression Benchmark linear regression on correlated normal data
 bench-linear-regression      Benchmark linear regression on normal data
+bench-logistic-wine          Benchmark logistic regression on wine quality data set
 cox-regression               Demo Cox regression on simulated data
 glm-logistic-regression      Demo logistic regression on Bernoulli data
 glm-poisson-regression       Demo Poisson regression on Poisson data

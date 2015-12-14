@@ -4,11 +4,11 @@
 # Friedman et al. (2010).
 #
 # Data generating process:
-#   Y = sum_{j=1}^p X_j*β_j + k*ɛ, where
+#   Y = sum_{j=1}^p X_j*beta_j + k*eps, where
 #     X ~ Multivariate normal where each covariate Xj, Xj' has equal correlation
-#       ρ; ρ ranges over (0,0.1,0.2,0.5,0.9,0.95) for each pair (n, d)
-#     β_j = (-1)^j exp(-2(j-1)/20)
-#     ɛ ~ Normal(0,1)
+#       rho; rho ranges over (0,0.1,0.2,0.5,0.9,0.95) for each pair (n, d)
+#     beta_j = (-1)^j exp(-2(j-1)/20)
+#     eps ~ Normal(0,1)
 #     k = 3
 #
 # Dimensions:

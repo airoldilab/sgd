@@ -3,7 +3,7 @@
 #' Form predictions using the estimated model parameters from stochastic
 #' gradient descent.
 #'
-#' @param x object of class \code{sgd}.
+#' @param object object of class \code{sgd}.
 #' @param x_test design matrix to form predictions on
 #' @param \dots further arguments passed to or from other methods.
 #'
@@ -12,12 +12,12 @@
 #' intercept, term.
 #'
 #' @export
-predict.sgd <- function(x, x_test, ...) {
-  if (x$model %in% c("lm", "glm")) {
-    eta <- x_test %*% x$coefficients
-    y <- x$model.out$family$linkinv(eta)
-  } else if(x$model == "m") {
-    eta <- x_test %*% x$estimates
+predict.sgd <- function(object, x_test, ...) {
+  if (object$model %in% c("lm", "glm")) {
+    eta <- x_test %*% object$coefficients
+    y <- object$model.out$family$linkinv(eta)
+  } else if (object$model == "m") {
+    eta <- x_test %*% object$estimates
     y <- eta
   # TODO
   } else {
@@ -28,12 +28,12 @@ predict.sgd <- function(x, x_test, ...) {
 
 #' @export
 #' @rdname predict.sgd
-predict_all <- function(x, x_test, ...) {
-  if (x$model %in% c("lm", "glm")) {
-    eta <- x_test %*% x$estimates
-    y <- x$model.out$family$linkinv(eta)
-  } else if(x$model == "m") {
-    eta <- x_test %*% x$estimates
+predict_all <- function(object, x_test, ...) {
+  if (object$model %in% c("lm", "glm")) {
+    eta <- x_test %*% object$estimates
+    y <- object$model.out$family$linkinv(eta)
+  } else if (object$model == "m") {
+    eta <- x_test %*% object$estimates
     y <- eta
   # TODO
   } else {

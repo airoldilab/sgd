@@ -70,10 +70,6 @@
 #'   }
 #' @param \dots arguments to be used to form the default \code{sgd.control}
 #'   arguments if it is not supplied directly.
-#' @param fn a function \eqn{f(theta, x)} of parameters and data, which outputs
-#'   a real number to be minimized.
-#' @param gr a function to return the gradient. If it is \code{NULL}, a
-#'   finite-difference approximation will be used.
 #' @param x,y a design matrix and the respective vector of outcomes.
 #'
 #' @details
@@ -140,7 +136,7 @@
 #'
 #' Boris T. Polyak. Some methods of speeding up the convergence of iteration
 #' methods. \emph{USSR Computational Mathematics and Mathematical Physics},
-#' 4(5):1–17, 1964.
+#' 4(5):1-17, 1964.
 #'
 #' Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 #' approximation by averaging. \emph{SIAM Journal on Control and Optimization},
@@ -161,18 +157,36 @@
 #' stochastic gradient descent. arXiv preprint arXiv:1107.2490, 2011.
 #'
 #' @examples
-#' ## Dobson (1990, p.93): Randomized Controlled Trial
-#' counts <- c(18, 17, 15, 20, 10, 20, 25, 13, 12)
-#' outcome <- gl(3, 1, 9)
-#' treatment <- gl(3, 3)
-#' print(d.AD <- data.frame(treatment, outcome, counts))
-#' sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
-#'                model.control=list(family = poisson()))
-#' sgd.D93
+#' ## Linear regression
+#' set.seed(42)
+#' N <- 1e4
+#' d <- 10
+#' X <- matrix(rnorm(N*d), ncol=d)
+#' theta <- rep(5, d+1)
+#' eps <- rnorm(N)
+#' y <- cbind(1, X) %*% theta + eps
+#' dat <- data.frame(y=y, x=X)
+#' sgd.theta <- sgd(y ~ ., data=dat, model="lm")
+#' sprintf("Mean squared error: %0.3f", mean((theta - as.numeric(sgd.theta$coefficients))^2))
+#'
+#' ## Wine quality (Cortez et al., 2009): Logistic regression
+#' set.seed(42)
+#' data("winequality")
+#' dat <- winequality
+#' dat$quality <- as.numeric(dat$quality > 5) # transform to binary
+#' test.set <- sample(1:nrow(dat), size=nrow(dat)/8, replace=F)
+#' dat.test <- dat[test.set, ]
+#' dat <- dat[-test.set, ]
+#' sgd.theta <- sgd(quality ~ ., data=dat,
+#'                model="glm", model.control=binomial(link="logit"),
+#'                sgd.control=list(reltol=1e-5, npasses=200), lr.control=c(scale=1, gamma=1, alpha=30, c=1))
+#' sgd.theta
 #'
 #' @useDynLib sgd
 #' @import MASS
+#' @importFrom methods new
 #' @importFrom Rcpp evalCpp
+#' @importFrom stats gaussian is.empty.model model.matrix model.response rnorm
 
 ################################################################################
 # Classes
@@ -231,14 +245,16 @@ sgd.formula <- function(formula, data, model,
 
 #' @export
 #' @rdname sgd
-sgd.function <- function(fn, gr=NULL, x, y,
-                         nparams,
-                         sgd.control=list(...),
-                         ...) {
-  model <- "gmm"
-  model.control <- list(model="gmm", fn=fn, gr=gr, d=ncol(x), nparams=nparams)
-  return(sgd.matrix(x, y, model, model.control, sgd.control))
+sgd.function <- function(x, ...) {
 }
+#sgd.function <- function(x, gr=NULL, X, y,
+#                         nparams,
+#                         sgd.control=list(...),
+#                         ...) {
+#  model <- "gmm"
+#  model.control <- list(model="gmm", fn=fn, gr=gr, d=ncol(X), nparams=nparams)
+#  return(sgd.matrix(X, y, model, model.control, sgd.control))
+#}
 
 #' @export
 #' @rdname sgd

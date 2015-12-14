@@ -13,8 +13,7 @@ sgd(x, ...)
 \method{sgd}{formula}(formula, data, model, model.control = list(),
   sgd.control = list(...), ...)
 
-\method{sgd}{function}(fn, gr = NULL, x, y, nparams,
-  sgd.control = list(...), ...)
+\method{sgd}{function}(x, ...)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
@@ -95,12 +94,6 @@ proportional hazards model), \code{"gmm"} (generalized method of moments),
   \item{\code{verbose}}{logical. Should the algorithm print progress?}
 }}
 
-\item{fn}{a function \eqn{f(theta, x)} of parameters and data, which outputs
-a real number to be minimized.}
-
-\item{gr}{a function to return the gradient. If it is \code{NULL}, a
-finite-difference approximation will be used.}
-
 \item{\dots}{arguments to be used to form the default \code{sgd.control}
 arguments if it is not supplied directly.}
 }
@@ -161,14 +154,30 @@ Learning rates and hyperparameters:
 }
 }
 \examples{
-## Dobson (1990, p.93): Randomized Controlled Trial
-counts <- c(18, 17, 15, 20, 10, 20, 25, 13, 12)
-outcome <- gl(3, 1, 9)
-treatment <- gl(3, 3)
-print(d.AD <- data.frame(treatment, outcome, counts))
-sgd.D93 <- sgd(counts ~ outcome + treatment, model="glm",
-               model.control=list(family = poisson()))
-sgd.D93
+## Linear regression
+set.seed(42)
+N <- 1e4
+d <- 10
+X <- matrix(rnorm(N*d), ncol=d)
+theta <- rep(5, d+1)
+eps <- rnorm(N)
+y <- cbind(1, X) \%*\% theta + eps
+dat <- data.frame(y=y, x=X)
+sgd.theta <- sgd(y ~ ., data=dat, model="lm")
+sprintf("Mean squared error: \%0.3f", mean((theta - as.numeric(sgd.theta$coefficients))^2))
+
+## Wine quality (Cortez et al., 2009): Logistic regression
+set.seed(42)
+data("winequality")
+dat <- winequality
+dat$quality <- as.numeric(dat$quality > 5) # transform to binary
+test.set <- sample(1:nrow(dat), size=nrow(dat)/8, replace=F)
+dat.test <- dat[test.set, ]
+dat <- dat[-test.set, ]
+sgd.theta <- sgd(quality ~ ., data=dat,
+               model="glm", model.control=binomial(link="logit"),
+               sgd.control=list(reltol=1e-5, npasses=200), lr.control=c(scale=1, gamma=1, alpha=30, c=1))
+sgd.theta
 }
 \author{
 Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi
@@ -184,7 +193,7 @@ convergence rate \eqn{O(1/k^2)}. \emph{Soviet Mathematics Doklady},
 
 Boris T. Polyak. Some methods of speeding up the convergence of iteration
 methods. \emph{USSR Computational Mathematics and Mathematical Physics},
-4(5):1–17, 1964.
+4(5):1-17, 1964.
 
 Boris T. Polyak and Anatoli B. Juditsky. Acceleration of stochastic
 approximation by averaging. \emph{SIAM Journal on Control and Optimization},

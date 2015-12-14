@@ -185,6 +185,9 @@ plot_clf <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
 }
 
 generic_plot <- function(dat, xaxis) {
+  x <- NULL
+  y <- NULL
+  label <- NULL
   p <- ggplot2::ggplot(dat, ggplot2::aes(x=x, y=y, group=label)) +
     ggplot2::geom_line(ggplot2::aes(linetype=label, color=label)) +
     ggplot2::theme(
