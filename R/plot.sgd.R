@@ -92,7 +92,7 @@ get_mse_param <- function(x, true_param) {
   return(mse)
 }
 
-plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
+plot_mse <- function(x, x_test, y_test, label="sgd", xaxis="log-Iteration") {
   if (class(x) != "list") {
     x <- list(label=x)
   }
@@ -120,7 +120,7 @@ plot_mse <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
   return(p)
 }
 
-plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
+plot_mse_param <- function(x, true_param, label="sgd", xaxis="log-Iteration") {
   if (class(x) != "list") {
     x <- list(x)
     names(x) <- label
@@ -150,7 +150,7 @@ plot_mse_param <- function(x, true_param, label=1, xaxis="log-Iteration") {
   return(p)
 }
 
-plot_clf <- function(x, x_test, y_test, label=1, xaxis="log-Iteration") {
+plot_clf <- function(x, x_test, y_test, label="sgd", xaxis="log-Iteration") {
   if (class(x) != "list") {
     x <- list(x)
     names(x) <- label

@@ -312,6 +312,16 @@ fit <- function(x, y, model,
     }
   }
 
+  if (model %in% c("lm", "glm")) {
+    model.control$transfer <- transfer_name(model.control$family$link)
+    family <- model.control$family
+    model.control$family <- family$family
+    # Enable logistic regression if response is binary factor.
+    if (is.factor(y) && family == "binomial") {
+      y <- as.integer(as.character(y))
+    }
+  }
+
   dataset <- list(X=x, Y=as.matrix(y))
   if ('big.matrix' %in% class(x)) {
     dataset$big <- TRUE
@@ -319,12 +329,6 @@ fit <- function(x, y, model,
   } else {
     dataset$big <- FALSE
     dataset[["bigmat"]] <- new("externalptr")
-  }
-
-  if (model %in% c("lm", "glm")) {
-    model.control$transfer <- transfer_name(model.control$family$link)
-    family <- model.control$family
-    model.control$family <- family$family
   }
 
   if (sgd.control$verbose) {
