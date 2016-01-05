@@ -1,15 +1,15 @@
 Package: sgd
 Type: Package
 Title: Stochastic Gradient Descent for Scalable Estimation
-Version: 1.0
+Version: 1.1
 Authors@R: c(
-    person("Dustin", "Tran", email = "dtran@g.harvard.edu", role = c("aut", "cre")),
+    person("Dustin", "Tran", email = "dustin@cs.columbia.edu", role = c("aut", "cre")),
     person("Panos", "Toulis", role = "aut"),
     person("Tian", "Lian", role = "ctb"),
     person("Ye", "Kuang", role = "ctb"),
     person("Edoardo", "Airoldi", role = "ctb")
     )
-Maintainer: Dustin Tran <dtran@g.harvard.edu>
+Maintainer: Dustin Tran <dustin@cs.columbia.edu>
 Description: A fast and flexible set of tools for large scale estimation. It
     features many stochastic gradient methods, built-in models, visualization
     tools, automated hyperparameter tuning, model checking, interval estimation,
@@ -27,6 +27,7 @@ Imports:
     MASS,
     methods,
     Rcpp (>= 0.11.3)
+LazyData: yes
 LinkingTo:
     BH,
     bigmemory,

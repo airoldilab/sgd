@@ -39,7 +39,8 @@ public:
     // Set which iterations to store estimates
     unsigned n_iters = n_samples*n_passes_;
     for (unsigned i = 0; i < size_; ++i) {
-      pos_(0, i) = int(round(pow(10, i * log10(n_iters) / (size_-1))));
+      pos_(0, i) = int(round(pow(10.,
+                   i * log10(static_cast<double>(n_iters)) / (size_-1))));
     }
     if (pos_(0, pos_.n_cols-1) != n_iters) {
       pos_(0, pos_.n_cols-1) = n_iters;
