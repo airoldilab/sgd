@@ -51,7 +51,7 @@ The following stochastic gradient methods exist:
 * Classical momentum
 * Nesterov's accelerated gradient
 
-Check out the vignette in the `vignettes/` directory, or examples in `demo/`.
+Check out the vignette in [`vignettes/`](vignettes/) or examples in [`demo/`](demo/).
 In R, the equivalent commands are `vignette(package="sgd")` and
 `demo(package="sgd")`.
 
