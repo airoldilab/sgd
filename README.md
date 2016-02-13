@@ -78,6 +78,8 @@ requests—or by solving any current issues!
 We thank all other members of the [Airoldi Lab](http://applied.stat.harvard.edu)
 (led by Prof. Edo Airoldi) for their feedback and contributions.
 
+## Citation
+
 ```
 @article{tran2015stochastic,
   author = {Tran, Dustin and Toulis, Panos and Airoldi, Edoardo M},
