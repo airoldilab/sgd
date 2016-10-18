@@ -63,9 +63,7 @@ install.packages("sgd")
 
 To install the latest development version from Github:
 ```{R}
-if (packageVersion("devtools") < 1.6) {
-  install.packages("devtools")
-}
+# install.packages("devtools")
 devtools::install_github("airoldilab/sgd")
 ```
 
