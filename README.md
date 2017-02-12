@@ -21,8 +21,8 @@ Example of large-scale linear regression:
 library(sgd)
 
 # Dimensions
-N <- 1e5
-d <- 1e2
+N <- 1e5  # number of data points
+d <- 1e2  # number of features
 
 # Generate data.
 X <- matrix(rnorm(N*d), ncol=d)
@@ -34,7 +34,7 @@ dat <- data.frame(y=y, x=X)
 sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 ```
 
-Any loss function may be specified, although for convenience the following are
+Any loss function may be specified. For convenience the following are
 built-in:
 * Linear models
 * Generalized linear models
