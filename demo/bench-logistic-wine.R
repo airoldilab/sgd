@@ -24,17 +24,17 @@ fit.sgd <- sgd(quality ~ ., data=dat,
 
 # Compare log likelihoods.
 log.lik <- function(theta.est) {
-  logistic <- function(z) sapply(z, function(i) {if(i>40) return(1); if(i< -40) return(0); return(exp(i)/(1+exp(i))) })
+  
   y <- dat.test$quality
   X <- as.matrix(dat.test[, seq(1, ncol(dat)-1)])
   X <- cbind(1, X)
 
-  eta <- logistic(X %*% theta.est)
+  eta <- plogis(X %*% theta.est)
   print(cor(y, eta))
   sum(y * log(eta) + (1-y) * log(1-eta))
 }
 
-theta.glm <- matrix(as.numeric(fit$coefficients), ncol=1)
+theta.glm <- matrix(as.numeric(fit.glm$coefficients), ncol=1)
 theta.sgd <- matrix(as.numeric(fit.sgd$coefficients), ncol=1)
 log.lik.glm <- log.lik(fit.glm$coefficients)
 log.lik.sgd <- log.lik(theta.sgd)
