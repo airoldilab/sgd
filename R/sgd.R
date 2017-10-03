@@ -480,6 +480,8 @@ valid_model_control <- function(model, model.control=list(...), ...) {
     control.loss <-  model.control$loss
     if (is.null(control.loss)) {
       control.loss <- "huber"
+    } else if (!is.character(control.loss)) {
+      stop ("'model.control$loss' must be a string")
     } else if (control.loss != "huber") {
       stop ("'loss' not available")
     }
