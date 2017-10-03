@@ -4,7 +4,6 @@
 \alias{sgd}
 \alias{sgd.big.matrix}
 \alias{sgd.formula}
-\alias{sgd.function}
 \alias{sgd.matrix}
 \title{Stochastic gradient descent}
 \usage{
@@ -12,8 +11,6 @@ sgd(x, ...)
 
 \method{sgd}{formula}(formula, data, model, model.control = list(),
   sgd.control = list(...), ...)
-
-\method{sgd}{function}(x, ...)
 
 \method{sgd}{matrix}(x, y, model, model.control = list(),
   sgd.control = list(...), ...)
