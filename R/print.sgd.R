@@ -5,5 +5,5 @@
 #'
 #' @export
 print.sgd <- function(x, ...) {
-  print(x$coefficients, ...)
+  print(coef(x), ...)
 }
