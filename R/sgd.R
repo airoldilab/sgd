@@ -670,6 +670,10 @@ valid_implicit_control <- function(delta=30L, ...) {
   #
   # Args:
   #   delta: convergence criterion for the one-dimensional optimization
+  args <- list(...)
+  if (!is.null(names(args))) {
+    stop("Invalid args passed into sgd.control through dots")
+  }
   if (!is.numeric(delta) || delta - as.integer(delta) != 0 || delta <= 0) {
     stop("value of 'delta' must be integer > 0")
   }
