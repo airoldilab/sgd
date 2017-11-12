@@ -1,6 +1,6 @@
-context("Predict generic method")
+context("Fitted generic method")
 
-test_that("Predict generic method", {
+test_that("Fitted generic method", {
 
   skip_on_cran()
 
@@ -17,9 +17,7 @@ test_that("Predict generic method", {
   dat <- data.frame(y=y, x=X)
 
   sgd.theta <- sgd(y ~ ., data=dat, model="lm")
-  predict(sgd.theta, cbind(1, X))
-  predict(sgd.theta, cbind(1, X), type="response")
-  predict(sgd.theta, cbind(1, X), type="term")
+  fitted(sgd.theta)
 
   # Check that it executes without error.
   expect_true(TRUE)

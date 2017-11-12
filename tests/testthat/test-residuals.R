@@ -1,6 +1,6 @@
-context("Predict generic method")
+context("Residuals generic method")
 
-test_that("Predict generic method", {
+test_that("Residuals generic method", {
 
   skip_on_cran()
 
@@ -17,9 +17,7 @@ test_that("Predict generic method", {
   dat <- data.frame(y=y, x=X)
 
   sgd.theta <- sgd(y ~ ., data=dat, model="lm")
-  predict(sgd.theta, cbind(1, X))
-  predict(sgd.theta, cbind(1, X), type="response")
-  predict(sgd.theta, cbind(1, X), type="term")
+  residuals(sgd.theta)
 
   # Check that it executes without error.
   expect_true(TRUE)

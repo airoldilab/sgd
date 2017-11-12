@@ -102,8 +102,10 @@ components:
 \item{converged}{logical. Was the algorithm judged to have converged?}
 \item{estimates}{estimates from algorithm stored at each iteration
     specified in \code{pos}}
+\item{fitted.values}{the fitted mean values}
 \item{pos}{vector of indices specifying the iteration number each estimate
     was stored for}
+\item{residuals}{the residuals, that is response minus fitted values}
 \item{times}{vector of times in seconds it took to complete the number of
     iterations specified in \code{pos}}
 \item{model.out}{a list of model-specific output attributes}
