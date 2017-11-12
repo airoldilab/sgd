@@ -17,20 +17,21 @@ Description: A fast and flexible set of tools for large scale estimation. It
 URL: https://github.com/airoldilab/sgd
 BugReports: https://github.com/airoldilab/sgd/issues
 License: GPL-2
-Suggests:
-    bigmemory,
-    gridExtra,
-    R.rsp,
-    testthat
 Imports:
     ggplot2,
     MASS,
     methods,
     Rcpp (>= 0.11.3)
-LazyData: yes
+Suggests:
+    bigmemory,
+    gridExtra,
+    R.rsp,
+    testthat
 LinkingTo:
     BH,
     bigmemory,
     Rcpp,
     RcppArmadillo
+LazyData: yes
 VignetteBuilder: R.rsp
+RoxygenNote: 6.0.1

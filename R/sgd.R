@@ -178,8 +178,8 @@
 #' dat.test <- dat[test.set, ]
 #' dat <- dat[-test.set, ]
 #' sgd.theta <- sgd(quality ~ ., data=dat,
-#'                model="glm", model.control=binomial(link="logit"),
-#'                sgd.control=list(reltol=1e-5, npasses=200),
+#'                  model="glm", model.control=binomial(link="logit"),
+#'                  sgd.control=list(reltol=1e-5, npasses=200),
 #'                  lr.control=c(scale=1, gamma=1, alpha=30, c=1))
 #' sgd.theta
 #'
