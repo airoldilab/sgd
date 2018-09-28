@@ -24,10 +24,10 @@ public:
   }
 
 private:
+  double scale_;
   double gamma_;
   double alpha_;
   double c_;
-  double scale_;
   learn_rate_value v_;
 };
 

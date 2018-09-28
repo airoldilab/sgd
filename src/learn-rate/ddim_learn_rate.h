@@ -45,10 +45,10 @@ public:
 private:
   unsigned d_;
   vec Idiag_;
+  double eta_;
   double a_;
   double b_;
   double c_;
-  double eta_;
   double eps_;
   learn_rate_value v_;
 };

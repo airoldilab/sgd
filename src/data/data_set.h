@@ -21,7 +21,7 @@ class data_set {
    */
 public:
   data_set(const SEXP& xpMat, const mat& Xx, const mat& Yy, unsigned n_passes,
-    bool big, bool shuffle) : xpMat_(xpMat), Y(Yy), big(big), shuffle_(shuffle) {
+    bool big, bool shuffle) : Y(Yy), big(big), xpMat_(xpMat), shuffle_(shuffle) {
     if (!big) {
       X = Xx;
       n_samples = X.n_rows;
