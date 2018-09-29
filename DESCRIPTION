@@ -1,7 +1,7 @@
 Package: sgd
 Type: Package
 Title: Stochastic Gradient Descent for Scalable Estimation
-Version: 1.1
+Version: 1.1.1
 Authors@R: c(
     person("Dustin", "Tran", email = "dustin@cs.columbia.edu", role = c("aut", "cre")),
     person("Panos", "Toulis", role = "aut"),
@@ -24,6 +24,7 @@ Imports:
     Rcpp (>= 0.11.3)
 Suggests:
     bigmemory,
+    glmnet,
     gridExtra,
     R.rsp,
     testthat
