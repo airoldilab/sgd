@@ -21,7 +21,8 @@ Imports:
     ggplot2,
     MASS,
     methods,
-    Rcpp (>= 0.11.3)
+    Rcpp (>= 0.11.3),
+    stats
 Suggests:
     bigmemory,
     glmnet,
@@ -35,4 +36,4 @@ LinkingTo:
     RcppArmadillo
 LazyData: yes
 VignetteBuilder: R.rsp
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0.9000
