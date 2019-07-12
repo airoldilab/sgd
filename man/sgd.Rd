@@ -156,7 +156,7 @@ Learning rates and hyperparameters:
 ## Linear regression
 set.seed(42)
 N <- 1e4
-d <- 10
+d <- 5
 X <- matrix(rnorm(N*d), ncol=d)
 theta <- rep(5, d+1)
 eps <- rnorm(N)
@@ -165,19 +165,6 @@ dat <- data.frame(y=y, x=X)
 sgd.theta <- sgd(y ~ ., data=dat, model="lm")
 sprintf("Mean squared error: \%0.3f", mean((theta - as.numeric(sgd.theta$coefficients))^2))
 
-## Wine quality (Cortez et al., 2009): Logistic regression
-set.seed(42)
-data("winequality")
-dat <- winequality
-dat$quality <- as.numeric(dat$quality > 5) # transform to binary
-test.set <- sample(1:nrow(dat), size=nrow(dat)/8, replace=FALSE)
-dat.test <- dat[test.set, ]
-dat <- dat[-test.set, ]
-sgd.theta <- sgd(quality ~ ., data=dat,
-                 model="glm", model.control=binomial(link="logit"),
-                 sgd.control=list(reltol=1e-5, npasses=200),
-                 lr.control=c(scale=1, gamma=1, alpha=30, c=1))
-sgd.theta
 
 }
 \references{
@@ -210,6 +197,8 @@ in stochastic gradient descent", arXiv preprint arXiv:1505.02417, 2015.
 
 Wei Xu. Towards optimal one pass large scale learning with averaged
 stochastic gradient descent. arXiv preprint arXiv:1107.2490, 2011.
+
+ # Dimensions
 }
 \author{
 Dustin Tran, Tian Lan, Panos Toulis, Ye Kuang, Edoardo Airoldi

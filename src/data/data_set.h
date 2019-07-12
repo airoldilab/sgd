@@ -1,8 +1,8 @@
 #ifndef DATA_DATA_SET_H
 #define DATA_DATA_SET_H
 
-#include "basedef.h"
-#include "data/data_point.h"
+#include "../basedef.h"
+#include "data_point.h"
 
 // wrapper around R's RNG such that we get a uniform distribution over
 // [0,n) as required by the STL algorithm

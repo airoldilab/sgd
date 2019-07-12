@@ -1,8 +1,8 @@
 #ifndef MODEL_BASE_MODEL_H
 #define MODEL_BASE_MODEL_H
 
-#include "basedef.h"
-#include "data/data_point.h"
+#include "../basedef.h"
+#include "../data/data_point.h"
 
 class base_model {
   /**

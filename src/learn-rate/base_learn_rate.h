@@ -1,8 +1,8 @@
 #ifndef LEARN_RATE_BASE_LEARN_RATE_H
 #define LEARN_RATE_BASE_LEARN_RATE_H
 
-#include "basedef.h"
-#include "learn-rate/learn_rate_value.h"
+#include "../basedef.h"
+#include "learn_rate_value.h"
 
 class base_learn_rate {
   /**

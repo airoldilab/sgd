@@ -1,15 +1,15 @@
 #ifndef SGD_IMPLICIT_SGD_H
 #define SGD_IMPLICIT_SGD_H
 
-#include "basedef.h"
-#include "data/data_point.h"
-#include "data/data_set.h"
-#include "model/cox_model.h"
-#include "model/glm_model.h"
-#include "model/gmm_model.h"
-#include "model/m_model.h"
-#include "learn-rate/learn_rate_value.h"
-#include "sgd/base_sgd.h"
+#include "../basedef.h"
+#include "../data/data_point.h"
+#include "../data/data_set.h"
+#include "../model/cox_model.h"
+#include "../model/glm_model.h"
+#include "../model/gmm_model.h"
+#include "../model/m_model.h"
+#include "../learn-rate/learn_rate_value.h"
+#include "base_sgd.h"
 
 template<typename MODEL>
 class Implicit_fn {

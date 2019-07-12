@@ -3,3 +3,5 @@
 *.Rdata
 *.so
 *.o
+*.Rproj
+.Rproj.user

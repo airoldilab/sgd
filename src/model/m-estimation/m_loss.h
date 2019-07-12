@@ -1,7 +1,7 @@
 #ifndef MODEL_M_LOSS_H
 #define MODEL_M_LOSS_H
 
-#include "basedef.h"
+#include "../../basedef.h"
 
 class base_loss;
 class huber_loss;

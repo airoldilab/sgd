@@ -1,10 +1,10 @@
 #ifndef SGD_MOMENTUM_SGD_H
 #define SGD_MOMENTUM_SGD_H
 
-#include "basedef.h"
-#include "data/data_set.h"
-#include "learn-rate/learn_rate_value.h"
-#include "sgd/base_sgd.h"
+#include "../basedef.h"
+#include "../data/data_set.h"
+#include "../learn-rate/learn_rate_value.h"
+#include "base_sgd.h"
 
 class momentum_sgd : public base_sgd {
   /**

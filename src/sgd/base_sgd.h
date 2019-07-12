@@ -1,11 +1,11 @@
 #ifndef SGD_BASE_SGD_H
 #define SGD_BASE_SGD_H
 
-#include "basedef.h"
-#include "learn-rate/base_learn_rate.h"
-#include "learn-rate/onedim_learn_rate.h"
-#include "learn-rate/onedim_eigen_learn_rate.h"
-#include "learn-rate/ddim_learn_rate.h"
+#include "../basedef.h"
+#include "../learn-rate/base_learn_rate.h"
+#include "../learn-rate/onedim_learn_rate.h"
+#include "../learn-rate/onedim_eigen_learn_rate.h"
+#include "../learn-rate/ddim_learn_rate.h"
 
 class base_sgd {
   /**

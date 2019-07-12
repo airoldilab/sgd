@@ -1,7 +1,7 @@
 #ifndef MODEL_GLM_FAMILY_H
 #define MODEL_GLM_FAMILY_H
 
-#include "basedef.h"
+#include "../../basedef.h"
 
 class base_family;
 class gaussian_family;

@@ -1,10 +1,10 @@
 #ifndef MODEL_M_MODEL_H
 #define MODEL_M_MODEL_H
 
-#include "basedef.h"
-#include "data/data_point.h"
-#include "model/base_model.h"
-#include "model/m-estimation/m_loss.h"
+#include "../basedef.h"
+#include "../data/data_point.h"
+#include "base_model.h"
+#include "m-estimation/m_loss.h"
 
 class m_model : public base_model {
   /**

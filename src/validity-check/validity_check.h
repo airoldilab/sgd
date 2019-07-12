@@ -1,12 +1,12 @@
 #ifndef VALIDITY_CHECK_VALIDITY_CHECK_H
 #define VALIDITY_CHECK_VALIDITY_CHECK_H
 
-#include "basedef.h"
-#include "data/data_set.h"
-#include "validity-check/cox_validity_check_model.h"
-#include "validity-check/glm_validity_check_model.h"
-#include "validity-check/gmm_validity_check_model.h"
-#include "validity-check/m_validity_check_model.h"
+#include "../basedef.h"
+#include "../data/data_set.h"
+#include "cox_validity_check_model.h"
+#include "glm_validity_check_model.h"
+#include "gmm_validity_check_model.h"
+#include "m_validity_check_model.h"
 
 template<typename MODEL>
 bool validity_check(const data_set& data, const mat& theta, bool good_gradient,

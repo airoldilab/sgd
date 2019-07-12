@@ -1,11 +1,11 @@
 #ifndef MODEL_GLM_MODEL_H
 #define MODEL_GLM_MODEL_H
 
-#include "basedef.h"
-#include "data/data_point.h"
-#include "model/base_model.h"
-#include "model/glm/glm_family.h"
-#include "model/glm/glm_transfer.h"
+#include "../basedef.h"
+#include "../data/data_point.h"
+#include "base_model.h"
+#include "glm/glm_family.h"
+#include "glm/glm_transfer.h"
 
 class glm_model : public base_model {
   /**

@@ -1,9 +1,9 @@
 #ifndef MODEL_GMM_MODEL_H
 #define MODEL_GMM_MODEL_H
 
-#include "basedef.h"
-#include "data/data_point.h"
-#include "model/base_model.h"
+#include "../basedef.h"
+#include "../data/data_point.h"
+#include "base_model.h"
 
 class gmm_model : public base_model {
   /**

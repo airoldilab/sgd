@@ -1,7 +1,7 @@
 #ifndef MODEL_GLM_TRANSFER_H
 #define MODEL_GLM_TRANSFER_H
 
-#include "basedef.h"
+#include "../../basedef.h"
 
 class base_transfer;
 class identity_transfer;
