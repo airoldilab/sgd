@@ -36,9 +36,14 @@ public:
         for (unsigned j = 0; j < n_samples; ++j) {
           idxvec_[i * n_samples + j] = j;
         }
-        std::random_shuffle(idxvec_.begin() + i * n_samples,
+        // std::random_shuffle(idxvec_.begin() + i * n_samples,
+        //                     idxvec_.begin() + (i + 1) * n_samples,
+        //                     randWrapper);
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::shuffle(idxvec_.begin() + i * n_samples,
                             idxvec_.begin() + (i + 1) * n_samples,
-                            randWrapper);
+                            gen);
       }
     }
   }

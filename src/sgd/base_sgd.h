@@ -16,7 +16,7 @@ class base_sgd {
    * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) : ti_(ti) {
+  base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) : ti_(ti) {
     name_ = Rcpp::as<std::string>(sgd["method"]);
     n_params_ = Rcpp::as<unsigned>(sgd["nparams"]);
     reltol_ = Rcpp::as<double>(sgd["reltol"]);
@@ -124,12 +124,36 @@ public:
   //mat update(unsigned t, const mat& theta_old, const data_set& data,
   //MODEL& model, bool& good_gradient);
 
+  // base_sgd& operator=(const mat& theta_new) {
+  //   last_estimate_ = theta_new;
+  //   t_ += 1;
+  //   if (t_ == pos_[n_recorded_]) {
+  //     estimates_.col(n_recorded_) = theta_new;
+  //     times_.at(n_recorded_) = ti_.elapsed();
+  //     n_recorded_ += 1;
+  //     while (n_recorded_ < size_ && pos_[n_recorded_-1] == pos_[n_recorded_]) {
+  //       estimates_.col(n_recorded_) = theta_new;
+  //       times_.at(n_recorded_) = times_.at(n_recorded_-1);
+  //       n_recorded_ += 1;
+  //     }
+  //   }
+  //   return *this;
+  // }
+  
   base_sgd& operator=(const mat& theta_new) {
     last_estimate_ = theta_new;
     t_ += 1;
     if (t_ == pos_[n_recorded_]) {
       estimates_.col(n_recorded_) = theta_new;
-      times_.at(n_recorded_) = ti_.elapsed();
+      boost::timer::cpu_times times = ti_.elapsed();
+      boost::chrono::nanoseconds wall_ns(times.wall);
+      boost::chrono::nanoseconds user_ns(times.user);
+      boost::chrono::nanoseconds system_ns(times.system);
+      boost::chrono::duration<double> wall_sec = boost::chrono::duration_cast<boost::chrono::duration<double>>(wall_ns);
+      boost::chrono::duration<double> user_sec = boost::chrono::duration_cast<boost::chrono::duration<double>>(user_ns);
+      boost::chrono::duration<double> system_sec = boost::chrono::duration_cast<boost::chrono::duration<double>>(system_ns);
+      // boost::chrono::duration<double> seconds = boost::chrono::duration_cast<boost::chrono::duration<double>>(boost::chrono::nanoseconds(times.user + times.system));
+      times_.at(n_recorded_) = wall_sec.count() + user_sec.count() + system_sec.count();
       n_recorded_ += 1;
       while (n_recorded_ < size_ && pos_[n_recorded_-1] == pos_[n_recorded_]) {
         estimates_.col(n_recorded_) = theta_new;
@@ -156,7 +180,7 @@ protected:
   mat estimates_;           // collection of stored estimates
   mat last_estimate_;       // last SGD estimate
   vec times_;               // times to reach each stored estimate
-  boost::timer ti_;         // timer
+  boost::timer::cpu_timer ti_;         // timer
   base_learn_rate* lr_obj_; // learning rate
   unsigned t_;              // current iteration
   unsigned n_recorded_;     // number of coefs that have been recorded

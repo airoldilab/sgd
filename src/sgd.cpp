@@ -30,7 +30,7 @@ Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd);
  */
 // [[Rcpp::export]]
 Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
-  boost::timer ti;
+  boost::timer::cpu_timer ti;
   Rcpp::List Dataset(dataset);
   Rcpp::List Model_control(model_control);
   Rcpp::List Sgd_control(sgd_control);
@@ -166,7 +166,7 @@ Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control) {
 template<typename MODEL, typename SGD>
 Rcpp::List run(const data_set& data, MODEL& model, SGD& sgd) {
   unsigned n_samples = data.n_samples;
-  unsigned n_features = data.n_features;
+  // unsigned n_features = data.n_features;
   unsigned n_passes = sgd.get_n_passes();
 
   bool good_gradient = true;

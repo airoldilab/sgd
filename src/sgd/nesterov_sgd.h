@@ -15,7 +15,7 @@ class nesterov_sgd : public base_sgd {
    * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  nesterov_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) :
+  nesterov_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) :
     base_sgd(sgd, n_samples, ti) {
     mu_ = 0.9;
     v_ = last_estimate_;

@@ -50,7 +50,7 @@ class implicit_sgd : public base_sgd {
    * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  implicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) :
+  implicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) :
     base_sgd(sgd, n_samples, ti) {
     delta_ = Rcpp::as<double>(sgd["delta"]);
   }

@@ -34,9 +34,9 @@ public:
     }
   }
 
-  const double& at(unsigned i) const {
-    return at(i);
-  }
+  // const double& at(unsigned i) const {
+  //   return at(i);
+  // }
 
   double& at(unsigned i, unsigned j) {
     if (type_ == 2) {
@@ -49,13 +49,13 @@ public:
     }
   }
 
-  const double& at(unsigned i, unsigned j) const {
-    return at(i, j);
-  }
+  // const double& at(unsigned i, unsigned j) const {
+  //   return at(i, j);
+  // }
 
   // Take average for usage in implicit SGD
   double mean() const {
-    double average = 0.0;
+    // double average = 0.0;
     if (type_ == 0) {
       return lr_scalar_;
     } else if (type_ == 1) {

@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // run
 Rcpp::List run(SEXP dataset, SEXP model_control, SEXP sgd_control);
 RcppExport SEXP _sgd_run(SEXP datasetSEXP, SEXP model_controlSEXP, SEXP sgd_controlSEXP) {

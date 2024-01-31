@@ -15,7 +15,7 @@ class momentum_sgd : public base_sgd {
    * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  momentum_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer& ti) :
+  momentum_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) :
     base_sgd(sgd, n_samples, ti) {
     mu_ = 0.9;
     v_ = last_estimate_;
