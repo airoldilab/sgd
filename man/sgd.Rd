@@ -9,14 +9,11 @@
 \usage{
 sgd(x, ...)
 
-\method{sgd}{formula}(formula, data, model, model.control = list(),
-  sgd.control = list(...), ...)
+\method{sgd}{formula}(formula, data, model, model.control = list(), sgd.control = list(...), ...)
 
-\method{sgd}{matrix}(x, y, model, model.control = list(),
-  sgd.control = list(...), ...)
+\method{sgd}{matrix}(x, y, model, model.control = list(), sgd.control = list(...), ...)
 
-\method{sgd}{big.matrix}(x, y, model, model.control = list(),
-  sgd.control = list(...), ...)
+\method{sgd}{big.matrix}(x, y, model, model.control = list(), sgd.control = list(...), ...)
 }
 \arguments{
 \item{x, y}{a design matrix and the respective vector of outcomes.}

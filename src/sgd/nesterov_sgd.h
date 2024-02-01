@@ -12,11 +12,10 @@ class nesterov_sgd : public base_sgd {
    *
    * @param sgd       attributes affiliated with sgd as R type
    * @param n_samples number of data samples
-   * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  nesterov_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) :
-    base_sgd(sgd, n_samples, ti) {
+  nesterov_sgd(Rcpp::List sgd, unsigned n_samples) :
+    base_sgd(sgd, n_samples) {
     mu_ = 0.9;
     v_ = last_estimate_;
   }

@@ -13,11 +13,10 @@ class explicit_sgd : public base_sgd {
    *
    * @param sgd       attributes affiliated with sgd as R type
    * @param n_samples number of data samples
-   * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  explicit_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) :
-    base_sgd(sgd, n_samples, ti) {}
+  explicit_sgd(Rcpp::List sgd, unsigned n_samples) :
+    base_sgd(sgd, n_samples) {}
 
   template<typename MODEL>
   mat update(unsigned t, const mat& theta_old, const data_set& data,

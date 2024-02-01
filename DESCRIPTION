@@ -1,16 +1,16 @@
 Package: sgd
 Type: Package
 Title: Stochastic Gradient Descent for Scalable Estimation
-Version: 1.1.1
+Version: 1.1.2
 Authors@R: c(
-    person("Junhyung Lyle", "Kim", email = "lylejkim@gmail.com", role = c("cre", "aut")),
+    person("Junhyung Lyle", "Kim", email = "jlylekim@gmail.com", role = c("cre", "aut")),
     person("Dustin", "Tran", role = "aut"),
     person("Panos", "Toulis", role = "aut"),
     person("Tian", "Lian", role = "ctb"),
     person("Ye", "Kuang", role = "ctb"),
     person("Edoardo", "Airoldi", role = "ctb")
     )
-Maintainer: Junhyung Lyle Kim <lylejkim@gmail.com>
+Maintainer: Junhyung Lyle Kim <jlylekim@gmail.com>
 Description: A fast and flexible set of tools for large scale estimation. It
     features many stochastic gradient methods, built-in models, visualization
     tools, automated hyperparameter tuning, model checking, interval estimation,
@@ -37,4 +37,5 @@ LinkingTo:
     RcppArmadillo
 LazyData: yes
 VignetteBuilder: R.rsp
+Encoding: UTF-8
 RoxygenNote: 7.3.1

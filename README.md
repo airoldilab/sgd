@@ -69,12 +69,11 @@ devtools::install_github("airoldilab/sgd")
 
 ## Authors
 sgd is written by [Dustin Tran](http://dustintran.com) and
-[Panos Toulis](http://faculty.chicagobooth.edu/Panagiotis.toulis/index.html), 
+[Panos Toulis](https://www.ptoulis.com/), 
 and is under active development. Please feel free to contribute by
 submitting any issues or requests—or by solving any current issues!
 
-We thank all other members of the [Airoldi Lab](http://applied.stat.harvard.edu)
-(led by Prof. Edo Airoldi) for their feedback and contributions.
+We thank all other members of the Airoldi Lab (led by Prof. Edo Airoldi) for their feedback and contributions.
 
 ## Citation
 

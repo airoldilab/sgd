@@ -4,7 +4,8 @@
 \name{winequality}
 \alias{winequality}
 \title{Wine quality data of white wine samples from Portugal}
-\format{A data frame with 4898 rows and 12 variables
+\format{
+A data frame with 4898 rows and 12 variables
 \itemize{
   \item fixed acidity.
   \item volatile acidity.
@@ -18,7 +19,8 @@
   \item sulphates.
   \item alcohol.
   \item quality (score between 0 and 10).
-}}
+}
+}
 \source{
 \url{https://archive.ics.uci.edu/ml/datasets/Wine+Quality}
 }

@@ -16,7 +16,7 @@ class base_sgd {
    * @param ti        timer for benchmarking how long to get each estimate
    */
 public:
-  base_sgd(Rcpp::List sgd, unsigned n_samples, const boost::timer::cpu_timer& ti) : ti_(ti) {
+  base_sgd(Rcpp::List sgd, unsigned n_samples) {
     name_ = Rcpp::as<std::string>(sgd["method"]);
     n_params_ = Rcpp::as<unsigned>(sgd["nparams"]);
     reltol_ = Rcpp::as<double>(sgd["reltol"]);
@@ -24,7 +24,6 @@ public:
     size_ = Rcpp::as<unsigned>(sgd["size"]);
     estimates_ = zeros<mat>(n_params_, size_);
     last_estimate_ = Rcpp::as<mat>(sgd["start"]);
-    times_ = zeros<vec>(size_);
     t_ = 0;
     n_recorded_ = 0;
     pos_ = Mat<unsigned>(1, size_);
@@ -81,9 +80,6 @@ public:
   }
   mat get_last_estimate() const {
     return last_estimate_;
-  }
-  vec get_times() const {
-    return times_;
   }
   Mat<unsigned> get_pos() const {
     return pos_;
@@ -145,19 +141,9 @@ public:
     t_ += 1;
     if (t_ == pos_[n_recorded_]) {
       estimates_.col(n_recorded_) = theta_new;
-      boost::timer::cpu_times times = ti_.elapsed();
-      boost::chrono::nanoseconds wall_ns(times.wall);
-      boost::chrono::nanoseconds user_ns(times.user);
-      boost::chrono::nanoseconds system_ns(times.system);
-      boost::chrono::duration<double> wall_sec = boost::chrono::duration_cast<boost::chrono::duration<double>>(wall_ns);
-      boost::chrono::duration<double> user_sec = boost::chrono::duration_cast<boost::chrono::duration<double>>(user_ns);
-      boost::chrono::duration<double> system_sec = boost::chrono::duration_cast<boost::chrono::duration<double>>(system_ns);
-      // boost::chrono::duration<double> seconds = boost::chrono::duration_cast<boost::chrono::duration<double>>(boost::chrono::nanoseconds(times.user + times.system));
-      times_.at(n_recorded_) = wall_sec.count() + user_sec.count() + system_sec.count();
       n_recorded_ += 1;
       while (n_recorded_ < size_ && pos_[n_recorded_-1] == pos_[n_recorded_]) {
         estimates_.col(n_recorded_) = theta_new;
-        times_.at(n_recorded_) = times_.at(n_recorded_-1);
         n_recorded_ += 1;
       }
     }
@@ -168,7 +154,6 @@ public:
     // Throw away the space for things that were not recorded.
     pos_.shed_cols(n_recorded_, size_-1);
     estimates_.shed_cols(n_recorded_, size_-1);
-    times_.shed_rows(n_recorded_, size_-1);
   }
 
 protected:
@@ -179,8 +164,6 @@ protected:
   unsigned size_;           // number of estimates to be recorded (log-uniformly)
   mat estimates_;           // collection of stored estimates
   mat last_estimate_;       // last SGD estimate
-  vec times_;               // times to reach each stored estimate
-  boost::timer::cpu_timer ti_;         // timer
   base_learn_rate* lr_obj_; // learning rate
   unsigned t_;              // current iteration
   unsigned n_recorded_;     // number of coefs that have been recorded
