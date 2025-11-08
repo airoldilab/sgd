@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{object of class \code{sgd}.}
 
-\item{\dots}{further arguments passed to or from other methods.}
+\item{...}{further arguments passed to or from other methods.}
 }
 \description{
 Print objects of class \code{sgd}.

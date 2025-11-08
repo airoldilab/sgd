@@ -68,7 +68,7 @@ devtools::install_github("airoldilab/sgd")
 ```
 
 ## Authors
-sgd is written by [Dustin Tran](http://dustintran.com), [Junhyung Lyle Kim](https://jlylekim.github.io/) and
+sgd is written by [Dustin Tran](https://dustintran.com), [Junhyung Lyle Kim](https://jlylekim.github.io/) and
 [Panos Toulis](https://www.ptoulis.com/). Please feel free to contribute by
 submitting any issues or requests—or by solving any current issues!
 

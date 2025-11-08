@@ -1,23 +1,9 @@
 ## Test environments
-
-* local OS X install, R 4.3.2
-* win-builder (devel)
+* macOS 15 arm64, R 4.5.1
+* R-hub: Windows (devel)
 
 ## R CMD check results
-There were no ERRORs or WARNINGs.
+0 errors | 0 warnings | 0 notes
 
-There was 1 NOTE:
-
-checking CRAN incoming feasibility (8.6s)
-   Maintainer: ‘Junhyung Lyle Kim <jlylekim@gmail.com>’
-   
-   New submission
-   
-   Package was archived on CRAN
-   
-   CRAN repository db overrides:
-     X-CRAN-Comment: Archived on 2024-01-30 as check problems were not
-       corrected in time.
-
-  -> This is the new submission after fixing the check problems. 
-
+## Comments
+- Replaced deprecated Armadillo `is_finite()` calls.

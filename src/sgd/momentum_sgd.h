@@ -24,7 +24,7 @@ public:
   mat update(unsigned t, const mat& theta_old, const data_set& data,
     MODEL& model, bool& good_gradient) {
     mat grad_t = model.gradient(t, theta_old, data);
-    if (!is_finite(grad_t)) {
+    if (!grad_t.is_finite()) {
       good_gradient = false;
     }
     learn_rate_value at = learning_rate(t, grad_t);

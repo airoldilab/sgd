@@ -18,7 +18,7 @@ bool validity_check(const data_set& data, const mat& theta, bool good_gradient,
   }
 
   // Check if all estimates are finite.
-  if (!is_finite(theta)) {
+  if (!theta.is_finite()) {
     Rcpp::Rcout << "warning: non-finite coefficients at iteration " << t << std::endl;
   }
 

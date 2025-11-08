@@ -147,7 +147,7 @@ public:
 
     mat grad_t = (z - (eta_j + at_avg*z*xjnorm)/(1 + at_avg*xjnorm)) *
       data_pt.x.t();
-    if (!is_finite(grad_t)) {
+    if (!grad_t.is_finite()) {
       good_gradient = false;
     }
     return theta_old + (at * grad_t);
